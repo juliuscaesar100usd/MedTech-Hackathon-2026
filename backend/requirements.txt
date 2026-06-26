@@ -28,3 +28,9 @@ reportlab>=4.0.0            # used by sample-data generator to build PDFs
 # --- Tests ---
 pytest>=8.0.0
 httpx>=0.26.0
+
+# === Merged from lane fragments (lane1..lane4), deduped by package ===
+sentence-transformers>=2.5.0    # requirements.lane2.txt
+numpy>=1.26    # requirements.lane2.txt — embedding cache (.npz) + cosine math
+xlrd>=2.0.1    # requirements.lane3.txt
+anthropic>=0.40.0    # requirements.lane3.txt

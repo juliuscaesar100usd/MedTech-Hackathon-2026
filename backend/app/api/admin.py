@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from ..catalog_loader import is_real_catalog, load_real_catalog
 from ..config import settings
 from ..enums import ParseStatus
 from ..ingestion import enqueue_batch_processing, ingest_archive
@@ -50,7 +51,12 @@ def upload_archive(file: UploadFile, db: Session = Depends(get_db)) -> Ingestion
 
 @router.post("/catalog")
 def upload_catalog(file: UploadFile, db: Session = Depends(get_db)) -> dict:
-    """Upload an .xlsx/.json service catalog; upsert into the Service table."""
+    """Upload a service catalog; upsert into the Service table.
+
+    The real organizer catalog (.xlsx, sheet "Справочник услуг" with
+    service×specialty rows) is detected automatically and loaded with its
+    specialties; a plain .xlsx/.json catalog falls back to the simple loader.
+    """
     name = file.filename or "catalog"
     suffix = Path(name).suffix or ".json"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -58,6 +64,8 @@ def upload_catalog(file: UploadFile, db: Session = Depends(get_db)) -> dict:
         tmp_path = tmp.name
 
     try:
+        if is_real_catalog(tmp_path):
+            return load_real_catalog(db, tmp_path)
         items = load_catalog_from_file(tmp_path)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

@@ -102,7 +102,11 @@ def process_document(
         n_matched = 0
         row_logs: list[str] = []
         for row in parsed.rows:
-            match = matcher.match(row.service_name_raw)
+            # Section header (e.g. "ЛАБОРАТОРНЫЕ ИССЛЕДОВАНИЯ") carried by the
+            # parser in row.extra; feeds the matcher's specialty prior (lane 2)
+            # and is persisted on the PriceItem (schema contract).
+            section = (getattr(row, "extra", None) or {}).get("section")
+            match = matcher.match(row.service_name_raw, section=section)
             outcome = validate_row(row, effective_date, settings)
             item = upsert_with_versioning(
                 db,
@@ -111,6 +115,7 @@ def process_document(
                 row=row,
                 outcome=outcome,
                 match=match,
+                section=section,
                 settings=settings,
             )
             if item is None:

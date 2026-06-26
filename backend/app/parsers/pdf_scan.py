@@ -27,6 +27,12 @@ from .base import BaseParser, ParsedDocument, ParsedRow, register_parser
 from .ocr_clean import clean_ocr_text
 from .pdf_text import extract_header_hints
 from .table_extract import parse_price
+from .vision_fallback import (
+    VISION_DPI,
+    extract_rows_via_vision,
+    is_low_confidence,
+    vision_available,
+)
 
 # Lines whose name part starts with one of these are document metadata, not data.
 _HEADER_SKIP_RE = re.compile(
@@ -144,17 +150,22 @@ def _row_from_cells(cells: list[str], ref: str) -> ParsedRow | None:
     )
 
 
-def _rows_from_tsv(img: Image.Image, tessdata_dir: str, ref: str) -> list[ParsedRow]:
-    """Group OCR words into lines, then split each line into cells by geometry."""
+def _tsv_data(img: Image.Image, tessdata_dir: str) -> dict | None:
+    """Run Tesseract's TSV (word-geometry) pass; return the DICT or None."""
     config = f'--tessdata-dir "{tessdata_dir}"'
     try:
-        data = pytesseract.image_to_data(
+        return pytesseract.image_to_data(
             img, lang=settings.ocr_langs, config=config,
             output_type=pytesseract.Output.DICT,
         )
     except Exception:
-        return []
+        return None
 
+
+def _rows_from_data(data: dict | None, ref: str) -> list[ParsedRow]:
+    """Group OCR words into lines, then split each line into cells by geometry."""
+    if not data:
+        return []
     n = len(data["text"])
     lines: dict[tuple, list[tuple[int, int, str]]] = {}
     for i in range(n):
@@ -172,6 +183,13 @@ def _rows_from_tsv(img: Image.Image, tessdata_dir: str, ref: str) -> list[Parsed
         if row is not None:
             rows.append(row)
     return rows
+
+
+def _render_png(page, dpi: int = VISION_DPI) -> bytes:
+    """Rasterize a PDF page to PNG bytes at `dpi` for the vision fallback."""
+    zoom = dpi / 72.0
+    pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom))
+    return pix.tobytes("png")
 
 
 def _parse_line(line: str, ref: str) -> ParsedRow | None:
@@ -236,9 +254,38 @@ class PdfScanParser(BaseParser):
                 text_parts.append(page_text)
 
                 # Prefer geometry-based TSV reconstruction; fall back to regex.
-                page_rows = _rows_from_tsv(img, tessdata_dir, ref)
+                data = _tsv_data(img, tessdata_dir)
+                page_rows = _rows_from_data(data, ref)
                 if not page_rows:
                     page_rows = _rows_from_text(page_text, ref)
+
+                # Fix B: on low-confidence pages (skewed scan / prices detached
+                # from names), retry with the Claude vision model. Tesseract stays
+                # the default; vision only runs when both the page is weak AND the
+                # fallback is configured (anthropic installed + ANTHROPIC_API_KEY).
+                low, reason = is_low_confidence(data, page_rows)
+                if low:
+                    ok, why = vision_available()
+                    if ok:
+                        try:
+                            vrows = extract_rows_via_vision(_render_png(page), ref)
+                        except Exception as exc:  # pragma: no cover - network/API
+                            doc.add_warning(
+                                f"{ref}: vision fallback error ({exc}); kept OCR rows"
+                            )
+                            vrows = None
+                        if vrows:
+                            doc.add_warning(
+                                f"{ref}: low OCR confidence ({reason}); used Claude "
+                                f"vision fallback ({len(vrows)} rows vs "
+                                f"{len(page_rows)} OCR)"
+                            )
+                            page_rows = vrows
+                    else:
+                        doc.add_warning(
+                            f"{ref}: low OCR confidence ({reason}); vision fallback "
+                            f"unavailable ({why}) — kept OCR rows"
+                        )
                 doc.rows.extend(page_rows)
 
         doc.raw_text = "\n".join(text_parts).strip()

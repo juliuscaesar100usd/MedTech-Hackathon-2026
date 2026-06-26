@@ -20,6 +20,28 @@ from app.parsers.base import get_parser
 from app.parsers.table_extract import find_header_row, parse_price, rows_from_table
 
 
+# Cyrillic-capable TrueType font for building the sample PDFs/scans. The Linux
+# CI image ships DejaVuSans at the first path; macOS/Windows dev machines don't,
+# so we fall back to system fonts that also cover Cyrillic. Resolved once.
+_CYRILLIC_FONT_CANDIDATES = (
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",          # Debian / Ubuntu (CI)
+    "/usr/share/fonts/dejavu/DejaVuSans.ttf",                   # Fedora / Arch
+    "/Library/Fonts/Arial Unicode.ttf",                         # macOS
+    "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",     # macOS
+    "/System/Library/Fonts/Supplemental/Arial.ttf",            # macOS
+    "/System/Library/Fonts/Supplemental/Verdana.ttf",          # macOS
+    "C:\\Windows\\Fonts\\arial.ttf",                            # Windows
+)
+
+
+def _cyrillic_font_path() -> str:
+    """First Cyrillic-capable TTF that exists, or skip on a fontless system."""
+    for p in _CYRILLIC_FONT_CANDIDATES:
+        if os.path.exists(p):
+            return p
+    pytest.skip("no Cyrillic-capable TrueType font found on this system")
+
+
 # --------------------------------------------------------------------------- #
 # Unit tests: price parsing + header detection + table mapping.               #
 # --------------------------------------------------------------------------- #
@@ -87,9 +109,7 @@ def _make_text_pdf(path: str) -> None:
 
     # Helvetica has no Cyrillic glyphs; register a TTF that does.
     if "DejaVu" not in pdfmetrics.getRegisteredFontNames():
-        pdfmetrics.registerFont(
-            TTFont("DejaVu", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
-        )
+        pdfmetrics.registerFont(TTFont("DejaVu", _cyrillic_font_path()))
 
     c = canvas.Canvas(path, pagesize=A4)
     w, h = A4
@@ -196,7 +216,7 @@ def _make_scan_pdf(path: str) -> None:
 
     img = Image.new("RGB", (1654, 1169), "white")  # ~A4 landscape @ 200dpi
     draw = ImageDraw.Draw(img)
-    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    font_path = _cyrillic_font_path()
     big = ImageFont.truetype(font_path, 48)
     med = ImageFont.truetype(font_path, 40)
 

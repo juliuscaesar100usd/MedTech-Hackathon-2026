@@ -28,3 +28,4 @@ frontend/.vite/
 
 # Large model caches (optional ML)
 .cache/
+.gstack/

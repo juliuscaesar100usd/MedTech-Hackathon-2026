@@ -47,6 +47,7 @@ def upsert_with_versioning(
     row: ParsedRow,
     outcome: ValidationOutcome,
     match: MatchResult,
+    section: str | None = None,
     settings: Settings | None = None,
 ) -> PriceItem | None:
     """Create, version and stage a :class:`PriceItem`. Returns it, or None if
@@ -67,6 +68,7 @@ def upsert_with_versioning(
         partner_id=partner_id,
         service_name_raw=name,
         service_code_source=row.service_code_source,
+        section=section,
         service_id=match.service_id if match is not None else None,
         price_resident_kzt=outcome.price_resident_kzt,
         price_nonresident_kzt=outcome.price_nonresident_kzt,

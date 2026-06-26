@@ -1,0 +1,13 @@
+# Lane 3 (parsers) extra dependencies.
+# Installed in addition to backend/requirements.txt — do NOT duplicate base pins here.
+
+# --- Fix A: legacy .xls reading (Клиника 7) ---
+# pandas dispatches *.xls to this engine; without it every .xls errors at runtime.
+xlrd>=2.0.1
+# (LibreOffice `soffice` is the runtime fallback when xlrd can't open a file; it is a
+#  system package, not a pip dependency — install via the OS, e.g. `brew install --cask
+#  libreoffice` or `apt-get install libreoffice-calc`.)
+
+# --- Fix B: Claude vision fallback for low-confidence scanned pages (Клиника 4) ---
+# Used only when Tesseract OCR confidence is low; reads ANTHROPIC_API_KEY from .env.
+anthropic>=0.40.0

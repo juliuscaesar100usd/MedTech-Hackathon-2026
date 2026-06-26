@@ -1,0 +1,10 @@
+# LANE 2 — semantic normalization stack (embedding stage of the matcher).
+#
+# Heavy: pulls in torch and downloads the multilingual-e5-base model on first
+# use. Install on TOP of backend/requirements.txt:
+#     pip install -r backend/requirements.txt -r backend/requirements.lane2.txt
+#
+# At runtime the embedding stage is gated by USE_EMBEDDINGS=true; if this stack
+# is absent the matcher degrades gracefully to exact -> synonym -> fuzzy.
+sentence-transformers>=2.5.0
+numpy>=1.26          # explicit: the embedding cache (.npz) and cosine math
