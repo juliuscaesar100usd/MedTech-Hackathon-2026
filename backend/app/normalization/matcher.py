@@ -465,6 +465,8 @@ def build_matcher(db: Session, settings=None) -> Matcher:
             query_prefix="query: " if use_e5 else "",
             passage_prefix="passage: " if use_e5 else "",
             cache_dir=cache_dir,
+            model_cache_dir=getattr(settings, "embeddings_model_cache", None),
+            offline=getattr(settings, "embeddings_offline", False),
         )
 
     return Matcher(

@@ -34,8 +34,15 @@ class Settings(BaseSettings):
     # cosine/ratio similarity in [0,1]
     match_auto_threshold: float = 0.85   # >= -> auto-match
     match_review_threshold: float = 0.60  # [review,auto) -> needs_review queue; below -> unmatched
-    use_embeddings: bool = False
-    embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"
+    # Embeddings ON by default (lane 2 semantic stage). The model loads from a
+    # baked, OFFLINE cache (no ~1GB download at runtime) — see embeddings_* below
+    # and scripts/bake_embedding_model.py.
+    use_embeddings: bool = True
+    embedding_model: str = "intfloat/multilingual-e5-base"
+    # Lighter fallback if size is a concern: set EMBEDDING_MODEL=intfloat/multilingual-e5-small.
+    # Load the model from this local cache and forbid network fetches (offline judging).
+    embeddings_offline: bool = True
+    embeddings_model_cache: Path = BACKEND_ROOT / "model_cache"
 
     # --- OCR ---
     ocr_langs: str = "rus+kaz+eng"

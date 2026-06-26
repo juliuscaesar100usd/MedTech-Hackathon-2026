@@ -48,12 +48,18 @@ class EmbeddingIndex:
         query_prefix: str = _DEFAULT_QUERY_PREFIX,
         passage_prefix: str = _DEFAULT_PASSAGE_PREFIX,
         cache_dir: str | Path | None = None,
+        model_cache_dir: str | Path | None = None,
+        offline: bool = False,
     ) -> None:
         self.model_name = model_name
         self.enabled = enabled
         self.query_prefix = query_prefix
         self.passage_prefix = passage_prefix
         self.cache_dir = Path(cache_dir) if cache_dir is not None else _CACHE_DIR
+        # Where the model WEIGHTS live (HF hub layout). When offline, the model
+        # is loaded from here with no network access (baked cache for judging).
+        self.model_cache_dir = Path(model_cache_dir) if model_cache_dir is not None else None
+        self.offline = offline
         self._model = None  # sentence_transformers.SentenceTransformer | None
         self._emb = None    # numpy.ndarray (n_texts, dim), L2-normalized float32
         self._n = 0
@@ -67,12 +73,20 @@ class EmbeddingIndex:
             return True
         if not self.enabled:
             return False
+        # Offline judging: load weights from the baked cache, forbid network.
+        # Set before importing sentence_transformers so the hub respects it.
+        import os
+
+        if self.offline:
+            os.environ.setdefault("HF_HUB_OFFLINE", "1")
+            os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
         try:  # Lazy import — never required at module import time.
             from sentence_transformers import SentenceTransformer  # type: ignore
         except Exception:
             return False
+        cache_folder = str(self.model_cache_dir) if self.model_cache_dir else None
         try:
-            self._model = SentenceTransformer(self.model_name)
+            self._model = SentenceTransformer(self.model_name, cache_folder=cache_folder)
         except Exception:
             self._model = None
             return False

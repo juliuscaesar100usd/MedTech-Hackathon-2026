@@ -35,12 +35,21 @@ _TIER_RK_RE = re.compile(r"\bрк\b|(?<!не)резидент|граждан", r
 _TIER_NEAR_RE = re.compile(r"ближн", re.I)
 _TIER_FAR_RE = re.compile(r"дальн", re.I)
 
-# A full-width section header row ("ПРИЕМ ВРАЧА", "ЛАБОРАТОРНЫЕ ИССЛЕДОВАНИЯ").
+# A full-width section header row ("ПРИЕМ ВРАЧА", "ЛАБОРАТОРНЫЕ ИССЛЕДОВАНИЯ",
+# "Раздел 5.Кардиология", "Категория: УЗИ"). Structural heading words are added
+# so mixed-case "Раздел/Категория"-style headers are detected too (they were
+# missed before, leaving PriceItem.section empty and the specialty prior inert).
 _SECTION_HINT_RE = re.compile(
+    r"раздел|подраздел|категори|отделени|перечень|наименование услуг|"
     r"прием|приём|консультац|осмотр|услуг|анализ|исследован|диагностик|"
     r"процедур|манипул|узи|рентген|лаборатор|терап|хирург|стоматолог|кабинет",
     re.I,
 )
+
+# A leading structural heading word ("Раздел 5.Кардиология", "Категория: УЗИ").
+# No real service name starts with these, so such a row is a heading even when it
+# embeds a number (which would otherwise be misread as a price).
+_SECTION_LEAD_RE = re.compile(r"^\s*(раздел|подраздел|категори|отделени|глава|блок)\b", re.I)
 
 # --------------------------------------------------------------------------- #
 # Price / currency parsing.                                                    #
@@ -241,11 +250,14 @@ def _section_label(row: list[object]) -> str | None:
     letters = [ch for ch in text if ch.isalpha()]
     if len(letters) < 3:
         return None
+    # A row led by a structural heading word is a heading even when it embeds a
+    # number ("Раздел 5.Кардиология"); otherwise an embedded value rules it out.
+    lead_heading = bool(_SECTION_LEAD_RE.match(text))
     val, _ = parse_price(text)
-    if val is not None:
+    if val is not None and not lead_heading:
         return None  # it's a value, not a heading
     upper_ratio = sum(1 for ch in letters if ch.isupper()) / len(letters)
-    if upper_ratio >= 0.6 or _SECTION_HINT_RE.search(text):
+    if lead_heading or upper_ratio >= 0.6 or _SECTION_HINT_RE.search(text):
         return text.strip(" .:-—|\t")
     return None
 
