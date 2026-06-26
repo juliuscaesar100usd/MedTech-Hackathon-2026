@@ -20,6 +20,21 @@ _NAME_KW = (
     "наименование", "услуг", "название", "анализ", "исследовани",
     "процедур", "манипул", "service", "name", "атауы", "қызмет",
 )
+# For COLUMN mapping, "услуг" is too greedy — it also matches "Код услуги",
+# "Перечень услуг", etc. So split into strong name words and a weak fallback,
+# and map code/unit/index columns BEFORE name so those never win the name slot.
+_NAME_KW_STRONG = (
+    "наименование", "название", "анализ", "исследовани", "процедур",
+    "манипул", "service", "name", "атауы", "қызмет",
+)
+_NAME_KW_WEAK = ("услуг",)
+# Unit / quantity columns (excluded from the price fallback).
+_UNIT_KW = (
+    "ед.изм", "ед. изм", "ед изм", "единиц", "измерен", "кол-во", "кол.",
+    "колво", "количество", "qty", "unit", "өлшем", "саны",
+)
+# Row-number / index columns ("№ п/п") — excluded from name AND price.
+_INDEX_KW = ("п/п", "№", "no.", "номер п")
 _CODE_KW = ("код", "артикул", "code", "коды", "шифр")
 # Non-resident must be checked BEFORE resident (both contain "цена" sometimes).
 _NONRES_KW = ("нерезидент", "иностран", "non-resident", "nonresident", "non resident")
@@ -28,6 +43,28 @@ _RES_KW = (
     "price", "cost", "kzt", "тг", "тенге", "бағас", "құны",
 )
 _CURRENCY_KW = ("валюта", "currency", "валютасы")
+
+# Citizen-tier price columns (organizer .xls format, e.g. Клиника 7):
+# РК / граждане РК (resident) vs ближнее / дальнее зарубежье (non-resident tiers).
+_TIER_RK_RE = re.compile(r"\bрк\b|(?<!не)резидент|граждан", re.I)
+_TIER_NEAR_RE = re.compile(r"ближн", re.I)
+_TIER_FAR_RE = re.compile(r"дальн", re.I)
+
+# A full-width section header row ("ПРИЕМ ВРАЧА", "ЛАБОРАТОРНЫЕ ИССЛЕДОВАНИЯ",
+# "Раздел 5.Кардиология", "Категория: УЗИ"). Structural heading words are added
+# so mixed-case "Раздел/Категория"-style headers are detected too (they were
+# missed before, leaving PriceItem.section empty and the specialty prior inert).
+_SECTION_HINT_RE = re.compile(
+    r"раздел|подраздел|категори|отделени|перечень|наименование услуг|"
+    r"прием|приём|консультац|осмотр|услуг|анализ|исследован|диагностик|"
+    r"процедур|манипул|узи|рентген|лаборатор|терап|хирург|стоматолог|кабинет",
+    re.I,
+)
+
+# A leading structural heading word ("Раздел 5.Кардиология", "Категория: УЗИ").
+# No real service name starts with these, so such a row is a heading even when it
+# embeds a number (which would otherwise be misread as a price).
+_SECTION_LEAD_RE = re.compile(r"^\s*(раздел|подраздел|категори|отделени|глава|блок)\b", re.I)
 
 # --------------------------------------------------------------------------- #
 # Price / currency parsing.                                                    #
@@ -156,11 +193,17 @@ def _map_columns(header: list[object]) -> dict[str, int]:
                 return
 
     taken: set[int] = set()
-    assign("name", _NAME_KW, taken)
-    assign("code", _CODE_KW, taken)
+    # Claim the unambiguous structural columns FIRST so a greedy name keyword
+    # ("услуг" in "Код услуги") can't steal the code/index column.
+    assign("index", _INDEX_KW, taken)         # № / п/п
+    assign("code", _CODE_KW, taken)           # "Код услуги" -> code, not name
+    assign("unit", _UNIT_KW, taken)           # ед.изм / кол-во
     assign("nonresident", _NONRES_KW, taken)  # before resident
     assign("resident", _RES_KW, taken)
     assign("currency", _CURRENCY_KW, taken)
+    # Name last: strong words first, then the weak "услуг" fallback.
+    assign("name", _NAME_KW_STRONG, taken)
+    assign("name", _NAME_KW_WEAK, taken)
     return mapping
 
 
@@ -183,6 +226,63 @@ def _guess_name_column(rows: list[list[object]]) -> int:
     return best_col
 
 
+def _map_tiers(header: list[object]) -> dict[str, int]:
+    """Detect citizen-tier price columns (РК / ближнее / дальнее зарубежье).
+
+    Returns any of keys 'rk'/'near'/'far' -> column index. Only treated as a tier
+    layout when a near- or far-abroad column is present, so an ordinary 'Цена'
+    column is still handled by the normal resident/non-resident mapping.
+    """
+    cells = [_cell(c) for c in header]
+    rk = near = far = None
+    for i, c in enumerate(cells):
+        if near is None and _TIER_NEAR_RE.search(c):
+            near = i
+            continue
+        if far is None and _TIER_FAR_RE.search(c):
+            far = i
+            continue
+        if rk is None and _TIER_RK_RE.search(c):
+            rk = i
+    if near is None and far is None:
+        return {}
+    tiers: dict[str, int] = {}
+    if rk is not None:
+        tiers["rk"] = rk
+    if near is not None:
+        tiers["near"] = near
+    if far is not None:
+        tiers["far"] = far
+    return tiers
+
+
+def _section_label(row: list[object]) -> str | None:
+    """Return the heading text if `row` is a full-width section header, else None.
+
+    A section row has exactly one non-empty cell, no parseable price, and is
+    either uppercase-dominant or matches a known section keyword. (Ordinary
+    priced rows always have at least name + price cells, so they never qualify.)
+    """
+    cells = [_cell(c) for c in row]
+    nonempty = [c for c in cells if c]
+    if len(nonempty) != 1:
+        return None
+    text = nonempty[0]
+    letters = [ch for ch in text if ch.isalpha()]
+    if len(letters) < 3:
+        return None
+    # A row led by a structural heading word is a heading even when it embeds a
+    # number ("Раздел 5.Кардиология"); otherwise an embedded value rules it out.
+    lead_heading = bool(_SECTION_LEAD_RE.match(text))
+    val, _ = parse_price(text)
+    if val is not None and not lead_heading:
+        return None  # it's a value, not a heading
+    upper_ratio = sum(1 for ch in letters if ch.isupper()) / len(letters)
+    if lead_heading or upper_ratio >= 0.6 or _SECTION_HINT_RE.search(text):
+        return text.strip(" .:-—|\t")
+    return None
+
+
 def rows_from_table(
     table: list[list[object]], source_ref_prefix: str = ""
 ) -> list[ParsedRow]:
@@ -203,7 +303,18 @@ def rows_from_table(
     hdr_local = find_header_row(clean_rows)
     header = clean_rows[hdr_local]
     mapping = _map_columns(header)
-    has_header = bool(mapping)
+    tiers = _map_tiers(header)
+    has_header = bool(mapping) or bool(tiers)
+
+    # Citizen-tier columns (РК / ближнее / дальнее) drive resident/non-resident.
+    if tiers:
+        if tiers.get("rk") is not None:
+            mapping["resident"] = tiers["rk"]
+        nonres_col = tiers.get("far")
+        if nonres_col is None:
+            nonres_col = tiers.get("near")
+        if nonres_col is not None:
+            mapping["nonresident"] = nonres_col
 
     if has_header:
         data = indexed[hdr_local + 1:]
@@ -217,8 +328,15 @@ def rows_from_table(
 
     prefix = source_ref_prefix.rstrip(";") if source_ref_prefix else ""
     out: list[ParsedRow] = []
+    current_section: str | None = None
 
     for orig_idx, row in data:
+        # Section header rows ("ПРИЕМ ВРАЧА") carry their label onto following rows.
+        section = _section_label(row)
+        if section is not None:
+            current_section = section
+            continue
+
         name = _cell(row[name_col]) if name_col < len(row) else ""
         if not name or not any(ch.isalpha() for ch in name):
             continue  # skip rows without a real service name
@@ -244,17 +362,37 @@ def rows_from_table(
             cur = detect_currency(_cell(row[mapping["currency"]]), default=currency)
             currency = cur
 
-        # No mapped price column (or header-less): take the first numeric cell
-        # that is not the name/code column.
+        # No mapped price column (or header-less): take the RIGHTMOST numeric cell
+        # that is not the name/code/unit/index column. Rightmost (not leftmost) so
+        # a leading "№ п/п" / qty column is never mistaken for the price, and the
+        # unit/index columns are skipped outright (fixes "index column as price").
         if res_price is None and nonres_price is None:
-            skip = {name_col, mapping.get("code", -1)}
-            for ci, cell in enumerate(row):
+            skip = {
+                name_col,
+                mapping.get("code", -1),
+                mapping.get("unit", -1),
+                mapping.get("index", -1),
+            }
+            for ci in range(len(row) - 1, -1, -1):
                 if ci in skip:
                     continue
-                p, c = parse_price(cell)
+                p, c = parse_price(row[ci])
                 if p is not None:
                     res_price, currency = p, c
                     break
+
+        extra: dict = {}
+        if current_section:
+            extra["section"] = current_section
+        # Keep the extra citizen tiers (near/far abroad) so nothing is lost when
+        # they collapse onto the single non-resident field.
+        if tiers:
+            for label, key in (("price_near_abroad", "near"), ("price_far_abroad", "far")):
+                ci = tiers.get(key)
+                if ci is not None and ci < len(row):
+                    tv, _ = parse_price(row[ci])
+                    if tv is not None:
+                        extra[label] = tv
 
         ref = f"{prefix};row={orig_idx}" if prefix else f"row={orig_idx}"
         out.append(
@@ -266,6 +404,7 @@ def rows_from_table(
                 currency=currency,
                 service_code_source=code,
                 source_ref=ref,
+                extra=extra,
             )
         )
     return out

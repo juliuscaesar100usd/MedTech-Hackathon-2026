@@ -85,8 +85,12 @@ def matcher(db: Session):
     n = seed_services(db, CATALOG)
     assert n == len(CATALOG)
     assert len(load_services(db)) == len(CATALOG)
-    # Embeddings stay off (sentence-transformers not installed): pure lexical.
-    return build_matcher(db)
+    # Pure-lexical contract suite: pin embeddings OFF (the embedding stage has
+    # dedicated stub-based coverage in test_matcher_lane2). The app-wide default
+    # is now ON, so pin explicitly rather than relying on it being absent.
+    from app.config import Settings
+
+    return build_matcher(db, Settings(use_embeddings=False))
 
 
 # --------------------------------------------------------------------------- #

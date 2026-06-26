@@ -51,6 +51,11 @@ class Service(Base):
     __tablename__ = "services"
 
     service_id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    # Organizer service code (the real catalog's ``Code``). The natural unique key
+    # for coded services; NULL for services that have no organizer code (the demo
+    # catalog, and the lab/diagnostic rows whose code was unrecoverable in the
+    # source file). SQL treats NULLs as distinct, so many NULL codes coexist.
+    code: Mapped[int | None] = mapped_column(Integer, unique=True, index=True)
     service_name: Mapped[str] = mapped_column(String(512), nullable=False, index=True)
     synonyms: Mapped[list] = mapped_column(JSON, default=list)         # list[str]
     category: Mapped[str | None] = mapped_column(String(128), index=True)
@@ -58,6 +63,34 @@ class Service(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     items: Mapped[list["PriceItem"]] = relationship(back_populates="service")
+    specialties: Mapped[list["ServiceSpecialty"]] = relationship(
+        back_populates="service", cascade="all, delete-orphan"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Service <-> Specialty (the real catalog's service×specialty rows)
+# One service (by ``code``) is offered by several specialties; this table holds
+# the 1281 service×specialty pairs from ``data/catalog/real_catalog.xlsx``.
+# --------------------------------------------------------------------------- #
+class ServiceSpecialty(Base):
+    __tablename__ = "service_specialties"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    service_id: Mapped[str] = mapped_column(
+        ForeignKey("services.service_id"), nullable=False, index=True
+    )
+    specialty: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
+    # Organizer specialty id (the catalog's ``ID`` column); may be NULL when the
+    # source row's id was unrecoverable. ``specialty`` (the name) is the reliable key.
+    specialty_id: Mapped[int | None] = mapped_column(Integer)
+
+    service: Mapped["Service"] = relationship(back_populates="specialties")
+
+    __table_args__ = (
+        # Idempotent loads: each (service, specialty) pair exists at most once.
+        UniqueConstraint("service_id", "specialty", name="uq_service_specialty"),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -149,6 +182,9 @@ class PriceItem(Base):
 
     service_name_raw: Mapped[str] = mapped_column(String(1024), nullable=False)
     service_code_source: Mapped[str | None] = mapped_column(String(128))
+    # Section/department header the item was found under in the source document
+    # (e.g. a specialty heading). Carried through for grouping and match hints.
+    section: Mapped[str | None] = mapped_column(String(256))
     service_id: Mapped[str | None] = mapped_column(
         ForeignKey("services.service_id"), index=True
     )

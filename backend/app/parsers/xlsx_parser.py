@@ -6,6 +6,10 @@ columns. Each sheet's data rows become ParsedRows tagged with source_ref=sheet.
 """
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
+import tempfile
 from datetime import date, datetime
 
 import openpyxl
@@ -22,9 +26,59 @@ def _cellval(v: object) -> str:
         return ""
     if isinstance(v, (datetime, date)):
         return v.isoformat()
-    if isinstance(v, float) and v.is_integer():
-        return str(int(v))
+    if isinstance(v, float):
+        if v != v:  # NaN — pandas renders blank .xls cells this way; treat as empty
+            return ""
+        if v.is_integer():
+            return str(int(v))
     return str(v).strip()
+
+
+# --------------------------------------------------------------------------- #
+# Legacy .xls -> .xlsx conversion via LibreOffice (Fix A fallback).            #
+# --------------------------------------------------------------------------- #
+def _find_soffice() -> str | None:
+    """Locate the LibreOffice headless binary on PATH or in common install dirs."""
+    for name in ("soffice", "libreoffice"):
+        found = shutil.which(name)
+        if found:
+            return found
+    for cand in (
+        "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+        "/usr/bin/soffice",
+        "/usr/bin/libreoffice",
+        "/opt/libreoffice/program/soffice",
+        "/snap/bin/libreoffice",
+    ):
+        if os.path.exists(cand):
+            return cand
+    return None
+
+
+def _convert_xls_to_xlsx(src_path: str) -> str | None:
+    """Convert a legacy .xls to .xlsx via `soffice --headless`. Returns the new
+    path (caller cleans up its temp dir) or None if conversion is unavailable."""
+    soffice = _find_soffice()
+    if soffice is None:
+        return None
+    outdir = tempfile.mkdtemp(prefix="medarchive_xls_")
+    # Isolate the LibreOffice user profile so a headless run never collides with
+    # a desktop instance or a read-only HOME.
+    profile = f"file://{os.path.join(outdir, 'profile')}"
+    cmd = [
+        soffice, "--headless", f"-env:UserInstallation={profile}",
+        "--convert-to", "xlsx", "--outdir", outdir, src_path,
+    ]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, timeout=180)
+    except Exception:
+        shutil.rmtree(outdir, ignore_errors=True)
+        return None
+    out = os.path.join(outdir, os.path.splitext(os.path.basename(src_path))[0] + ".xlsx")
+    if os.path.exists(out):
+        return out
+    shutil.rmtree(outdir, ignore_errors=True)
+    return None
 
 
 class _BaseExcelParser(BaseParser):
@@ -77,21 +131,27 @@ class XlsxParser(_BaseExcelParser):
             wb.close()
         return self._finish(doc, top_text)
 
-    # ---- .xls via pandas --------------------------------------------------- #
+    # ---- .xls via xlrd, with a LibreOffice conversion fallback ------------- #
     def _parse_xls(self, file_path: str, doc: ParsedDocument) -> ParsedDocument:
+        sheets = self._read_xls_xlrd(file_path, doc)
+        if sheets is None:
+            # xlrd missing or failed -> convert .xls -> .xlsx and reuse the
+            # openpyxl path (which preserves header detection / sections / tiers).
+            converted = _convert_xls_to_xlsx(file_path)
+            if converted is None:
+                doc.add_warning(
+                    "Cannot read legacy .xls: xlrd unavailable/failed and no "
+                    "LibreOffice (soffice) found for fallback conversion. "
+                    "Install xlrd>=2.0.1 or LibreOffice."
+                )
+                return doc
+            doc.add_warning("Read .xls via LibreOffice .xls->.xlsx conversion fallback.")
+            try:
+                return self._parse_xlsx(converted, doc)
+            finally:
+                shutil.rmtree(os.path.dirname(converted), ignore_errors=True)
+
         top_text: list[str] = []
-        try:
-            import pandas as pd  # local import: only needed for legacy .xls
-        except Exception as exc:  # pragma: no cover
-            doc.add_warning(f"pandas unavailable for .xls: {exc}")
-            return doc
-        try:
-            sheets = pd.read_excel(file_path, sheet_name=None, header=None, dtype=str)
-        except Exception as exc:
-            doc.add_warning(
-                f".xls engine unavailable or read failed ({exc}); install xlrd."
-            )
-            return doc
         for sheet_name, df in sheets.items():
             table = [[_cellval(v) for v in row] for row in df.values.tolist()]
             if not table:
@@ -105,3 +165,28 @@ class XlsxParser(_BaseExcelParser):
                 rows_from_table(table, source_ref_prefix=f"sheet={sheet_name}")
             )
         return self._finish(doc, top_text)
+
+    @staticmethod
+    def _read_xls_xlrd(file_path: str, doc: ParsedDocument):
+        """Read every sheet of a legacy .xls with the xlrd engine.
+
+        Returns a ``{sheet_name: DataFrame}`` dict, or None to signal that the
+        caller should fall back to LibreOffice conversion.
+        """
+        try:
+            import pandas as pd  # local import: only needed for legacy .xls
+        except Exception as exc:  # pragma: no cover
+            doc.add_warning(f"pandas unavailable for .xls: {exc}")
+            return None
+        try:
+            import xlrd  # noqa: F401  ensure the legacy engine is importable
+        except Exception:
+            doc.add_warning("xlrd not installed; trying LibreOffice fallback.")
+            return None
+        try:
+            return pd.read_excel(
+                file_path, sheet_name=None, header=None, dtype=str, engine="xlrd"
+            )
+        except Exception as exc:
+            doc.add_warning(f"xlrd read failed ({exc}); trying LibreOffice fallback.")
+            return None

@@ -10,6 +10,7 @@ from __future__ import annotations
 import traceback
 from collections import defaultdict
 from datetime import date, datetime, timezone
+from types import SimpleNamespace
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -102,7 +103,26 @@ def process_document(
         n_matched = 0
         row_logs: list[str] = []
         for row in parsed.rows:
-            match = matcher.match(row.service_name_raw)
+            # Section header (e.g. "ЛАБОРАТОРНЫЕ ИССЛЕДОВАНИЯ") carried by the
+            # parser in row.extra; feeds the matcher's specialty prior (lane 2)
+            # and is persisted on the PriceItem (schema contract).
+            section = (getattr(row, "extra", None) or {}).get("section")
+            # Route through match_item() (the filtered path): it returns None for
+            # section/category-header rows so they never become PriceItems or land
+            # in the verification queue. The adapter maps ParsedRow's price fields
+            # to the *_kzt names match_item expects.
+            row_view = SimpleNamespace(
+                service_name_raw=row.service_name_raw,
+                price_resident_kzt=row.price_resident,
+                price_nonresident_kzt=row.price_nonresident,
+                price_original=row.price_original,
+                service_code_source=row.service_code_source,
+                section=section,
+            )
+            match = matcher.match_item(row_view)
+            if match is None:
+                # Section/category header — skip entirely (not a service line).
+                continue
             outcome = validate_row(row, effective_date, settings)
             item = upsert_with_versioning(
                 db,
@@ -111,6 +131,7 @@ def process_document(
                 row=row,
                 outcome=outcome,
                 match=match,
+                section=section,
                 settings=settings,
             )
             if item is None:

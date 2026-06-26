@@ -28,3 +28,9 @@ frontend/.vite/
 
 # Large model caches (optional ML)
 .cache/
+.gstack/
+# Baked sentence-transformers weights (~1.1GB e5-base) — exceed GitHub's 100MB
+# file limit, so not committed. Reproduce offline via scripts/bake_embedding_model.py
+# (or commit via Git LFS). Loaded offline at runtime when embeddings_offline=True.
+backend/model_cache/
+backend/app/normalization/_emb_cache/

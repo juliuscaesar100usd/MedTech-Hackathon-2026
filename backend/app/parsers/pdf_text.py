@@ -7,14 +7,15 @@ free-text header at the top of a price list.
 from __future__ import annotations
 
 import re
+import statistics
 from datetime import date
 
 import pdfplumber
 from dateutil import parser as dateparser
 
 from ..enums import FileFormat
-from .base import BaseParser, ParsedDocument, register_parser
-from .table_extract import rows_from_table
+from .base import BaseParser, ParsedDocument, ParsedRow, register_parser
+from .table_extract import _section_label, parse_price, rows_from_table
 
 try:  # PyMuPDF — used as a text fallback when pdfplumber finds nothing.
     import fitz  # type: ignore
@@ -130,6 +131,113 @@ def extract_header_hints(text: str, doc: ParsedDocument) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Word-geometry row extraction (borderless / text-layout PDFs).                #
+# --------------------------------------------------------------------------- #
+# Many real price lists are laid out with whitespace columns and NO ruled
+# lines, so pdfplumber's table detection (which keys on lines/rects) finds
+# nothing. We then reconstruct rows from word geometry: group words into visual
+# lines, split each line into CELLS at wide horizontal gaps (so "2 500" stays one
+# cell but "2 500    3 625" splits into two price columns), and read the trailing
+# numeric cells as prices. Section headers carry down via _section_label so the
+# specialty prior fires on PDFs too.
+_PDF_LINE_TOL = 3.0   # words within this vertical distance belong to one line (pt)
+_MIN_CELL_GAP = 11.0  # absolute floor for a column-separating gap (pt)
+
+
+def _pdf_lines(words: list[dict]) -> list[list[dict]]:
+    ws = sorted(words, key=lambda w: (round(float(w["top"]), 1), float(w["x0"])))
+    lines: list[list[dict]] = []
+    cur: list[dict] = []
+    top: float | None = None
+    for w in ws:
+        t = float(w["top"])
+        if top is None or abs(t - top) <= _PDF_LINE_TOL:
+            cur.append(w)
+            if top is None:
+                top = t
+        else:
+            lines.append(cur)
+            cur = [w]
+            top = t
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def _cells_by_gap(line: list[dict]) -> list[str]:
+    line = sorted(line, key=lambda w: float(w["x0"]))
+    widths = [(float(w["x1"]) - float(w["x0"])) / max(1, len(w["text"])) for w in line]
+    cw = statistics.median(widths) if widths else 6.0
+    thr = max(2.2 * cw, _MIN_CELL_GAP)
+    cells: list[str] = []
+    cur = [line[0]["text"]]
+    prev_x1 = float(line[0]["x1"])
+    for w in line[1:]:
+        if float(w["x0"]) - prev_x1 > thr:
+            cells.append(" ".join(cur))
+            cur = [w["text"]]
+        else:
+            cur.append(w["text"])
+        prev_x1 = float(w["x1"])
+    cells.append(" ".join(cur))
+    return cells
+
+
+def _row_from_line(cells: list[str], ref: str, section: str | None) -> ParsedRow | None:
+    cells = [c.strip() for c in cells if c.strip()]
+    if not cells:
+        return None
+    prices: list[tuple[float, object]] = []
+    cut = len(cells)
+    for i in range(len(cells) - 1, -1, -1):
+        val, cur = parse_price(cells[i])
+        if val is None or val <= 0:
+            break
+        prices.append((val, cur))
+        cut = i
+    if not prices:
+        return None
+    name = " ".join(cells[:cut]).strip(" .:-—|\t")
+    if len(name) < 3 or not any(ch.isalpha() for ch in name):
+        return None
+    prices.reverse()
+    # Drop a leading qty / row-index column (a tiny integer) when a real price
+    # follows it, so "Приём врача  1  1080" -> price 1080, not resident=1.
+    while len(prices) > 1 and prices[0][0] < 10 <= prices[1][0]:
+        prices.pop(0)
+    res, currency = prices[0]
+    nonres = prices[1][0] if len(prices) > 1 else None
+    return ParsedRow(
+        service_name_raw=name,
+        price_resident=res,
+        price_nonresident=nonres,
+        price_original=res,
+        currency=currency,  # type: ignore[arg-type]
+        source_ref=ref,
+        extra={"section": section} if section else {},
+    )
+
+
+def _rows_from_pdf_words(page, ref: str) -> list[ParsedRow]:
+    try:
+        words = page.extract_words(use_text_flow=False)
+    except Exception:
+        return []
+    rows: list[ParsedRow] = []
+    section: str | None = None
+    for line in _pdf_lines(words):
+        cells = _cells_by_gap(line)
+        sec = _section_label(cells)
+        if sec is not None:
+            section = sec
+            continue
+        row = _row_from_line(cells, ref, section)
+        if row is not None:
+            rows.append(row)
+    return rows
+
+
+# --------------------------------------------------------------------------- #
 # Parser.                                                                      #
 # --------------------------------------------------------------------------- #
 @register_parser
@@ -146,9 +254,15 @@ class PdfTextParser(BaseParser):
                     ptext = page.extract_text() or ""
                     if ptext:
                         text_parts.append(ptext)
+                    page_rows: list[ParsedRow] = []
                     for tno, table in enumerate(page.extract_tables() or []):
                         ref = f"page={pno + 1};table={tno + 1}"
-                        doc.rows.extend(rows_from_table(table, source_ref_prefix=ref))
+                        page_rows.extend(rows_from_table(table, source_ref_prefix=ref))
+                    # Borderless / text-layout page (no ruled table found):
+                    # reconstruct rows from word geometry.
+                    if not page_rows:
+                        page_rows = _rows_from_pdf_words(page, ref=f"page={pno + 1}")
+                    doc.rows.extend(page_rows)
         except Exception as exc:  # pragma: no cover - corrupt/locked PDF
             doc.add_warning(f"pdfplumber failed: {exc}")
 
@@ -164,6 +278,6 @@ class PdfTextParser(BaseParser):
 
         doc.raw_text = raw_text
         if not doc.rows:
-            doc.add_warning("No tables extracted from PDF.")
+            doc.add_warning("No priced rows extracted from PDF (tables or text layout).")
         extract_header_hints(raw_text, doc)
         return doc
