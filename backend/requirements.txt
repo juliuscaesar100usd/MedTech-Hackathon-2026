@@ -1,0 +1,30 @@
+# --- Web / API ---
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.6
+pydantic-settings>=2.1
+python-multipart>=0.0.9
+
+# --- Database ---
+SQLAlchemy>=2.0.25
+psycopg2-binary>=2.9.9        # PostgreSQL driver (production)
+
+# --- Document parsing ---
+pdfplumber>=0.10.3            # PDF text + tables
+PyMuPDF>=1.23.0              # fitz: fast PDF text + page rasterization for OCR
+openpyxl>=3.1.2              # XLSX
+pandas>=2.1.0               # tabular handling
+python-docx>=1.1.0          # DOCX (incl. tracked-changes handling)
+pytesseract>=0.3.10         # OCR (Tesseract bindings)
+Pillow>=10.0.0              # image handling for OCR
+
+# --- Normalization / matching ---
+rapidfuzz>=3.6.0            # fast fuzzy matching
+
+# --- Utilities ---
+python-dateutil>=2.8.2
+reportlab>=4.0.0            # used by sample-data generator to build PDFs
+
+# --- Tests ---
+pytest>=8.0.0
+httpx>=0.26.0

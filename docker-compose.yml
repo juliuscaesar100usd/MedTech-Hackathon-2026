@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: medarchive
+      POSTGRES_PASSWORD: medarchive
+      POSTGRES_DB: medarchive
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medarchive"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://medarchive:medarchive@db:5432/medarchive
+      OCR_LANGS: rus+kaz+eng
+      CORS_ORIGINS: '["*"]'
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - storage:/app/storage
+    # Seed the catalog + ingest the sample archive on first boot, then serve.
+    command: >
+      sh -c "python -m scripts.bootstrap_demo --quiet || true;
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  frontend:
+    build: ./frontend
+    environment:
+      # Build-time API base; the nginx container also proxies /api to backend.
+      VITE_API_BASE: /api
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:
+  storage:

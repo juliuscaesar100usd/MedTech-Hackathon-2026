@@ -1,0 +1,3 @@
+# Optional semantic-matching stack (heavy: torch + model download).
+# Enable with USE_EMBEDDINGS=true after installing:  pip install -r requirements-ml.txt
+sentence-transformers>=2.5.0

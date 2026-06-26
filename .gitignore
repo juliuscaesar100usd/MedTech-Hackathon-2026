@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Database / storage
+*.db
+*.db-wal
+*.db-shm
+backend/storage/
+backend/medarchive.db*
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Env
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+*.log
+
+# Large model caches (optional ML)
+.cache/
