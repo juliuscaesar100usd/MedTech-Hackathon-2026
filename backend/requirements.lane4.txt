@@ -1,3 +1,0 @@
-# Lane 4 (price-history endpoint) backend dependencies.
-# The price-history router uses only what is already in requirements.txt
-# (fastapi, sqlalchemy, pydantic) — no additional backend packages required.

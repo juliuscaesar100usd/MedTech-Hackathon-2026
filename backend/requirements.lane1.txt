@@ -1,9 +1,0 @@
-# Lane 1 (catalog / schema) dependencies.
-# Installed in addition to backend/requirements.txt — do NOT edit requirements.txt.
-#
-# openpyxl is already pinned in requirements.txt; listed here so lane 1 is
-# self-describing (the real-catalog loader reads .xlsx via openpyxl).
-openpyxl>=3.1.2
-
-# SQLAlchemy + pydantic-settings are also provided by the base requirements.txt
-# and are required by the catalog loader / models; no new packages beyond these.

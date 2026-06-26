@@ -1,0 +1,103 @@
+<svg width="1000" height="660" viewBox="0 0 1000 660" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif">
+  <defs>
+    <linearGradient id="sLogo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0891b2"/><stop offset="1" stop-color="#0e7490"/></linearGradient>
+    <filter id="sWin" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="18" stdDeviation="28" flood-color="#0f172a" flood-opacity="0.18"/></filter>
+    <filter id="sCard" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.07"/></filter>
+  </defs>
+
+  <rect width="1000" height="660" fill="#e9eef5"/>
+
+  <!-- window -->
+  <g filter="url(#sWin)"><rect x="16" y="16" width="968" height="628" rx="16" fill="#f4f7fb"/></g>
+  <path d="M16 32 a16 16 0 0 1 16 -16 H968 a16 16 0 0 1 16 16 V52 H16 Z" fill="#ffffff"/>
+  <circle cx="44" cy="34" r="6" fill="#ff5f57"/><circle cx="64" cy="34" r="6" fill="#febc2e"/><circle cx="84" cy="34" r="6" fill="#28c840"/>
+  <rect x="360" y="24" width="280" height="20" rx="10" fill="#f1f5f9"/>
+  <text x="500" y="38" text-anchor="middle" fill="#94a3b8" font-size="11.5" font-weight="600">localhost:5173</text>
+
+  <!-- navbar -->
+  <rect x="16" y="52" width="968" height="54" fill="#ffffff"/>
+  <line x1="16" y1="106" x2="984" y2="106" stroke="#e2e8f0"/>
+  <rect x="44" y="64" width="30" height="30" rx="9" fill="url(#sLogo)"/>
+  <path d="M52 80 h4 l3 -7 l4 14 l3 -9 l2 3 h5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="84" y="84" fill="#0f172a" font-size="17" font-weight="800">Med<tspan fill="#0e7490">Archive</tspan></text>
+  <g font-size="13.5" font-weight="600">
+    <rect x="636" y="68" width="62" height="24" rx="6" fill="#ecfeff"/>
+    <text x="648" y="84" fill="#0e7490">Search</text>
+    <text x="714" y="84" fill="#64748b">Services</text>
+    <text x="792" y="84" fill="#64748b">Partners</text>
+    <text x="878" y="84" fill="#64748b">Admin</text>
+  </g>
+
+  <!-- hero -->
+  <text x="500" y="156" text-anchor="middle" fill="#0f172a" font-size="29" font-weight="800" letter-spacing="-0.5">Find any medical service — and what it costs</text>
+  <text x="500" y="184" text-anchor="middle" fill="#64748b" font-size="14.5">See which partner clinics provide a service and at what price.</text>
+
+  <!-- search box -->
+  <g filter="url(#sCard)"><rect x="220" y="206" width="560" height="58" rx="11" fill="#ffffff" stroke="#e2e8f0"/></g>
+  <g transform="translate(244,226)" stroke="#94a3b8" stroke-width="2.2" fill="none" stroke-linecap="round"><circle cx="8" cy="8" r="7"/><line x1="13" y1="13" x2="19" y2="19"/></g>
+  <text x="284" y="241" fill="#0f172a" font-size="16" font-weight="600">УЗИ</text>
+  <rect x="650" y="216" width="120" height="38" rx="9" fill="#0891b2"/>
+  <text x="710" y="240" text-anchor="middle" fill="#ffffff" font-size="14.5" font-weight="700">Search</text>
+
+  <!-- chips -->
+  <g font-size="12.5" fill="#64748b" font-weight="500">
+    <rect x="300" y="282" width="146" height="26" rx="13" fill="#ffffff" stroke="#e2e8f0"/><text x="373" y="299" text-anchor="middle">МРТ головного мозга</text>
+    <rect x="456" y="282" width="52" height="26" rx="13" fill="#ecfeff" stroke="#a5f3fc"/><text x="482" y="299" text-anchor="middle" fill="#0e7490" font-weight="700">УЗИ</text>
+    <rect x="518" y="282" width="182" height="26" rx="13" fill="#ffffff" stroke="#e2e8f0"/><text x="609" y="299" text-anchor="middle">Консультация терапевта</text>
+  </g>
+
+  <!-- tabs -->
+  <rect x="44" y="330" width="118" height="32" rx="8" fill="#0891b2"/>
+  <text x="103" y="351" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">Services (6)</text>
+  <rect x="172" y="330" width="118" height="32" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="231" y="351" text-anchor="middle" fill="#334155" font-size="13" font-weight="700">Partners (2)</text>
+
+  <!-- result cards -->
+  <!-- card template positions: x in {44,355,666}, y in {382,524}, w=290 h=126 -->
+  <g font-weight="700">
+    <!-- row 1 -->
+    <g transform="translate(44,382)">
+      <g filter="url(#sCard)"><rect width="290" height="126" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+      <text x="22" y="40" fill="#0f172a" font-size="16">УЗИ брюшной полости</text>
+      <rect x="22" y="54" width="86" height="22" rx="11" fill="#ecfeff"/><text x="65" y="69" text-anchor="middle" fill="#0e7490" font-size="11.5">Диагностика</text>
+      <text x="122" y="69" fill="#64748b" font-size="12.5" font-weight="500">5 партнёров</text>
+      <text x="22" y="104" fill="#0e7490" font-size="16">6 000 – 12 000 ₸</text>
+    </g>
+    <g transform="translate(355,382)">
+      <g filter="url(#sCard)"><rect width="290" height="126" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+      <text x="22" y="40" fill="#0f172a" font-size="16">УЗИ щитовидной железы</text>
+      <rect x="22" y="54" width="86" height="22" rx="11" fill="#ecfeff"/><text x="65" y="69" text-anchor="middle" fill="#0e7490" font-size="11.5">Диагностика</text>
+      <text x="122" y="69" fill="#64748b" font-size="12.5" font-weight="500">4 партнёра</text>
+      <text x="22" y="104" fill="#0e7490" font-size="16">4 500 – 9 000 ₸</text>
+    </g>
+    <g transform="translate(666,382)">
+      <g filter="url(#sCard)"><rect width="290" height="126" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+      <text x="22" y="40" fill="#0f172a" font-size="16">ЭхоКГ (УЗИ сердца)</text>
+      <rect x="22" y="54" width="86" height="22" rx="11" fill="#ecfeff"/><text x="65" y="69" text-anchor="middle" fill="#0e7490" font-size="11.5">Диагностика</text>
+      <text x="122" y="69" fill="#64748b" font-size="12.5" font-weight="500">3 партнёра</text>
+      <text x="22" y="104" fill="#0e7490" font-size="16">8 000 – 15 000 ₸</text>
+    </g>
+    <!-- row 2 -->
+    <g transform="translate(44,520)">
+      <g filter="url(#sCard)"><rect width="290" height="110" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+      <text x="22" y="40" fill="#0f172a" font-size="16">УЗИ почек</text>
+      <rect x="22" y="54" width="86" height="22" rx="11" fill="#ecfeff"/><text x="65" y="69" text-anchor="middle" fill="#0e7490" font-size="11.5">Диагностика</text>
+      <text x="122" y="69" fill="#64748b" font-size="12.5" font-weight="500">4 партнёра</text>
+      <text x="22" y="98" fill="#0e7490" font-size="16">4 000 – 8 500 ₸</text>
+    </g>
+    <g transform="translate(355,520)">
+      <g filter="url(#sCard)"><rect width="290" height="110" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+      <text x="22" y="40" fill="#0f172a" font-size="16">УЗИ малого таза</text>
+      <rect x="22" y="54" width="86" height="22" rx="11" fill="#ecfeff"/><text x="65" y="69" text-anchor="middle" fill="#0e7490" font-size="11.5">Диагностика</text>
+      <text x="122" y="69" fill="#64748b" font-size="12.5" font-weight="500">3 партнёра</text>
+      <text x="22" y="98" fill="#0e7490" font-size="16">5 500 – 10 000 ₸</text>
+    </g>
+    <g transform="translate(666,520)">
+      <g filter="url(#sCard)"><rect width="290" height="110" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+      <text x="22" y="40" fill="#0f172a" font-size="16">УЗИ молочных желёз</text>
+      <rect x="22" y="54" width="86" height="22" rx="11" fill="#ecfeff"/><text x="65" y="69" text-anchor="middle" fill="#0e7490" font-size="11.5">Диагностика</text>
+      <text x="122" y="69" fill="#64748b" font-size="12.5" font-weight="500">3 партнёра</text>
+      <text x="22" y="98" fill="#0e7490" font-size="16">5 000 – 9 500 ₸</text>
+    </g>
+  </g>
+</svg>

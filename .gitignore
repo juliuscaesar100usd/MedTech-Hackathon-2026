@@ -34,3 +34,6 @@ frontend/.vite/
 # (or commit via Git LFS). Loaded offline at runtime when embeddings_offline=True.
 backend/model_cache/
 backend/app/normalization/_emb_cache/
+
+# TS incremental build info (build artifact)
+frontend/tsconfig.tsbuildinfo
