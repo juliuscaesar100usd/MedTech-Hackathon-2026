@@ -80,6 +80,84 @@ export interface SearchResult {
   partners: SearchPartnerHit[];
 }
 
+// --- AI assistant (chatbot) ---
+export type AssistantIntent = 'find_service' | 'find_partner' | 'compare' | 'unknown';
+export type ResidentPref = 'resident' | 'nonresident' | 'any';
+export type SortOrder = 'cheapest' | 'expensive' | 'relevance';
+
+export interface AssistantPreferences {
+  intent: AssistantIntent;
+  services: string[];
+  category: string | null;
+  city: string | null;
+  partner: string | null;
+  max_price_kzt: Money;
+  min_price_kzt: Money;
+  resident: ResidentPref;
+  sort: SortOrder;
+  limit: number;
+  language: string | null;
+  raw_query: string;
+  notes: string[];
+}
+
+export interface AssistantOffer {
+  item_id: string | number;
+  partner_id: string | number;
+  partner_name: string;
+  city: string | null;
+  price_resident_kzt: Money;
+  price_nonresident_kzt: Money;
+  price_shown_kzt: Money;
+  currency_original: string;
+  effective_date: string | null;
+  is_verified: boolean;
+}
+
+export interface AssistantServiceResult {
+  type: 'service';
+  service_id: string | number | null;
+  service_name: string;
+  category: string | null;
+  partner_count: number;
+  best_price_kzt: Money;
+  min_price_kzt: Money;
+  max_price_kzt: Money;
+  offers: AssistantOffer[];
+  match_reason: string;
+  score: number;
+}
+
+export interface AssistantPartnerResult {
+  type: 'partner';
+  partner_id: string | number;
+  name: string;
+  city: string | null;
+  service_count: number;
+  score: number;
+}
+
+export interface AssistantChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AssistantReply {
+  reply: string;
+  preferences: AssistantPreferences;
+  services: AssistantServiceResult[];
+  partners: AssistantPartnerResult[];
+  used_llm: boolean;
+  parser: 'llm' | 'rule_based';
+  suggestions: string[];
+}
+
+export interface AssistantStatus {
+  enabled: boolean;
+  llm_available: boolean;
+  model: string;
+}
+
 export interface MatchCandidate {
   service_id: number | string;
   service_name: string;
@@ -324,6 +402,18 @@ export const api = {
 
   search(q: string): Promise<SearchResult> {
     return request<SearchResult>('/search', { params: { q } });
+  },
+
+  // --- AI assistant ---
+  assistantStatus(): Promise<AssistantStatus> {
+    return request<AssistantStatus>('/assistant/status');
+  },
+
+  assistantChat(message: string, history: AssistantChatMessage[] = []): Promise<AssistantReply> {
+    return request<AssistantReply>('/assistant/chat', {
+      method: 'POST',
+      body: { message, history },
+    });
   },
 
   // --- Operator queues ---

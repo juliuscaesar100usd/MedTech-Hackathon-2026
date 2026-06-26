@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { ToastProvider } from './components/Toast';
 
 import { SearchPage } from './pages/SearchPage';
+import { ChatPage } from './pages/ChatPage';
 import { ServicesPage } from './pages/ServicesPage';
 import { ServicePartnersPage } from './pages/ServicePartnersPage';
 import { PartnersPage } from './pages/PartnersPage';
@@ -22,6 +23,7 @@ export function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<SearchPage />} />
+            <Route path="assistant" element={<ChatPage />} />
             <Route path="services" element={<ServicesPage />} />
             <Route path="services/:id" element={<ServicePartnersPage />} />
             <Route path="partners" element={<PartnersPage />} />

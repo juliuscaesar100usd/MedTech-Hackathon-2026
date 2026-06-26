@@ -20,7 +20,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
-from .api import admin, matching, partners, price_history, search, services
+from .api import (
+    admin,
+    assistant,
+    matching,
+    partners,
+    price_history,
+    search,
+    services,
+)
 from .config import settings
 from .database import init_db
 
@@ -35,7 +43,9 @@ and **versions prices**, and flags anomalies for human review.
 
 This API powers the back office: full-text **search**, partner/service
 **comparison**, the **unmatched / verification** operator queues, manual
-**matching**, and a live **dashboard**.
+**matching**, a live **dashboard**, and an **AI assistant** that turns
+free-text preferences ("blood test in Almaty under 5000 ₸") into ranked,
+filtered catalog results.
 """
 
 
@@ -64,6 +74,7 @@ _prefix = settings.api_prefix
 app.include_router(services.router, prefix=_prefix, tags=["services"])
 app.include_router(partners.router, prefix=_prefix, tags=["partners"])
 app.include_router(search.router, prefix=_prefix, tags=["search"])
+app.include_router(assistant.router, prefix=_prefix, tags=["assistant"])
 app.include_router(matching.router, prefix=_prefix, tags=["matching"])
 app.include_router(price_history.router, prefix=_prefix, tags=["price-history"])
 app.include_router(admin.router, prefix=_prefix, tags=["admin"])

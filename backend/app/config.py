@@ -61,9 +61,30 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["*"]
     api_prefix: str = "/api"
 
+    # --- AI assistant / chatbot ---
+    # The assistant parses free-text preferences into a structured query and
+    # returns the matching catalog results. It is OFFLINE-FIRST: a deterministic
+    # rule-based parser always works. When an Anthropic API key is present AND
+    # the ``anthropic`` SDK is installed, the assistant additionally uses Claude
+    # to extract preferences for messier / more conversational input; on any
+    # failure it transparently falls back to the rule-based parser.
+    assistant_enabled: bool = True
+    # Set ANTHROPIC_API_KEY in the environment (or .env) to activate the LLM tier.
+    anthropic_api_key: str | None = None
+    assistant_model: str = "claude-opus-4-8"
+    # Max catalog results the assistant returns per message.
+    assistant_max_results: int = 5
+
     @property
     def is_sqlite(self) -> bool:
         return self.database_url.startswith("sqlite")
+
+    @property
+    def assistant_llm_configured(self) -> bool:
+        """True when an Anthropic API key is available for the LLM tier."""
+        import os
+
+        return bool(self.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY"))
 
 
 @lru_cache
