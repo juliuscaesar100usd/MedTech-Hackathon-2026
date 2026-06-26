@@ -20,6 +20,21 @@ _NAME_KW = (
     "наименование", "услуг", "название", "анализ", "исследовани",
     "процедур", "манипул", "service", "name", "атауы", "қызмет",
 )
+# For COLUMN mapping, "услуг" is too greedy — it also matches "Код услуги",
+# "Перечень услуг", etc. So split into strong name words and a weak fallback,
+# and map code/unit/index columns BEFORE name so those never win the name slot.
+_NAME_KW_STRONG = (
+    "наименование", "название", "анализ", "исследовани", "процедур",
+    "манипул", "service", "name", "атауы", "қызмет",
+)
+_NAME_KW_WEAK = ("услуг",)
+# Unit / quantity columns (excluded from the price fallback).
+_UNIT_KW = (
+    "ед.изм", "ед. изм", "ед изм", "единиц", "измерен", "кол-во", "кол.",
+    "колво", "количество", "qty", "unit", "өлшем", "саны",
+)
+# Row-number / index columns ("№ п/п") — excluded from name AND price.
+_INDEX_KW = ("п/п", "№", "no.", "номер п")
 _CODE_KW = ("код", "артикул", "code", "коды", "шифр")
 # Non-resident must be checked BEFORE resident (both contain "цена" sometimes).
 _NONRES_KW = ("нерезидент", "иностран", "non-resident", "nonresident", "non resident")
@@ -178,11 +193,17 @@ def _map_columns(header: list[object]) -> dict[str, int]:
                 return
 
     taken: set[int] = set()
-    assign("name", _NAME_KW, taken)
-    assign("code", _CODE_KW, taken)
+    # Claim the unambiguous structural columns FIRST so a greedy name keyword
+    # ("услуг" in "Код услуги") can't steal the code/index column.
+    assign("index", _INDEX_KW, taken)         # № / п/п
+    assign("code", _CODE_KW, taken)           # "Код услуги" -> code, not name
+    assign("unit", _UNIT_KW, taken)           # ед.изм / кол-во
     assign("nonresident", _NONRES_KW, taken)  # before resident
     assign("resident", _RES_KW, taken)
     assign("currency", _CURRENCY_KW, taken)
+    # Name last: strong words first, then the weak "услуг" fallback.
+    assign("name", _NAME_KW_STRONG, taken)
+    assign("name", _NAME_KW_WEAK, taken)
     return mapping
 
 
@@ -341,14 +362,21 @@ def rows_from_table(
             cur = detect_currency(_cell(row[mapping["currency"]]), default=currency)
             currency = cur
 
-        # No mapped price column (or header-less): take the first numeric cell
-        # that is not the name/code column.
+        # No mapped price column (or header-less): take the RIGHTMOST numeric cell
+        # that is not the name/code/unit/index column. Rightmost (not leftmost) so
+        # a leading "№ п/п" / qty column is never mistaken for the price, and the
+        # unit/index columns are skipped outright (fixes "index column as price").
         if res_price is None and nonres_price is None:
-            skip = {name_col, mapping.get("code", -1)}
-            for ci, cell in enumerate(row):
+            skip = {
+                name_col,
+                mapping.get("code", -1),
+                mapping.get("unit", -1),
+                mapping.get("index", -1),
+            }
+            for ci in range(len(row) - 1, -1, -1):
                 if ci in skip:
                     continue
-                p, c = parse_price(cell)
+                p, c = parse_price(row[ci])
                 if p is not None:
                     res_price, currency = p, c
                     break
