@@ -1502,3 +1502,18 @@ p {
 
 /* Tighten hero headline in the split column (≤2-3 lines, taste-skill) */
 .lp-hero-text .lp-h1 { font-size: clamp(30px, 4.4vw, 46px); max-width: 16ch; }
+
+/* Fix metrics band: consistent colored tick on EVERY metric (no first-child
+   exception that left 93.9% flush while the rest were indented). */
+.lp-metrics { gap: var(--sp-6); align-items: start; }
+.lp-metric,
+.lp-metric:first-child {
+  padding-left: var(--sp-4);
+  border-left: 3px solid var(--c-primary-600);
+}
+.lp-metric-label { gap: 2px; }
+
+/* Animated README SVGs (pipeline, normalization) embedded as section visuals */
+.lp-anim { margin: var(--sp-5) auto 0; max-width: 920px; }
+.lp-anim-wide { max-width: 100%; }
+.lp-anim img { display: block; width: 100%; height: auto; }

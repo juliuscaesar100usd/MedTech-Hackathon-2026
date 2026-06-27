@@ -25,15 +25,6 @@ const METRICS = [
   { value: '∞', label: 'История цен', sub: 'каждая загрузка версионируется' },
 ];
 
-const PIPELINE = ['Определение', 'Парсинг', 'Нормализация', 'Валидация', 'Версии', 'Хранение'];
-
-const CASCADE = [
-  { n: 1, name: 'Точное', method: 'Сравнение нормализованных строк', when: 'Одинаковые названия' },
-  { n: 2, name: 'Синонимы', method: 'Словарь синонимов каталога', when: '«ОАК» → «Общий анализ крови»' },
-  { n: 3, name: 'Нечёткое', method: 'RapidFuzz token-set ratio', when: 'Опечатки, перестановка слов' },
-  { n: 4, name: 'Эмбеддинги', method: 'multilingual-e5 (cosine)', when: 'Смысловая близость ru / kz' },
-];
-
 const CAPS = [
   { icon: Tray, title: 'Приём и парсинг', body: 'ZIP через интерфейс или CLI, авто-определение формата, фоновая очередь; оригиналы и сырой текст не удаляются.' },
   { icon: Scan, title: 'Любой формат', body: 'Текстовый PDF, скан через Tesseract OCR (rus+kaz+eng), все листы XLSX/XLS, DOCX с принятием правок.' },
@@ -97,15 +88,15 @@ export function LandingPage() {
           Каждый архив распаковывается, каждый файл ставится в очередь и проходит единый конвейер.
           Новый формат добавляется новым парсером, без изменения ядра.
         </p>
-        <ol className="lp-pipeline">
-          {PIPELINE.map((step, i) => (
-            <li key={step} className="lp-pipe-step">
-              <span className="lp-pipe-num">{i + 1}</span>
-              <span className="lp-pipe-name">{step}</span>
-              {i < PIPELINE.length - 1 && <ArrowRight className="lp-pipe-arrow" size={20} />}
-            </li>
-          ))}
-        </ol>
+        <figure className="lp-anim lp-anim-wide">
+          <img
+            src="/assets/pipeline.svg"
+            alt="Конвейер: определение → парсинг → нормализация → валидация → версии → хранение"
+            loading="lazy"
+            width={1160}
+            height={220}
+          />
+        </figure>
       </section>
 
       {/* ---- Matching cascade (keeps an eyebrow — signature concept) ---- */}
@@ -119,18 +110,15 @@ export function LandingPage() {
             работают офлайн; без них сопоставитель деградирует до лексической цепочки, и демо всё равно
             работает.
           </p>
-          <ol className="lp-cascade">
-            {CASCADE.map((c) => (
-              <li key={c.n} className="lp-cascade-step">
-                <span className="lp-cascade-num">{c.n}</span>
-                <div className="lp-cascade-body">
-                  <h3 className="lp-cascade-name">{c.name}</h3>
-                  <p className="lp-cascade-method">{c.method}</p>
-                  <p className="lp-cascade-when">{c.when}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          <figure className="lp-anim">
+            <img
+              src="/assets/normalization.svg"
+              alt="Каскад сопоставления: точное → синонимы → нечёткое → эмбеддинги"
+              loading="lazy"
+              width={1080}
+              height={320}
+            />
+          </figure>
         </div>
       </section>
 

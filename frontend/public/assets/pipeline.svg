@@ -1,0 +1,104 @@
+<svg width="1160" height="220" viewBox="0 0 1160 220" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif">
+  <defs>
+    <linearGradient id="pTeal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0891b2"/><stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <filter id="pShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <!-- rail -->
+  <line x1="92" y1="92" x2="1068" y2="92" stroke="#e2e8f0" stroke-width="4" stroke-linecap="round"/>
+  <line x1="92" y1="92" x2="1068" y2="92" stroke="url(#pTeal)" stroke-width="4" stroke-linecap="round" stroke-dasharray="26 80">
+    <animate attributeName="stroke-dashoffset" values="106;0" dur="1.8s" repeatCount="indefinite"/>
+  </line>
+  <!-- traveling packet -->
+  <circle cy="92" r="7" fill="#22d3ee">
+    <animate attributeName="cx" values="92;1068" dur="3.6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;1;1;1;0" dur="3.6s" repeatCount="indefinite"/>
+  </circle>
+  <circle cy="92" r="13" fill="#22d3ee" opacity="0.25">
+    <animate attributeName="cx" values="92;1068" dur="3.6s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- ============ stages ============ -->
+  <!-- helper geometry: 6 nodes centered on x = 92,287,482,677,872,1067 (step 195) -->
+
+  <!-- node 1: detect -->
+  <g transform="translate(92,92)">
+    <circle r="5" fill="#0e7490"><animate attributeName="r" values="5;8;5" dur="1.8s" begin="0s" repeatCount="indefinite"/></circle>
+    <g filter="url(#pShadow)"><rect x="-78" y="22" width="156" height="86" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+    <!-- magnifier icon -->
+    <g transform="translate(-58,42)" stroke="#0e7490" stroke-width="2.4" fill="none" stroke-linecap="round">
+      <circle cx="9" cy="9" r="8"/><line x1="15" y1="15" x2="22" y2="22"/>
+    </g>
+    <text x="-24" y="52" fill="#0f172a" font-size="12.5" font-weight="800">Определение</text>
+    <text x="-58" y="78" fill="#64748b" font-size="11.5" font-weight="600">тип файла</text>
+    <text x="-58" y="95" fill="#94a3b8" font-size="11">pdf·scan·docx·xlsx</text>
+  </g>
+
+  <!-- node 2: parse -->
+  <g transform="translate(287,92)">
+    <circle r="5" fill="#0e7490"><animate attributeName="r" values="5;8;5" dur="1.8s" begin="0.3s" repeatCount="indefinite"/></circle>
+    <g filter="url(#pShadow)"><rect x="-78" y="22" width="156" height="86" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+    <g transform="translate(-58,40)" stroke="#0e7490" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 1 H14 l6 6 V21 a1 1 0 0 1 -1 1 H4 a1 1 0 0 1 -1 -1 Z"/>
+      <line x1="7" y1="11" x2="16" y2="11"/><line x1="7" y1="16" x2="16" y2="16"/>
+    </g>
+    <text x="-24" y="52" fill="#0f172a" font-size="12.5" font-weight="800">Парсинг</text>
+    <text x="-58" y="78" fill="#64748b" font-size="11.5" font-weight="600">текст + таблицы</text>
+    <text x="-58" y="95" fill="#94a3b8" font-size="11">OCR · tracked-changes</text>
+  </g>
+
+  <!-- node 3: normalize -->
+  <g transform="translate(482,92)">
+    <circle r="5" fill="#0e7490"><animate attributeName="r" values="5;8;5" dur="1.8s" begin="0.6s" repeatCount="indefinite"/></circle>
+    <g filter="url(#pShadow)"><rect x="-78" y="22" width="156" height="86" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+    <g transform="translate(-58,40)" stroke="#0e7490" stroke-width="2.2" fill="none" stroke-linecap="round">
+      <circle cx="11" cy="11" r="9"/><circle cx="11" cy="11" r="4"/>
+    </g>
+    <text x="-24" y="52" fill="#0f172a" font-size="12.5" font-weight="800">Нормализация</text>
+    <text x="-58" y="78" fill="#64748b" font-size="11.5" font-weight="600">→ справочник</text>
+    <text x="-58" y="95" fill="#94a3b8" font-size="11">exact·syn·fuzzy·emb</text>
+  </g>
+
+  <!-- node 4: validate -->
+  <g transform="translate(677,92)">
+    <circle r="5" fill="#0e7490"><animate attributeName="r" values="5;8;5" dur="1.8s" begin="0.9s" repeatCount="indefinite"/></circle>
+    <g filter="url(#pShadow)"><rect x="-78" y="22" width="156" height="86" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+    <g transform="translate(-58,40)" stroke="#059669" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 1 l8 3 V12 c0 6 -4 9 -8 11 c-4 -2 -8 -5 -8 -11 V4 Z"/>
+      <path d="M7 11 l3 3 l5 -6"/>
+    </g>
+    <text x="-24" y="52" fill="#0f172a" font-size="12.5" font-weight="800">Валидация</text>
+    <text x="-58" y="78" fill="#64748b" font-size="11.5" font-weight="600">проверки §4.4</text>
+    <text x="-58" y="95" fill="#94a3b8" font-size="11">аномалии · валюта</text>
+  </g>
+
+  <!-- node 5: version -->
+  <g transform="translate(872,92)">
+    <circle r="5" fill="#0e7490"><animate attributeName="r" values="5;8;5" dur="1.8s" begin="1.2s" repeatCount="indefinite"/></circle>
+    <g filter="url(#pShadow)"><rect x="-78" y="22" width="156" height="86" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+    <g transform="translate(-58,40)" stroke="#0e7490" stroke-width="2.2" fill="none" stroke-linecap="round">
+      <circle cx="11" cy="11" r="9"/><path d="M11 6 V11 l4 3"/>
+    </g>
+    <text x="-24" y="52" fill="#0f172a" font-size="12.5" font-weight="800">Версии</text>
+    <text x="-58" y="78" fill="#64748b" font-size="11.5" font-weight="600">история цен</text>
+    <text x="-58" y="95" fill="#94a3b8" font-size="11">dedup · архив</text>
+  </g>
+
+  <!-- node 6: persist -->
+  <g transform="translate(1067,92)">
+    <circle r="5" fill="#0e7490"><animate attributeName="r" values="5;8;5" dur="1.8s" begin="1.5s" repeatCount="indefinite"/></circle>
+    <g filter="url(#pShadow)"><rect x="-78" y="22" width="156" height="86" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+    <g transform="translate(-58,38)" stroke="#0e7490" stroke-width="2.2" fill="none">
+      <ellipse cx="11" cy="4" rx="9" ry="3.4"/>
+      <path d="M2 4 V18 a9 3.4 0 0 0 18 0 V4"/>
+      <path d="M2 11 a9 3.4 0 0 0 18 0"/>
+    </g>
+    <text x="-24" y="52" fill="#0f172a" font-size="12.5" font-weight="800">Хранение</text>
+    <text x="-58" y="78" fill="#64748b" font-size="11.5" font-weight="600">DB + REST API</text>
+    <text x="-58" y="95" fill="#94a3b8" font-size="11">SQLite / Postgres</text>
+  </g>
+</svg>
