@@ -1451,17 +1451,23 @@ p {
 }
 .lp-shot img { display: block; width: 100%; height: auto; }
 
-/* Metrics band (was the in-hero stat strip) */
-.lp-metrics-band { border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border); background: var(--c-surface); }
+/* Metrics band — 4 uniform, equal-height stat tiles.
+   SINGLE source of truth: earlier tick/line variants were deleted because
+   three stacked blocks fought in the cascade (uneven heights, flush mobile). */
+.lp-metrics-band { background: transparent; border: none; }
 .lp-metrics {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-5);
-  padding: var(--sp-6) var(--sp-5); list-style: none; margin: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4);
+  align-items: stretch; padding: var(--sp-6) var(--sp-5); list-style: none; margin: 0;
 }
-.lp-metric { margin: 0; padding-left: var(--sp-5); border-left: 2px solid var(--c-primary-100); }
-.lp-metric:first-child { border-left: none; padding-left: 0; }
-.lp-metric-value { margin: 0; font-size: clamp(26px, 3.4vw, 36px); font-weight: 800; letter-spacing: -0.02em; color: var(--c-primary-700); font-variant-numeric: tabular-nums; }
-.lp-metric-label { margin: 4px 0 0; font-size: 14px; font-weight: 650; color: var(--c-text); display: flex; flex-direction: column; }
-.lp-metric-sub { font-size: 12px; font-weight: 500; color: var(--c-text-faint); }
+.lp-metric,
+.lp-metric:first-child {
+  margin: 0; display: flex; flex-direction: column; gap: 6px;
+  padding: var(--sp-5); background: var(--c-surface);
+  border: 1px solid var(--c-border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+}
+.lp-metric-value { margin: 0; font-size: clamp(28px, 3.4vw, 38px); font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: var(--c-primary-700); font-variant-numeric: tabular-nums; }
+.lp-metric-label { margin: 0; display: flex; flex-direction: column; gap: 3px; font-size: 14px; font-weight: 650; color: var(--c-text); }
+.lp-metric-sub { font-size: 12px; font-weight: 500; line-height: 1.4; color: var(--c-text-faint); }
 
 /* Capabilities showcase: real search shot + icon list */
 .lp-showcase { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--sp-7); align-items: start; }
@@ -1496,44 +1502,14 @@ p {
   .lp-showcase-media { position: static; }
 }
 @media (max-width: 760px) {
-  .lp-metrics { grid-template-columns: repeat(2, 1fr); row-gap: var(--sp-5); }
-  .lp-metric, .lp-metric:first-child { border-left: none; padding-left: 0; }
+  .lp-metrics { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Tighten hero headline in the split column (≤2-3 lines, taste-skill) */
 .lp-hero-text .lp-h1 { font-size: clamp(30px, 4.4vw, 46px); max-width: 16ch; }
-
-/* Fix metrics band: consistent colored tick on EVERY metric (no first-child
-   exception that left 93.9% flush while the rest were indented). */
-.lp-metrics { gap: var(--sp-6); align-items: start; }
-.lp-metric,
-.lp-metric:first-child {
-  padding-left: var(--sp-4);
-  border-left: 3px solid var(--c-primary-600);
-}
-.lp-metric-label { gap: 2px; }
 
 /* Animated README SVGs (pipeline, normalization) embedded as section visuals */
 .lp-anim { margin: var(--sp-5) auto 0; max-width: 920px; }
 .lp-anim-wide { max-width: 100%; }
 .lp-anim img { display: block; width: 100%; height: auto; }
 
-/* Metrics band v3: clean stat tiles (the tick treatment still read as broken).
-   Unambiguous contained cards, no floating vertical lines. */
-.lp-metrics-band { background: transparent; border-top: none; border-bottom: none; }
-.lp-metrics {
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--sp-4);
-  padding: var(--sp-6) var(--sp-5);
-}
-.lp-metric,
-.lp-metric:first-child {
-  padding: var(--sp-5);
-  border-left: none;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-sm);
-}
-.lp-metric:first-child { border-left: 1px solid var(--c-border); }
-@media (max-width: 760px) { .lp-metrics { grid-template-columns: repeat(2, 1fr); } }
