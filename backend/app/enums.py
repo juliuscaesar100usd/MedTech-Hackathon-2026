@@ -49,3 +49,8 @@ class BatchStatus(str, Enum):
     done = "done"
     partial = "partial"
     error = "error"
+
+
+class UserRole(str, Enum):
+    user = "user"
+    admin = "admin"

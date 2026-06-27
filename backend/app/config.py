@@ -57,6 +57,15 @@ class Settings(BaseSettings):
     # --- Currency rates file (currency -> KZT, dated) ---
     fx_rates_path: Path = BACKEND_ROOT / "app" / "data" / "fx_rates.json"
 
+    # --- Auth ---
+    # Secret for HMAC-signing session tokens. MUST be overridden in production
+    # (set AUTH_SECRET). The default is intentionally insecure.
+    auth_secret: str = "dev-insecure-change-me"
+    auth_token_ttl_seconds: int = 86400  # 24h
+    # Seeded default admin (created on startup if no admin exists).
+    admin_email: str = "admin@medarchive"
+    admin_password: str = "admin12345"  # override via ADMIN_PASSWORD
+
     # --- API ---
     cors_origins: list[str] = ["*"]
     api_prefix: str = "/api"

@@ -33,6 +33,7 @@ from .enums import (
     MatchMethod,
     MatchStatus,
     ParseStatus,
+    UserRole,
 )
 
 
@@ -231,6 +232,19 @@ class PriceItem(Base):
         Index("ix_priceitem_active_service", "service_id", "is_active"),
         Index("ix_priceitem_dedup", "partner_id", "service_name_raw", "effective_date"),
     )
+
+
+# --------------------------------------------------------------------------- #
+# Auth — application accounts (admin-gating + future user features)
+# --------------------------------------------------------------------------- #
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    email: Mapped[str] = mapped_column(String(256), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(String(256), nullable=False)
+    role: Mapped[str] = mapped_column(String(16), nullable=False, default=UserRole.user.value)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
 # Lightweight audit of every manual match/verify action (operator traceability)
