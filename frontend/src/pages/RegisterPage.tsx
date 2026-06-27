@@ -21,7 +21,7 @@ export function RegisterPage() {
     setBusy(true);
     try {
       await register(email, password);
-      navigate('/', { replace: true });
+      navigate('/search', { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Registration failed.');
     } finally {

@@ -4,6 +4,7 @@ import { RequireAdmin } from './components/RequireAdmin';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider } from './auth/AuthContext';
 
+import { LandingPage } from './pages/LandingPage';
 import { SearchPage } from './pages/SearchPage';
 import { ChatPage } from './pages/ChatPage';
 import { ServicesPage } from './pages/ServicesPage';
@@ -27,7 +28,8 @@ export function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
-            <Route index element={<SearchPage />} />
+            <Route index element={<LandingPage />} />
+            <Route path="search" element={<SearchPage />} />
             <Route path="assistant" element={<ChatPage />} />
             <Route path="services" element={<ServicesPage />} />
             <Route path="services/:id" element={<ServicePartnersPage />} />

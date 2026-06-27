@@ -12,7 +12,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const dest = (location.state as { from?: string } | null)?.from ?? '/';
+  const dest = (location.state as { from?: string } | null)?.from ?? '/search';
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

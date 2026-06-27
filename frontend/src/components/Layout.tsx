@@ -2,7 +2,8 @@ import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 const baseNav = [
-  { to: '/', label: 'Search', end: true },
+  { to: '/', label: 'Home', end: true },
+  { to: '/search', label: 'Search' },
   { to: '/assistant', label: 'Assistant' },
   { to: '/services', label: 'Services' },
   { to: '/partners', label: 'Partners' },
