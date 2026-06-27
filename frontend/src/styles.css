@@ -1205,3 +1205,27 @@ p {
 .chat-input .input {
   flex: 1;
 }
+
+/* --- Auth pages --- */
+.auth-wrap { display: flex; justify-content: center; padding: 64px 16px; }
+.auth-card {
+  display: flex; flex-direction: column; gap: 14px;
+  width: 100%; max-width: 360px;
+  padding: 28px; border-radius: 14px;
+  background: #fff; border: 1px solid #e6e9ee;
+  box-shadow: 0 8px 30px rgba(16, 24, 40, 0.06);
+}
+.auth-title { margin: 0 0 6px; font-size: 22px; }
+.auth-label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #475467; }
+.auth-input {
+  padding: 10px 12px; border-radius: 8px;
+  border: 1px solid #d0d5dd; font-size: 15px;
+}
+.auth-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }
+.auth-btn {
+  margin-top: 4px; padding: 11px 14px; border: none; border-radius: 8px;
+  background: #2563eb; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.auth-btn:disabled { opacity: 0.6; cursor: default; }
+.auth-error { margin: 0; color: #b42318; font-size: 13px; }
+.auth-alt { margin: 4px 0 0; font-size: 13px; color: #475467; }

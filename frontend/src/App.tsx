@@ -9,6 +9,8 @@ import { ServicesPage } from './pages/ServicesPage';
 import { ServicePartnersPage } from './pages/ServicePartnersPage';
 import { PartnersPage } from './pages/PartnersPage';
 import { PartnerPage } from './pages/PartnerPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { UploadPage } from './pages/admin/UploadPage';
@@ -30,6 +32,8 @@ export function App() {
             <Route path="services/:id" element={<ServicePartnersPage />} />
             <Route path="partners" element={<PartnersPage />} />
             <Route path="partners/:id" element={<PartnerPage />} />
+            <Route path="login" element={<LoginPage />} />
+            <Route path="register" element={<RegisterPage />} />
 
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
