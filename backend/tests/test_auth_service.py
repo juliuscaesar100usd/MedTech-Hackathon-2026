@@ -66,3 +66,39 @@ def test_seed_admin_idempotent_and_promote(db):
     assert promoted.role == UserRole.admin.value
     with pytest.raises(service.UserNotFoundError):
         service.promote_to_admin(db, "nobody@example.com")
+
+
+def test_make_admin_cli_promotes(tmp_path, monkeypatch):
+    """Drive the make_admin CLI's main() against an isolated temp SQLite DB."""
+    # Build a temp engine + session factory — avoids reloading app.config whose
+    # @lru_cache on get_settings() would ignore the monkeypatched DATABASE_URL.
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from app.database import Base
+    from app import models  # noqa: F401  — registers ORM mappers
+
+    db_url = f"sqlite:///{tmp_path / 'cli.db'}"
+    engine = create_engine(
+        db_url, connect_args={"check_same_thread": False}, future=True
+    )
+    Base.metadata.create_all(bind=engine)
+    TempSession = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+    # Seed a regular user in the temp DB.
+    s = TempSession()
+    try:
+        service.register_user(s, "cli@example.com", "password123")
+    finally:
+        s.close()
+
+    # Import the CLI and redirect its DB handle to our temp session factory.
+    import importlib
+    from scripts import make_admin
+    importlib.reload(make_admin)
+    monkeypatch.setattr(make_admin, "SessionLocal", TempSession)
+    monkeypatch.setattr(make_admin, "init_db", lambda: None)
+
+    assert make_admin.main(["cli@example.com"]) == 0        # promoted → 0
+    assert make_admin.main(["missing@example.com"]) == 1    # not found → 1
+    assert make_admin.main([]) == 2                         # no args → 2 (usage)
