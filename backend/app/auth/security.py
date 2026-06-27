@@ -32,11 +32,13 @@ def verify_password(password: str, stored: str) -> bool:
         if algo != _ALGO:
             return False
         iters = int(iters_s)
+        if iters < 1:
+            return False
         salt = bytes.fromhex(salt_hex)
         expected = bytes.fromhex(hash_hex)
+        dk = hashlib.pbkdf2_hmac("sha256", (password or "").encode("utf-8"), salt, iters)
     except (ValueError, AttributeError):
         return False
-    dk = hashlib.pbkdf2_hmac("sha256", (password or "").encode("utf-8"), salt, iters)
     return hmac.compare_digest(dk, expected)
 
 
@@ -69,9 +71,10 @@ def verify_token(token: str, now: int | None = None) -> dict | None:
     now = int(time.time()) if now is None else now
     try:
         payload_b64, sig = token.split(".")
+        expected_sig = _sign(payload_b64)
     except (ValueError, AttributeError):
         return None
-    if not hmac.compare_digest(_sign(payload_b64), sig):
+    if not hmac.compare_digest(expected_sig, sig):
         return None
     try:
         payload = json.loads(_b64d(payload_b64))

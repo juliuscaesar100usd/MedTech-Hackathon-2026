@@ -26,7 +26,18 @@ def test_token_roundtrip():
 
 def test_token_expired_is_rejected():
     tok = security.make_token("uid-123", "user", ttl=10, now=1000)
-    assert security.verify_token(tok, now=1011) is None  # exp == 1010
+    assert security.verify_token(tok, now=1011) is None   # past exp
+    assert security.verify_token(tok, now=1010) is None   # at exact exp boundary
+    assert security.verify_token(tok, now=1009) is not None  # one second before
+
+
+def test_token_malformed_non_ascii_returns_none():
+    assert security.verify_token("été.fakesig", now=1001) is None
+    assert security.verify_token("\xff\xfe.X", now=1001) is None
+
+
+def test_verify_password_corrupt_iterations_returns_false():
+    assert security.verify_password("x", "pbkdf2_sha256$0$abcd$ef01") is False
 
 
 def test_token_tampered_is_rejected():
