@@ -1,0 +1,173 @@
+/* ============================================================================
+   PulseIQ reskin — AUTH (LoginPage / RegisterPage). Un-layered, scoped under
+   .preview-root. Tokens only. `.auth-card`/`.auth-input`/`.auth-btn` are PAGE
+   hooks (NOT the .card/.input/.btn primitives) — styled fully here. Reset zeroes
+   inherited styles, so font-family/color/margin/box-sizing are asserted
+   explicitly (especially on input/button). `.auth-wrap` is also used by the
+   RequireAdmin loading state (no card) — centering stays generic.
+   Loads after _base.css + _primitives.css.
+   ========================================================================== */
+
+/* ---------- Centered wash canvas ---------- */
+.auth-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 64px);
+  padding: 48px 16px;
+  background: var(--pq-wash), var(--pq-bg-tint);
+  font-family: var(--pq-sans);
+}
+
+/* ---------- Card ---------- */
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px;
+  background: var(--pq-surface);
+  border: 1px solid var(--pq-border);
+  border-radius: var(--pq-r-lg);
+  box-shadow: var(--pq-shadow-lg);
+}
+.auth-title {
+  margin: 0 0 6px;
+  font: 700 24px/1.2 var(--pq-sans);
+  letter-spacing: -.02em;
+  color: var(--pq-ink);
+}
+
+/* ---------- Labelled fields ---------- */
+.auth-label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font: 600 13px/1.4 var(--pq-sans);
+  color: var(--pq-muted);
+}
+.auth-input {
+  width: 100%;
+  margin: 0;
+  padding: 11px 13px;
+  font: 400 15px/1.4 var(--pq-sans);
+  color: var(--pq-ink);
+  background: var(--pq-surface);
+  border: 1px solid var(--pq-border-strong);
+  border-radius: var(--pq-r-sm);
+  transition: border-color .14s ease, box-shadow .14s ease;
+}
+.auth-input::placeholder {
+  color: var(--pq-faint);
+}
+.auth-input:hover {
+  border-color: var(--pq-blue-200);
+}
+.auth-input:focus {
+  outline: none;
+  border-color: var(--pq-blue-600);
+  box-shadow: 0 0 0 3px var(--pq-blue-100);
+}
+.auth-input:disabled {
+  background: var(--pq-surface-2);
+  color: var(--pq-muted);
+  cursor: not-allowed;
+}
+
+/* ---------- Error ---------- */
+.auth-error {
+  margin: 0;
+  padding: 9px 12px;
+  font: 500 13px/1.45 var(--pq-sans);
+  color: var(--pq-danger);
+  background: var(--pq-danger-bg);
+  border: 1px solid #f3c9cb;
+  border-left: 3px solid var(--pq-danger);
+  border-radius: var(--pq-r-sm);
+}
+
+/* ---------- Submit ---------- */
+.auth-btn {
+  margin-top: 4px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--pq-blue-600);
+  border-radius: var(--pq-pill);
+  font: 700 15px/1 var(--pq-sans);
+  color: #fff;
+  background: var(--pq-blue);
+  cursor: pointer;
+  transition: background .14s ease, transform .06s ease;
+}
+.auth-btn:hover {
+  background: var(--pq-blue-600);
+}
+.auth-btn:active {
+  background: var(--pq-blue-700);
+  transform: translateY(1px);
+}
+.auth-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--pq-blue-100);
+}
+.auth-btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* ---------- Cross-link ---------- */
+.auth-alt {
+  margin: 4px 0 0;
+  font: 400 13px/1.5;
+  color: var(--pq-muted);
+}
+.auth-alt a {
+  color: var(--pq-blue-600);
+  font-weight: 600;
+  text-decoration: none;
+}
+.auth-alt a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Motion (gated) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .auth-card {
+    animation: pq-scale-in .42s cubic-bezier(.16, 1, .3, 1) both;
+  }
+}
+
+/* Shared reduced-motion kill-switch (superset across chat + auth pages) */
+@media (prefers-reduced-motion: reduce) {
+  .chat-row,
+  .chat-results,
+  .chat-results > *,
+  .pref-chips,
+  .chat-bubble.typing span,
+  .assistant-mode.live::before,
+  .auth-card {
+    animation: none !important;
+  }
+  .auth-input,
+  .auth-btn {
+    transition: none !important;
+  }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 620px) {
+  .auth-wrap {
+    padding: 24px 14px;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
+  .auth-card {
+    max-width: none;
+    padding: 22px 18px;
+    border-radius: var(--pq-r);
+  }
+  .auth-title {
+    font-size: 22px;
+  }
+}

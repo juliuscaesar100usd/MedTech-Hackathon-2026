@@ -1,0 +1,395 @@
+/* ============================================================================
+   PulseIQ reskin — ADMIN AREA (shell + dashboard + upload + documents +
+   verification + unmatched). Un-layered, every selector .preview-root-scoped,
+   tokens only (no calc). Builds ONLY admin-specific hooks + deltas on top of
+   _base.css (--c-* → blue remap) and _primitives.css; primitives are NOT
+   restyled here. Inline styles (bar widths, card-grid columns, active-candidate
+   borders, row margins) WIN — designed around, never overridden.
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   ADMIN CANVAS — only admin pages (which contain .admin-subnav) get the tint,
+   so white cards read against it. :has() is supported in all target browsers.
+   --------------------------------------------------------------------------- */
+.page:has(.admin-subnav) {
+  background: var(--pq-surface-2);
+  border-radius: var(--pq-r-lg);
+}
+
+/* ----------------------------------------------------------------------------
+   SUBNAV — horizontal pill tabs. Qualified so it never bleeds into the top
+   navbar's .nav-link; overrides the navbar underline pseudo.
+   --------------------------------------------------------------------------- */
+.admin-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  background: var(--pq-surface-2);
+  border: 1px solid var(--pq-border);
+  border-radius: var(--pq-pill);
+  box-shadow: var(--pq-shadow-sm);
+  margin-bottom: 24px;
+}
+.admin-subnav .nav-link {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
+  min-height: 38px;
+  border-radius: var(--pq-pill);
+  font: 600 13px/1 var(--pq-sans);
+  color: var(--pq-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  background: transparent;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+.admin-subnav .nav-link::after {
+  display: none;
+}
+.admin-subnav .nav-link:hover {
+  background: var(--pq-blue-50);
+  color: var(--pq-blue-700);
+}
+.admin-subnav .nav-link.active {
+  background: var(--pq-blue);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(31, 88, 214, 0.35), var(--pq-shadow-sm);
+}
+.admin-subnav .nav-link.active::after {
+  display: none;
+}
+.admin-subnav .nav-link:focus-visible {
+  outline: 2px solid var(--pq-blue-600);
+  outline-offset: 2px;
+}
+
+/* ----------------------------------------------------------------------------
+   DASHBOARD — stat cards
+   --------------------------------------------------------------------------- */
+.stat-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  margin-bottom: 24px;
+}
+.stat-card {
+  position: relative;
+  background: var(--pq-surface);
+  border: 1px solid var(--pq-border);
+  border-radius: var(--pq-r);
+  box-shadow: var(--pq-shadow-sm);
+  padding: 18px 20px;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--pq-border-strong);
+}
+a.stat-card {
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+}
+a.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--pq-shadow-md);
+  border-color: var(--pq-border-strong);
+}
+.stat-card .stat-label {
+  font: 600 12px/1.3 var(--pq-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pq-muted);
+  margin-bottom: 6px;
+}
+.stat-card .stat-value {
+  font: 700 clamp(26px, 2.4vw, 32px)/1.05 var(--pq-sans);
+  color: var(--pq-ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+.stat-card .stat-sub {
+  font: 600 12px/1.4 var(--pq-sans);
+  color: var(--pq-faint);
+  margin-top: 8px;
+}
+
+/* stat-card variants — color the accent bar + wash + sub; keep value ink */
+.stat-card.accent {
+  border-color: var(--pq-blue-100);
+  background: linear-gradient(180deg, var(--pq-blue-50), var(--pq-surface));
+}
+.stat-card.accent::before {
+  background: var(--pq-blue);
+}
+.stat-card.accent .stat-sub {
+  color: var(--pq-success);
+}
+.stat-card.accent .stat-sub::before {
+  content: "\25B2 ";
+}
+.stat-card.warn {
+  border-color: #f3e2c7;
+  background: linear-gradient(180deg, var(--pq-warn-bg), var(--pq-surface));
+}
+.stat-card.warn::before {
+  background: var(--pq-warn);
+}
+.stat-card.warn .stat-value {
+  color: var(--pq-ink);
+}
+.stat-card.warn .stat-sub {
+  color: var(--pq-warn);
+}
+.stat-card.danger {
+  border-color: #f6d5d7;
+  background: linear-gradient(180deg, var(--pq-danger-bg), var(--pq-surface));
+}
+.stat-card.danger::before {
+  background: var(--pq-danger);
+}
+.stat-card.danger .stat-value {
+  color: var(--pq-ink);
+}
+.stat-card.danger .stat-sub {
+  color: var(--pq-danger);
+}
+
+/* ----------------------------------------------------------------------------
+   DASHBOARD — distribution card headings + bar list
+   --------------------------------------------------------------------------- */
+.card-grid .card h3,
+section > .card > h3 {
+  font: 700 16px/1.25 var(--pq-sans);
+  color: var(--pq-ink);
+  margin: 0 0 14px;
+}
+.bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.bar-head .bar-name {
+  font: 600 13px/1.3 var(--pq-sans);
+  color: var(--pq-ink);
+}
+.bar-head .bar-val {
+  font: 700 13px/1.3 var(--pq-sans);
+  color: var(--pq-muted);
+  font-variant-numeric: tabular-nums;
+}
+.bar-track {
+  height: 10px;
+  background: var(--pq-blue-50);
+  border-radius: var(--pq-pill);
+  overflow: hidden;
+}
+/* CRITICAL: .bar-fill width is INLINE — never set width; animate scaleX only. */
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--pq-blue), var(--pq-blue-600));
+  border-radius: var(--pq-pill);
+  transform-origin: left center;
+}
+/* distribution card-grid: tune ONLY gap (its columns are inline-styled) */
+.card-grid {
+  gap: 18px;
+}
+
+/* ----------------------------------------------------------------------------
+   UPLOAD — standalone .rc-meta (NOT inside .result-card → primitive won't match)
+   --------------------------------------------------------------------------- */
+.rc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 13px;
+  color: var(--pq-muted);
+  font-variant-numeric: tabular-nums;
+}
+.rc-meta b {
+  color: var(--pq-ink);
+  font-weight: 700;
+}
+
+/* ----------------------------------------------------------------------------
+   VERIFICATION / UNMATCHED — queue card deltas (items are forms, not hoverable)
+   --------------------------------------------------------------------------- */
+.card > .row.wrap > div {
+  min-width: 120px;
+}
+.card > .row.wrap .pricetag {
+  display: block;
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+/* ----------------------------------------------------------------------------
+   UNMATCHED — selectable candidate (SIGNATURE). Active state is INLINE
+   (borderColor:var(--c-primary-600) + background:var(--c-primary-50)), which
+   renders blue via remap. Add a STRONGER ring keyed off the "выбрано"
+   .badge-primary that only renders when active — additive, no inline conflict.
+   --------------------------------------------------------------------------- */
+.tag-list > .card.pad-sm.hoverable {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid var(--pq-border);
+  border-radius: var(--pq-r);
+  background: #fff;
+  transition: border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease,
+    transform 0.14s ease;
+}
+.tag-list > .card.pad-sm.hoverable:hover {
+  border-color: var(--pq-border-strong);
+  box-shadow: var(--pq-shadow-sm);
+}
+.tag-list > .card.pad-sm.hoverable:has(.badge-primary) {
+  border-color: var(--pq-blue-600);
+  background: var(--pq-blue-50);
+  box-shadow: 0 0 0 2px var(--pq-blue-600);
+}
+
+/* ============================================================================
+   MOTION — gated behind prefers-reduced-motion: no-preference
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  /* bar fills grow in on scroll-reveal */
+  .bar-fill {
+    transform: scaleX(0);
+    animation: pq-bar-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-timeline: view();
+    animation-range: entry 10% cover 35%;
+  }
+
+  /* stat-grid scroll-reveal stagger */
+  .stat-grid > * {
+    animation: pq-rise 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 25%;
+  }
+  .stat-grid > :nth-child(1) { animation-delay: 0ms; }
+  .stat-grid > :nth-child(2) { animation-delay: 60ms; }
+  .stat-grid > :nth-child(3) { animation-delay: 120ms; }
+  .stat-grid > :nth-child(4) { animation-delay: 180ms; }
+  .stat-grid > :nth-child(5) { animation-delay: 240ms; }
+  .stat-grid > :nth-child(6) { animation-delay: 300ms; }
+
+  /* upload result card mounts conditionally — scope so candidate tiles
+     (.tag-list .card.pad-sm) are EXCLUDED from this scale-in */
+  .card-grid .card.pad-sm,
+  section > .card.pad-sm {
+    animation: pq-scale-in 0.22s ease both;
+  }
+
+  /* documents table: one rise on mount (do NOT per-row stagger — 4s
+     auto-refresh would re-flash rows) */
+  .table-wrap {
+    animation: pq-rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* candidate-tile hover lift */
+  .tag-list > .card.pad-sm.hoverable:hover {
+    transform: translateY(-1px);
+  }
+
+  /* create-new reveal (also fades verification filters once — harmless) */
+  .filters {
+    animation: pq-fade 0.2s ease both;
+  }
+
+  /* queue list is an anonymous flex column <div> — anchor via attr-selector,
+     stagger load + scroll-reveal */
+  section > div[style*="column"] > .card {
+    animation: pq-rise 0.5s cubic-bezier(0.16, 0.84, 0.44, 1) both;
+  }
+  section > div[style*="column"] > .card:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  section > div[style*="column"] > .card:nth-child(2) {
+    animation-delay: 70ms;
+  }
+  section > div[style*="column"] > .card:nth-child(3) {
+    animation-delay: 140ms;
+  }
+  section > div[style*="column"] > .card:nth-child(n + 4) {
+    animation-delay: 210ms;
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 980px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .admin-subnav .nav-link {
+    padding: 8px 13px;
+  }
+}
+@media (max-width: 620px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-subnav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-radius: var(--pq-r);
+  }
+  .admin-subnav::-webkit-scrollbar {
+    display: none;
+  }
+  .admin-subnav .nav-link {
+    flex: 0 0 auto;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filters .field {
+    flex: 1 1 100%;
+  }
+}
+
+/* ============================================================================
+   REDUCED-MOTION KILL-SWITCH — zero the admin animations/transforms; bars show
+   full via their inline width, candidate active state via remap + :has ring.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .stat-grid > *,
+  .card,
+  .bar-fill,
+  section > div[style*="column"] > .card,
+  .card-grid .card.pad-sm,
+  section > .card.pad-sm,
+  .table-wrap,
+  .filters {
+    animation: none;
+    transform: none;
+  }
+  a.stat-card:hover,
+  .tag-list > .card.pad-sm.hoverable:hover {
+    transform: none;
+  }
+}

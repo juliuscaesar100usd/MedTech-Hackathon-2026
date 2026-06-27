@@ -1,0 +1,210 @@
+/* ============================================================================
+   PulseIQ reskin — DIRECTORY pages: ServicePartnersPage, PartnersPage,
+   PartnerPage. PAGE-LEVEL deltas + the page-specific recharts reskin only.
+   Table chrome, cards, badges, contact-list, back-link, filters, price-tags,
+   page-header are ALREADY styled in _primitives.css — not restyled here.
+   Un-layered, every selector global. Tokens carry px units
+   → use var(--pq-*) directly, never calc. Same keyframe set as the foundation
+   (pq-rise/pq-fade/pq-scale-in/pq-float/pq-draw). Animation is gated under
+   prefers-reduced-motion:no-preference with a reduce kill-switch; recharts owns
+   its own JS animation and is left untouched in the reduce branch.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   PartnersPage — result-card title warms to blue on card hover (the card lift
+   itself is the .card.hoverable primitive). Faint numeric runs (partner count,
+   etc.) align to tabular figures.
+   --------------------------------------------------------------------------- */
+.result-card .rc-title {
+  transition: color 0.14s ease;
+}
+.result-card:hover .rc-title {
+  color: var(--pq-blue-700);
+}
+.faint b,
+p.faint {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+   PartnerPage — the two-column detail layout uses <h2> as CARD titles
+   ("Контакты", "Прайс-лист"); dial them to a card-title scale. The contact
+   card (.card + .contact-list/.ci-label) and the price-list table are pure
+   primitives.
+   --------------------------------------------------------------------------- */
+.two-col h2 {
+  font-size: 18px;
+}
+
+/* ---------------------------------------------------------------------------
+   General — partner name links inside data tables read as ink, warming to blue
+   on hover (vs. the global blue link colour) so the table stays calm.
+   --------------------------------------------------------------------------- */
+.data-table a.cell-strong {
+  color: var(--pq-ink);
+}
+.data-table a.cell-strong:hover {
+  color: var(--pq-blue-700);
+}
+
+/* ===========================================================================
+   RECHARTS RESKIN — ServicePartnersPage price-history chart (the signature
+   work). recharts paints stroke/fill as SVG PRESENTATION ATTRIBUTES, so CSS
+   overrides them WITHOUT !important. Legend text + tooltip box are recharts
+   INLINE styles → those DO need !important. The chart lives inside a
+   <section className="card"> primitive (white frame), so no wrapper styling.
+   =========================================================================== */
+.recharts-wrapper {
+  font-family: var(--pq-sans);
+}
+.recharts-surface {
+  overflow: visible;
+}
+/* Recolor by the ORIGINAL stroke/fill attribute values (resident #0e7490 →
+   blue, nonresident #94a3b8 → faint). The attribute persists in the DOM even
+   after CSS overrides the computed value, so this reliably hits curves, dots
+   and legend swatches — `:nth-of-type` does not (the 1st <g> is the grid). */
+.recharts-wrapper [stroke='#0e7490'] {
+  stroke: var(--pq-blue);
+}
+.recharts-wrapper [fill='#0e7490'] {
+  fill: var(--pq-blue);
+}
+.recharts-wrapper [stroke='#94a3b8'] {
+  stroke: var(--pq-faint);
+}
+.recharts-wrapper [fill='#94a3b8'] {
+  fill: var(--pq-faint);
+}
+.recharts-curve {
+  stroke-width: 2.5;
+}
+.recharts-curve[stroke-dasharray] {
+  stroke: var(--pq-faint);
+  stroke-width: 2;
+}
+.recharts-cartesian-grid line {
+  stroke: var(--pq-border);
+}
+.recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line {
+  stroke: var(--pq-border-strong);
+}
+.recharts-cartesian-axis-tick-value {
+  fill: var(--pq-muted);
+  font-size: 12px;
+}
+.recharts-line-dots polygon,
+.recharts-wrapper [fill='#dc2626'] {
+  fill: var(--pq-danger);
+  stroke: #fff;
+}
+.recharts-active-dot circle {
+  stroke: #fff;
+}
+.recharts-legend-item-text {
+  color: var(--pq-muted) !important;
+  font-size: 13px;
+}
+.recharts-default-tooltip {
+  border: 1px solid var(--pq-border) !important;
+  border-radius: var(--pq-r-sm) !important;
+  box-shadow: var(--pq-shadow-md) !important;
+  background: var(--pq-surface) !important;
+  font-family: var(--pq-sans);
+}
+.recharts-tooltip-label {
+  color: var(--pq-muted) !important;
+  font-size: 12px;
+}
+.recharts-tooltip-item {
+  color: var(--pq-ink) !important;
+}
+
+/* ===========================================================================
+   ANIMATION — scroll-driven card reveals + a load stagger on table rows.
+   Gated to no-preference; the reduce branch below is the kill-switch.
+   =========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  /* PartnersPage result-card grid — reveal on scroll-into-view */
+  .card-grid .result-card {
+    animation: pq-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 25%;
+  }
+
+  /* ServicePartnersPage price-history chart card — reveal on scroll-into-view.
+     section.card targets the chart frame only (result-cards are <a>, the
+     PartnerPage contact card is a <div>). */
+  section.card {
+    animation: pq-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 22%;
+  }
+
+  /* Data-table body rows (ServicePartners + PartnerPage price-list) — load
+     stagger; group-rows stay put as section anchors. */
+  .data-table tbody tr:not(.group-row) {
+    animation: pq-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .data-table tbody tr:not(.group-row):nth-child(1) { animation-delay: 0ms; }
+  .data-table tbody tr:not(.group-row):nth-child(2) { animation-delay: 30ms; }
+  .data-table tbody tr:not(.group-row):nth-child(3) { animation-delay: 60ms; }
+  .data-table tbody tr:not(.group-row):nth-child(4) { animation-delay: 90ms; }
+  .data-table tbody tr:not(.group-row):nth-child(5) { animation-delay: 120ms; }
+  .data-table tbody tr:not(.group-row):nth-child(6) { animation-delay: 150ms; }
+  .data-table tbody tr:not(.group-row):nth-child(7) { animation-delay: 180ms; }
+  .data-table tbody tr:not(.group-row):nth-child(8) { animation-delay: 210ms; }
+  .data-table tbody tr:not(.group-row):nth-child(9) { animation-delay: 240ms; }
+  .data-table tbody tr:not(.group-row):nth-child(10) { animation-delay: 270ms; }
+  .data-table tbody tr:not(.group-row):nth-child(11) { animation-delay: 300ms; }
+  .data-table tbody tr:not(.group-row):nth-child(12) { animation-delay: 330ms; }
+}
+
+/* Reduce kill-switch — drop our page animations + transitions and the hover
+   lift. recharts is intentionally NOT listed (it animates via its own JS). */
+@media (prefers-reduced-motion: reduce) {
+  .card-grid .result-card,
+  section.card,
+  .data-table tbody tr:not(.group-row),
+  .result-card .rc-title {
+    animation: none;
+    transition: none;
+  }
+  .card-grid .result-card:hover {
+    transform: none;
+  }
+}
+
+/* ===========================================================================
+   RESPONSIVE
+   =========================================================================== */
+@media (max-width: 980px) {
+  .two-col {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 620px) {
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .data-table {
+    min-width: 560px;
+    font-size: 13px;
+  }
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filters .field,
+  .filters .field.grow {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}

@@ -28,36 +28,42 @@ const VerificationQueuePage = lazy(() => named(import('./pages/admin/Verificatio
 const UnmatchedQueuePage = lazy(() => named(import('./pages/admin/UnmatchedQueuePage'), 'UnmatchedQueuePage'));
 const DashboardPage = lazy(() => named(import('./pages/admin/DashboardPage'), 'DashboardPage'));
 
+function SiteRoutes() {
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<LandingPage />} />
+        <Route path="search" element={<SearchPage />} />
+        <Route path="assistant" element={<ChatPage />} />
+        <Route path="services" element={<ServicesPage />} />
+        <Route path="services/:id" element={<ServicePartnersPage />} />
+        <Route path="partners" element={<PartnersPage />} />
+        <Route path="partners/:id" element={<PartnerPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+
+        <Route path="admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="upload" element={<UploadPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="verification" element={<VerificationQueuePage />} />
+          <Route path="unmatched" element={<UnmatchedQueuePage />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
+  );
+}
+
 export function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route index element={<LandingPage />} />
-            <Route path="search" element={<SearchPage />} />
-            <Route path="assistant" element={<ChatPage />} />
-            <Route path="services" element={<ServicesPage />} />
-            <Route path="services/:id" element={<ServicePartnersPage />} />
-            <Route path="partners" element={<PartnersPage />} />
-            <Route path="partners/:id" element={<PartnerPage />} />
-            <Route path="login" element={<LoginPage />} />
-            <Route path="register" element={<RegisterPage />} />
-
-            <Route path="admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="upload" element={<UploadPage />} />
-              <Route path="documents" element={<DocumentsPage />} />
-              <Route path="verification" element={<VerificationQueuePage />} />
-              <Route path="unmatched" element={<UnmatchedQueuePage />} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+        <BrowserRouter>
+          <SiteRoutes />
+        </BrowserRouter>
       </ToastProvider>
     </AuthProvider>
   );
