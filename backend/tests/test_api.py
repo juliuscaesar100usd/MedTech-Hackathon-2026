@@ -66,6 +66,29 @@ def client(session_factory):
 
 
 @pytest.fixture()
+def admin_headers(session_factory):
+    """Create an admin user in the test DB and return bearer auth headers."""
+    from app.auth.security import hash_password, make_token
+    from app.enums import UserRole
+    from app.models import User
+
+    s = session_factory()
+    try:
+        u = User(
+            email="admin@api-test.com",
+            password_hash=hash_password("adminpass1"),
+            role=UserRole.admin.value,
+        )
+        s.add(u)
+        s.commit()
+        s.refresh(u)
+        token = make_token(u.id, u.role)
+    finally:
+        s.close()
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
 def seed(db):
     """Seed services, partners and price items; return key ids."""
     s_blood = Service(
@@ -316,10 +339,11 @@ def test_match_creates_new_service(client, seed, db):
     assert created.service_name == "Консультация невролога"
 
 
-def test_admin_verify(client, seed):
+def test_admin_verify(client, seed, admin_headers):
     r = client.post(
         "/api/admin/verify",
         json={"item_id": seed["review_item"], "approve": True, "note": "ok"},
+        headers=admin_headers,
     )
     assert r.status_code == 200
     body = r.json()
@@ -327,12 +351,12 @@ def test_admin_verify(client, seed):
     assert body["needs_review"] is False
 
     assert client.post(
-        "/api/admin/verify", json={"item_id": "nope", "approve": True}
+        "/api/admin/verify", json={"item_id": "nope", "approve": True}, headers=admin_headers
     ).status_code == 404
 
 
-def test_admin_verification_queue(client, seed):
-    r = client.get("/api/admin/verification")
+def test_admin_verification_queue(client, seed, admin_headers):
+    r = client.get("/api/admin/verification", headers=admin_headers)
     assert r.status_code == 200
     out = r.json()
     assert len(out) == 1
@@ -343,8 +367,8 @@ def test_admin_verification_queue(client, seed):
     assert rec["anomaly_flags"] == ["price_outlier"]
 
 
-def test_admin_dashboard(client, seed):
-    r = client.get("/api/admin/dashboard")
+def test_admin_dashboard(client, seed, admin_headers):
+    r = client.get("/api/admin/dashboard", headers=admin_headers)
     assert r.status_code == 200
     d = r.json()
     assert d["partners"] == 2
@@ -359,7 +383,7 @@ def test_admin_dashboard(client, seed):
     assert "Алматы" in d["by_city"]
 
 
-def test_admin_upload_and_process(client, db, monkeypatch):
+def test_admin_upload_and_process(client, db, monkeypatch, admin_headers):
     # No-op the background worker (patch both the source and the admin import).
     import app.ingestion as ingestion_pkg
     import app.api.admin as admin_mod
@@ -397,6 +421,7 @@ def test_admin_upload_and_process(client, db, monkeypatch):
     r = client.post(
         "/api/admin/upload",
         files={"file": ("archive.zip", zip_buf, "application/zip")},
+        headers=admin_headers,
     )
     assert r.status_code == 200
     batch_id = r.json()["batch_id"]
@@ -406,6 +431,7 @@ def test_admin_upload_and_process(client, db, monkeypatch):
     r = client.post(
         "/api/admin/upload",
         files={"file": ("notes.txt", io.BytesIO(b"hi"), "text/plain")},
+        headers=admin_headers,
     )
     assert r.status_code == 400
 

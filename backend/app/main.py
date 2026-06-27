@@ -53,6 +53,14 @@ filtered catalog results.
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ARG001
     init_db()
+    from .auth.service import seed_admin
+    from .database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        seed_admin(db)
+    finally:
+        db.close()
     yield
 
 

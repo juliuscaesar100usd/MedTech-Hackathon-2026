@@ -25,9 +25,10 @@ from ..schemas import (
 from ..services.stats_service import compute_dashboard
 from ..validation import verify_item
 from ..validation.verification import ItemNotFoundError
+from ..auth.deps import require_admin
 from .deps import Pagination, get_db, pagination
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
 
 @router.post("/upload", response_model=BatchOut)

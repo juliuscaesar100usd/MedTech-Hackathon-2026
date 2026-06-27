@@ -99,3 +99,36 @@ def test_me_requires_token(client):
 def test_me_bad_auth_header_is_401(client, hdr):
     r = client.get("/api/auth/me", headers={"Authorization": hdr})
     assert r.status_code == 401
+
+
+def _token_for(client, role):
+    """Register a user, force its role in the DB, return a fresh token for it."""
+    from app.auth.security import make_token
+    from app.models import User as U
+
+    email = f"{role}@gate.com"
+    client.post("/api/auth/register", json={"email": email, "password": "password123"})
+    s = client._Session()
+    try:
+        u = s.query(U).filter(U.email == email).one()
+        u.role = role
+        s.commit()
+        return make_token(u.id, u.role)
+    finally:
+        s.close()
+
+
+def test_admin_dashboard_requires_admin(client):
+    # no token -> 401
+    assert client.get("/api/admin/dashboard").status_code == 401
+    # user token -> 403
+    user_tok = _token_for(client, "user")
+    assert client.get("/api/admin/dashboard", headers={"Authorization": f"Bearer {user_tok}"}).status_code == 403
+    # admin token -> 200
+    admin_tok = _token_for(client, "admin")
+    assert client.get("/api/admin/dashboard", headers={"Authorization": f"Bearer {admin_tok}"}).status_code == 200
+
+
+def test_public_endpoint_stays_open(client):
+    # A user-facing endpoint must still work with no auth at all.
+    assert client.get("/api/services").status_code == 200
