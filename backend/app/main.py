@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from .api import (
+    auth,
     admin,
     assistant,
     matching,
@@ -71,6 +72,7 @@ app.add_middleware(
 )
 
 _prefix = settings.api_prefix
+app.include_router(auth.router, prefix=_prefix, tags=["auth"])
 app.include_router(services.router, prefix=_prefix, tags=["services"])
 app.include_router(partners.router, prefix=_prefix, tags=["partners"])
 app.include_router(search.router, prefix=_prefix, tags=["search"])
