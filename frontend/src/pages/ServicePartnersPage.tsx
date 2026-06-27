@@ -77,7 +77,7 @@ function AnomalyDot(props: {
       <circle cx={cx} cy={cy} r={6} fill="#dc2626" stroke="#fff" strokeWidth={1.5} />
     );
   }
-  return <circle cx={cx} cy={cy} r={3.5} fill="#2563eb" />;
+  return <circle cx={cx} cy={cy} r={3.5} fill="#0e7490" />;
 }
 
 function PriceHistoryChart({
@@ -138,7 +138,7 @@ function PriceHistoryChart({
             type="monotone"
             dataKey="resident"
             name="Резидент (₸)"
-            stroke="#2563eb"
+            stroke="#0e7490"
             strokeWidth={2}
             dot={<AnomalyDot />}
             activeDot={{ r: 6 }}
