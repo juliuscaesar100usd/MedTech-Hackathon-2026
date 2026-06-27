@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ToastProvider } from './components/Toast';
+import { AuthProvider } from './auth/AuthContext';
 
 import { SearchPage } from './pages/SearchPage';
 import { ChatPage } from './pages/ChatPage';
@@ -18,7 +19,8 @@ import { DashboardPage } from './pages/admin/DashboardPage';
 
 export function App() {
   return (
-    <ToastProvider>
+    <AuthProvider>
+      <ToastProvider>
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
@@ -42,6 +44,7 @@ export function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-    </ToastProvider>
+      </ToastProvider>
+    </AuthProvider>
   );
 }
