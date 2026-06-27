@@ -1,5 +1,6 @@
 import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useScrollReveal } from '../lib/useScrollReveal';
 
 const baseNav = [
   { to: '/', label: 'Главная', end: true },
@@ -59,6 +60,7 @@ export function Layout() {
   // Key on pathname (not search) so each navigation remounts the view and
   // replays the entrance animation, while ?q= changes don't re-trigger it.
   const { pathname } = useLocation();
+  useScrollReveal();
   return (
     <div className="app-shell">
       <NavBar />

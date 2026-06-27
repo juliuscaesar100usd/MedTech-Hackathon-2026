@@ -1527,14 +1527,15 @@ p {
     to   { opacity: 1; transform: none; }
   }
 
-  .route-view .page > * { animation: rv-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .route-view .page > *:nth-child(1)   { animation-delay: 0.05s; }
-  .route-view .page > *:nth-child(2)   { animation-delay: 0.12s; }
-  .route-view .page > *:nth-child(3)   { animation-delay: 0.19s; }
-  .route-view .page > *:nth-child(4)   { animation-delay: 0.26s; }
-  .route-view .page > *:nth-child(n+5) { animation-delay: 0.32s; }
-  @keyframes rv-rise {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: none; }
+  /* Scroll reveal — JS (useScrollReveal) adds .reveal to content blocks and
+     toggles .is-visible when they enter the viewport. Above-fold blocks reveal
+     on load; below-fold reveal on scroll. --reveal-i staggers tight groups. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--reveal-i, 0) * 0.06s);
+    will-change: opacity, transform;
   }
+  .reveal.is-visible { opacity: 1; transform: none; }
 }
