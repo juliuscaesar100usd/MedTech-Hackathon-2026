@@ -1229,3 +1229,12 @@ p {
 .auth-btn:disabled { opacity: 0.6; cursor: default; }
 .auth-error { margin: 0; color: #b42318; font-size: 13px; }
 .auth-alt { margin: 4px 0 0; font-size: 13px; color: #475467; }
+
+/* --- Nav auth controls --- */
+.nav-auth { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.nav-user { font-size: 13px; color: #475467; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-logout {
+  border: 1px solid #d0d5dd; background: #fff; border-radius: 8px;
+  padding: 6px 12px; font-size: 13px; cursor: pointer; color: #344054;
+}
+.nav-logout:hover { background: #f9fafb; }

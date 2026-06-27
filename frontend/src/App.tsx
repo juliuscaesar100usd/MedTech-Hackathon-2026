@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { RequireAdmin } from './components/RequireAdmin';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider } from './auth/AuthContext';
 
@@ -35,7 +36,7 @@ export function App() {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
 
-            <Route path="admin" element={<AdminLayout />}>
+            <Route path="admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="upload" element={<UploadPage />} />
