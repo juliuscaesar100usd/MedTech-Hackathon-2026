@@ -5,6 +5,20 @@ import type { Money } from './format';
 
 export const API_BASE: string = import.meta.env.VITE_API_BASE || '/api';
 
+// --- Auth token: persisted in localStorage, injected on every request ---
+const TOKEN_KEY = 'medarchive_token';
+let authToken: string | null = localStorage.getItem(TOKEN_KEY);
+
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+export function getAuthToken(): string | null {
+  return authToken;
+}
+
 // ---------------------------------------------------------------------------
 // Types mirroring the backend contract
 // ---------------------------------------------------------------------------
@@ -78,6 +92,18 @@ export interface SearchResult {
   query: string;
   services: SearchServiceHit[];
   partners: SearchPartnerHit[];
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: 'user' | 'admin';
+  created_at: string;
+}
+
+export interface TokenResponse {
+  token: string;
+  user: AuthUser;
 }
 
 // --- AI assistant (chatbot) ---
@@ -328,14 +354,17 @@ async function request<T>(
   const url = buildUrl(path, params);
 
   const init: RequestInit = { method };
+  const headers: Record<string, string> = {};
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
   if (body !== undefined) {
     if (isForm) {
       init.body = body as FormData;
     } else {
-      init.headers = { 'Content-Type': 'application/json' };
+      headers['Content-Type'] = 'application/json';
       init.body = JSON.stringify(body);
     }
   }
+  init.headers = headers;
 
   let res: Response;
   try {
@@ -349,6 +378,10 @@ async function request<T>(
   }
 
   const parsed = await parseBody(res);
+  if (res.status === 401) {
+    setAuthToken(null);
+    window.dispatchEvent(new CustomEvent('medarchive:unauthorized'));
+  }
   if (!res.ok) {
     const detail =
       (parsed && typeof parsed === 'object' && 'detail' in parsed
@@ -379,6 +412,19 @@ export interface PartnerQuery {
 }
 
 export const api = {
+  // --- Auth ---
+  register(email: string, password: string): Promise<TokenResponse> {
+    return request<TokenResponse>('/auth/register', { method: 'POST', body: { email, password } });
+  },
+
+  login(email: string, password: string): Promise<TokenResponse> {
+    return request<TokenResponse>('/auth/login', { method: 'POST', body: { email, password } });
+  },
+
+  me(): Promise<AuthUser> {
+    return request<AuthUser>('/auth/me');
+  },
+
   // --- Public ---
   getServices(query: ServiceQuery = {}): Promise<ServiceOut[]> {
     return request<ServiceOut[]>('/services', { params: query as QueryParams });
