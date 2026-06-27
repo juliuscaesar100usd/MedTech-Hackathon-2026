@@ -1513,3 +1513,28 @@ p {
 .lp-anim-wide { max-width: 100%; }
 .lp-anim img { display: block; width: 100%; height: auto; }
 
+
+/* ---- Route transitions + element entrance (CSS-only, every page) ----
+   .route-view wraps the routed <Outlet/> and is keyed on pathname, so each
+   navigation remounts it and replays these animations. Landing (.lp) keeps its
+   own hero timeline; auth cards ride the .route-view fade; content + admin
+   pages (.page) get a staggered top-level reveal. Reduced-motion users get
+   instant, fully-visible content (no rule below the guard runs for them). */
+@media (prefers-reduced-motion: no-preference) {
+  .route-view { animation: route-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes route-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .route-view .page > * { animation: rv-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .route-view .page > *:nth-child(1)   { animation-delay: 0.05s; }
+  .route-view .page > *:nth-child(2)   { animation-delay: 0.12s; }
+  .route-view .page > *:nth-child(3)   { animation-delay: 0.19s; }
+  .route-view .page > *:nth-child(4)   { animation-delay: 0.26s; }
+  .route-view .page > *:nth-child(n+5) { animation-delay: 0.32s; }
+  @keyframes rv-rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+}

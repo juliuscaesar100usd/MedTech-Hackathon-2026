@@ -1,4 +1,4 @@
-import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 const baseNav = [
@@ -56,10 +56,15 @@ export function NavBar() {
 }
 
 export function Layout() {
+  // Key on pathname (not search) so each navigation remounts the view and
+  // replays the entrance animation, while ?q= changes don't re-trigger it.
+  const { pathname } = useLocation();
   return (
     <div className="app-shell">
       <NavBar />
-      <Outlet />
+      <div className="route-view" key={pathname}>
+        <Outlet />
+      </div>
     </div>
   );
 }
