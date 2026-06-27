@@ -93,3 +93,9 @@ def test_me_requires_token(client):
     assert client.get("/api/auth/me").status_code == 401
     me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert me.status_code == 200 and me.json()["email"] == "m@x.com"
+
+
+@pytest.mark.parametrize("hdr", ["garbage", "Basic abc123", "Bearer", ""])
+def test_me_bad_auth_header_is_401(client, hdr):
+    r = client.get("/api/auth/me", headers={"Authorization": hdr})
+    assert r.status_code == 401

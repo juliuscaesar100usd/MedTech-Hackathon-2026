@@ -20,7 +20,10 @@ def get_current_user(
     payload = verify_token(authorization[7:].strip())
     if not payload:
         return None
-    return get_user_by_id(db, payload.get("sub"))
+    uid = payload.get("sub")
+    if not uid:
+        return None
+    return get_user_by_id(db, uid)
 
 
 def require_admin(user: User | None = Depends(get_current_user)) -> User:

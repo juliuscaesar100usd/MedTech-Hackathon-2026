@@ -21,9 +21,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from .api import (
-    auth,
     admin,
     assistant,
+    auth,
     matching,
     partners,
     price_history,
