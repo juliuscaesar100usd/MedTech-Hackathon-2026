@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .enums import (
     BatchStatus,
@@ -223,3 +223,34 @@ class SearchResponse(BaseModel):
     query: str
     services: list[SearchHitService] = []
     partners: list[SearchHitPartner] = []
+
+
+# --------------------------- Auth ------------------------------------------- #
+class RegisterRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=256)
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def _looks_like_email(cls, v: str) -> str:
+        v = v.strip()
+        if "@" not in v or v.startswith("@") or v.endswith("@"):
+            raise ValueError("invalid email")
+        return v
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class UserOut(ORMModel):
+    id: str
+    email: str
+    role: str
+    created_at: datetime
+
+
+class TokenResponse(BaseModel):
+    token: str
+    user: UserOut
