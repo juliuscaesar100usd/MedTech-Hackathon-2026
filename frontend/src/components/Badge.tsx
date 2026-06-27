@@ -23,10 +23,10 @@ export function Badge({
 export function VerifiedBadge({ verified }: { verified?: boolean }) {
   return verified ? (
     <Badge tone="success" dot>
-      Verified
+      Проверено
     </Badge>
   ) : (
-    <Badge tone="neutral">Unverified</Badge>
+    <Badge tone="neutral">Не проверено</Badge>
   );
 }
 
@@ -38,5 +38,5 @@ export function StatusBadge({ status }: { status?: string | null }) {
   else if (/(pending|processing|queued|running|review|partial)/.test(s)) tone = 'warning';
   else if (/(error|failed|fail|unmatched|reject)/.test(s)) tone = 'danger';
   else if (/(manual|info)/.test(s)) tone = 'info';
-  return <Badge tone={tone}>{status || 'unknown'}</Badge>;
+  return <Badge tone={tone}>{status || 'неизвестно'}</Badge>;
 }

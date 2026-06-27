@@ -83,7 +83,7 @@ def match_item(body: MatchRequest, db: Session = Depends(get_db)) -> PriceItem:
     """Manually assign (or create) a catalog service for a price item."""
     item = db.get(PriceItem, body.item_id)
     if item is None:
-        raise HTTPException(status_code=404, detail="Price item not found")
+        raise HTTPException(status_code=404, detail="Позиция не найдена")
 
     old_service_id = item.service_id
     action = "match"
@@ -110,12 +110,12 @@ def match_item(body: MatchRequest, db: Session = Depends(get_db)) -> PriceItem:
     elif body.service_id is not None:
         svc = db.get(Service, body.service_id)
         if svc is None:
-            raise HTTPException(status_code=404, detail="Service not found")
+            raise HTTPException(status_code=404, detail="Услуга не найдена")
         service_id = body.service_id
     else:
         raise HTTPException(
             status_code=400,
-            detail="Provide either service_id or new_service.",
+            detail="Укажите service_id или new_service.",
         )
 
     item.service_id = service_id

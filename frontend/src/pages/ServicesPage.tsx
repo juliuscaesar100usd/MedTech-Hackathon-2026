@@ -39,29 +39,29 @@ export function ServicesPage() {
   return (
     <main className="page">
       <header className="page-header">
-        <div className="eyebrow">Catalog</div>
-        <h1>Medical services</h1>
+        <div className="eyebrow">Каталог</div>
+        <h1>Медицинские услуги</h1>
         <p className="subtitle">
-          The normalized service catalog. Pick a service to compare partner prices.
+          Нормализованный каталог услуг. Выберите услугу, чтобы сравнить цены партнёров.
         </p>
       </header>
 
       <div className="filters">
         <div className="field grow">
           <label className="field-label" htmlFor="svc-q">
-            Search services
+            Поиск услуг
           </label>
           <input
             id="svc-q"
             className="input"
-            placeholder="Filter by name, synonym or ICD code…"
+            placeholder="Фильтр по названию, синониму или коду МКБ…"
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
         </div>
         <div className="field">
           <label className="field-label" htmlFor="svc-cat">
-            Category
+            Категория
           </label>
           <select
             id="svc-cat"
@@ -69,7 +69,7 @@ export function ServicesPage() {
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
-            <option value="">All categories</option>
+            <option value="">Все категории</option>
             {categories.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -80,20 +80,20 @@ export function ServicesPage() {
       </div>
 
       {loading ? (
-        <Loading label="Loading services…" />
+        <Loading label="Загрузка услуг…" />
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : filtered.length === 0 ? (
-        <EmptyState icon="🩺" title="No services found">
+        <EmptyState icon="🩺" title="Услуги не найдены">
           {services.length === 0
-            ? 'No services in the catalog yet. Upload a catalog from the Admin area.'
-            : 'No services match your filters. Try clearing them.'}
+            ? 'В каталоге пока нет услуг. Загрузите каталог из раздела «Админ».'
+            : 'Услуги не найдены по выбранным фильтрам. Попробуйте сбросить фильтры.'}
         </EmptyState>
       ) : (
         <>
           <p className="faint" style={{ marginBottom: 12 }}>
-            {filtered.length} service{filtered.length === 1 ? '' : 's'}
-            {category ? ` in ${category}` : ''}
+            {filtered.length} {filtered.length === 1 ? 'услуга' : 'услуг'}
+            {category ? ` в ${category}` : ''}
           </p>
           <div className="card-grid">
             {filtered.map((s) => (
@@ -101,12 +101,12 @@ export function ServicesPage() {
                 <div className="rc-title">{s.service_name}</div>
                 <div className="rc-meta">
                   {s.category && <Badge tone="primary">{s.category}</Badge>}
-                  {!s.is_active && <Badge tone="neutral">Inactive</Badge>}
+                  {!s.is_active && <Badge tone="neutral">Неактивна</Badge>}
                   {s.icd_code && <span className="mono">ICD: {s.icd_code}</span>}
                 </div>
                 {s.synonyms && s.synonyms.length > 0 && (
                   <div className="rc-meta" style={{ marginTop: 8 }}>
-                    <span className="faint">aka {s.synonyms.slice(0, 3).join(', ')}</span>
+                    <span className="faint">синонимы: {s.synonyms.slice(0, 3).join(', ')}</span>
                   </div>
                 )}
               </Link>

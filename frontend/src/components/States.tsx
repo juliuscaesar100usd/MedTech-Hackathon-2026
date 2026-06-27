@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 import { ApiError } from '../lib/api';
 
 export function Spinner({ large = false }: { large?: boolean }) {
-  return <span className={`spinner${large ? ' lg' : ''}`} aria-label="Loading" />;
+  return <span className={`spinner${large ? ' lg' : ''}`} aria-label="Загрузка" />;
 }
 
-export function Loading({ label = 'Loading…' }: { label?: string }) {
+export function Loading({ label = 'Загрузка…' }: { label?: string }) {
   return (
     <div className="center-state">
       <Spinner large />
@@ -39,11 +39,11 @@ export function ErrorState({
   error: unknown;
   onRetry?: () => void;
 }) {
-  let message = 'Something went wrong.';
+  let message = 'Что-то пошло не так.';
   if (error instanceof ApiError) {
     message =
       error.status === 0
-        ? 'Could not reach the API. Is the backend running?'
+        ? 'Не удалось подключиться к API. Запущен ли сервер?'
         : `${error.message} (HTTP ${error.status})`;
   } else if (error instanceof Error) {
     message = error.message;
@@ -51,11 +51,11 @@ export function ErrorState({
   return (
     <div className="center-state error-state">
       <div className="es-icon">⚠️</div>
-      <div className="es-title">Unable to load data</div>
+      <div className="es-title">Не удалось загрузить данные</div>
       <div>{message}</div>
       {onRetry && (
         <button className="btn btn-secondary btn-sm" onClick={onRetry}>
-          Retry
+          Повторить
         </button>
       )}
     </div>

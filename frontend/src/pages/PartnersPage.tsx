@@ -38,27 +38,27 @@ export function PartnersPage() {
   return (
     <main className="page">
       <header className="page-header">
-        <div className="eyebrow">Network</div>
-        <h1>Partner clinics</h1>
-        <p className="subtitle">Browse all clinics whose price lists have been ingested.</p>
+        <div className="eyebrow">Сеть</div>
+        <h1>Клиники-партнёры</h1>
+        <p className="subtitle">Все клиники, прайс-листы которых были загружены.</p>
       </header>
 
       <div className="filters">
         <div className="field grow">
           <label className="field-label" htmlFor="prt-q">
-            Search partners
+            Поиск партнёров
           </label>
           <input
             id="prt-q"
             className="input"
-            placeholder="Filter by name or address…"
+            placeholder="Фильтр по названию или адресу…"
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
         </div>
         <div className="field">
           <label className="field-label" htmlFor="prt-city">
-            City
+            Город
           </label>
           <select
             id="prt-city"
@@ -66,7 +66,7 @@ export function PartnersPage() {
             value={city}
             onChange={(e) => setCity(e.target.value)}
           >
-            <option value="">All cities</option>
+            <option value="">Все города</option>
             {cities.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -80,25 +80,25 @@ export function PartnersPage() {
             checked={activeOnly}
             onChange={(e) => setActiveOnly(e.target.checked)}
           />
-          Active only
+          Только активные
         </label>
       </div>
 
       {loading ? (
-        <Loading label="Loading partners…" />
+        <Loading label="Загрузка партнёров…" />
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : filtered.length === 0 ? (
-        <EmptyState icon="🏥" title="No partners found">
+        <EmptyState icon="🏥" title="Партнёры не найдены">
           {partners.length === 0
-            ? 'No partners yet. Upload an archive from the Admin area to get started.'
-            : 'No partners match your filters.'}
+            ? 'Партнёры пока отсутствуют. Загрузите архив из раздела «Админ» для начала работы.'
+            : 'Нет партнёров, соответствующих фильтрам.'}
         </EmptyState>
       ) : (
         <>
           <p className="faint" style={{ marginBottom: 12 }}>
-            {filtered.length} partner{filtered.length === 1 ? '' : 's'}
-            {city ? ` in ${city}` : ''}
+            {filtered.length} {filtered.length === 1 ? 'партнёр' : 'партнёров'}
+            {city ? ` в ${city}` : ''}
           </p>
           <div className="card-grid">
             {filtered.map((p) => (
@@ -108,10 +108,10 @@ export function PartnersPage() {
                   {p.city && <span>📍 {p.city}</span>}
                   {p.is_active ? (
                     <Badge tone="success" dot>
-                      Active
+                      Активна
                     </Badge>
                   ) : (
-                    <Badge tone="neutral">Inactive</Badge>
+                    <Badge tone="neutral">Неактивна</Badge>
                   )}
                 </div>
                 {p.address && (

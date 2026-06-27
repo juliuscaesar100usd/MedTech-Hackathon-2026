@@ -28,7 +28,7 @@ def get_current_user(
 
 def require_admin(user: User | None = Depends(get_current_user)) -> User:
     if user is None:
-        raise HTTPException(status_code=401, detail="Authentication required.")
+        raise HTTPException(status_code=401, detail="Требуется авторизация.")
     if user.role != UserRole.admin.value:
-        raise HTTPException(status_code=403, detail="Admin access required.")
+        raise HTTPException(status_code=403, detail="Требуются права администратора.")
     return user

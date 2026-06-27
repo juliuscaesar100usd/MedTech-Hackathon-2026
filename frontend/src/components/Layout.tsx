@@ -2,17 +2,17 @@ import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 const baseNav = [
-  { to: '/', label: 'Home', end: true },
-  { to: '/search', label: 'Search' },
-  { to: '/assistant', label: 'Assistant' },
-  { to: '/services', label: 'Services' },
-  { to: '/partners', label: 'Partners' },
+  { to: '/', label: 'Главная', end: true },
+  { to: '/search', label: 'Поиск' },
+  { to: '/assistant', label: 'Ассистент' },
+  { to: '/services', label: 'Услуги' },
+  { to: '/partners', label: 'Партнёры' },
 ];
 
 export function NavBar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const items = user?.role === 'admin' ? [...baseNav, { to: '/admin', label: 'Admin' }] : baseNav;
+  const items = user?.role === 'admin' ? [...baseNav, { to: '/admin', label: 'Админ' }] : baseNav;
 
   function onLogout() {
     logout();
@@ -44,10 +44,10 @@ export function NavBar() {
           {user ? (
             <>
               <span className="nav-user" title={user.email}>{user.email}</span>
-              <button type="button" className="nav-logout" onClick={onLogout}>Logout</button>
+              <button type="button" className="nav-logout" onClick={onLogout}>Выйти</button>
             </>
           ) : (
-            <NavLink to="/login" className="nav-link">Login</NavLink>
+            <NavLink to="/login" className="nav-link">Войти</NavLink>
           )}
         </div>
       </div>

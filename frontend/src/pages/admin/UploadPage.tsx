@@ -11,9 +11,9 @@ import { formatInt, formatDateTime } from '../../lib/format';
 
 function errMessage(err: unknown): string {
   if (err instanceof ApiError)
-    return err.status === 0 ? 'Could not reach the API.' : `${err.message} (HTTP ${err.status})`;
+    return err.status === 0 ? 'Не удалось подключиться к API.' : `${err.message} (HTTP ${err.status})`;
   if (err instanceof Error) return err.message;
-  return 'Upload failed.';
+  return 'Загрузка не выполнена.';
 }
 
 export function UploadPage() {
@@ -38,7 +38,7 @@ function ArchiveUpload() {
     try {
       const batch = await api.uploadArchive(file);
       setResult(batch);
-      toast.success('Archive uploaded — processing started.');
+      toast.success('Архив загружен — обработка начата.');
       setFile(null);
     } catch (err) {
       toast.error(errMessage(err));
@@ -49,29 +49,29 @@ function ArchiveUpload() {
 
   return (
     <Card>
-      <h3>Upload price-list archive</h3>
+      <h3>Загрузить архив прайс-листов</h3>
       <p className="muted">
-        Upload a <b>.zip</b> of clinic price lists (PDF, scans, Excel, Word). It is parsed and
-        normalized in the background.
+        Загрузите <b>.zip</b>-архив прайс-листов клиник (PDF, сканы, Excel, Word). Файлы будут
+        разобраны и нормализованы в фоновом режиме.
       </p>
 
       <Dropzone
         accept=".zip,application/zip"
         file={file}
         disabled={busy}
-        title="Drop a .zip archive here"
-        subtitle="or click to browse"
+        title="Перетащите .zip-архив сюда"
+        subtitle="или нажмите для выбора файла"
         onFile={setFile}
       />
 
       <div className="btn-row" style={{ marginTop: 16 }}>
         <button className="btn btn-primary" disabled={!file || busy} onClick={submit}>
           {busy ? <Spinner /> : null}
-          {busy ? 'Uploading…' : 'Upload archive'}
+          {busy ? 'Загрузка…' : 'Загрузить архив'}
         </button>
         {file && !busy && (
           <button className="btn btn-ghost" onClick={() => setFile(null)}>
-            Clear
+            Очистить
           </button>
         )}
       </div>
@@ -79,7 +79,7 @@ function ArchiveUpload() {
       {result && (
         <div className="card pad-sm" style={{ marginTop: 16, background: 'var(--c-surface-2)' }}>
           <div className="row between">
-            <h4 style={{ margin: 0 }}>Batch #{result.batch_id}</h4>
+            <h4 style={{ margin: 0 }}>Пакет #{result.batch_id}</h4>
             <StatusBadge status={result.status} />
           </div>
           <div className="divider" />
@@ -87,14 +87,14 @@ function ArchiveUpload() {
             <span>
               <b>{result.archive_name || file?.name || 'archive.zip'}</b>
             </span>
-            <span>Total files: {formatInt(result.total_files)}</span>
-            <span>Processed: {formatInt(result.processed_files)}</span>
-            <span>Errors: {formatInt(result.error_files)}</span>
-            <span className="faint">Created: {formatDateTime(result.created_at)}</span>
+            <span>Всего файлов: {formatInt(result.total_files)}</span>
+            <span>Обработано: {formatInt(result.processed_files)}</span>
+            <span>Ошибок: {formatInt(result.error_files)}</span>
+            <span className="faint">Создан: {formatDateTime(result.created_at)}</span>
           </div>
           <div style={{ marginTop: 12 }}>
             <Link to="/admin/documents" className="btn btn-secondary btn-sm">
-              View documents →
+              Просмотр документов →
             </Link>
           </div>
         </div>
@@ -116,7 +116,7 @@ function CatalogUpload() {
     try {
       const res = await api.uploadCatalog(file);
       setResult(res);
-      toast.success(`Catalog imported: ${res.created} created, ${res.updated} updated.`);
+      toast.success(`Каталог импортирован: создано ${res.created}, обновлено ${res.updated}.`);
       setFile(null);
     } catch (err) {
       toast.error(errMessage(err));
@@ -127,47 +127,47 @@ function CatalogUpload() {
 
   return (
     <Card>
-      <h3>Import service catalog</h3>
+      <h3>Импортировать каталог услуг</h3>
       <p className="muted">
-        Upload an <b>.xlsx</b> or <b>.json</b> catalog of canonical services (names, synonyms,
-        categories, ICD codes) used for normalization.
+        Загрузите <b>.xlsx</b> или <b>.json</b>-каталог эталонных услуг (названия, синонимы,
+        категории, коды МКБ), используемый для нормализации.
       </p>
 
       <Dropzone
         accept=".xlsx,.json,application/json"
         file={file}
         disabled={busy}
-        title="Drop a catalog file here"
-        subtitle=".xlsx or .json — click to browse"
+        title="Перетащите файл каталога сюда"
+        subtitle=".xlsx или .json — нажмите для выбора"
         onFile={setFile}
       />
 
       <div className="btn-row" style={{ marginTop: 16 }}>
         <button className="btn btn-primary" disabled={!file || busy} onClick={submit}>
           {busy ? <Spinner /> : null}
-          {busy ? 'Importing…' : 'Import catalog'}
+          {busy ? 'Импорт…' : 'Импортировать каталог'}
         </button>
         {file && !busy && (
           <button className="btn btn-ghost" onClick={() => setFile(null)}>
-            Clear
+            Очистить
           </button>
         )}
       </div>
 
       {result && (
         <div className="card pad-sm" style={{ marginTop: 16, background: 'var(--c-surface-2)' }}>
-          <h4 style={{ marginTop: 0 }}>Catalog imported</h4>
+          <h4 style={{ marginTop: 0 }}>Каталог импортирован</h4>
           <div className="rc-meta" style={{ gap: '6px 18px' }}>
             <span>
-              Created: <b>{formatInt(result.created)}</b>
+              Создано: <b>{formatInt(result.created)}</b>
             </span>
             <span>
-              Updated: <b>{formatInt(result.updated)}</b>
+              Обновлено: <b>{formatInt(result.updated)}</b>
             </span>
           </div>
           <div style={{ marginTop: 12 }}>
             <Link to="/services" className="btn btn-secondary btn-sm">
-              View services →
+              Просмотр услуг →
             </Link>
           </div>
         </div>

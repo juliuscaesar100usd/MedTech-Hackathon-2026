@@ -10,7 +10,7 @@ import { formatInt, formatPercent, formatDateTime } from '../../lib/format';
 export function DashboardPage() {
   const { data, loading, error, reload } = useFetch<DashboardStats>(() => api.getDashboard(), []);
 
-  if (loading) return <Loading label="Loading dashboard…" />;
+  if (loading) return <Loading label="Загрузка дашборда…" />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (!data) return null;
 
@@ -19,45 +19,45 @@ export function DashboardPage() {
   return (
     <section>
       <div className="row between wrap" style={{ marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>Overview</h2>
+        <h2 style={{ margin: 0 }}>Обзор</h2>
         <button className="btn btn-secondary btn-sm" onClick={reload}>
-          ↻ Refresh
+          ↻ Обновить
         </button>
       </div>
 
       {/* Headline stat cards */}
       <div className="stat-grid">
-        <Stat label="Documents processed" value={formatInt(data.documents_done)}
-          sub={`${formatInt(data.documents)} total · ${formatInt(data.documents_error)} errors`} />
+        <Stat label="Обработано документов" value={formatInt(data.documents_done)}
+          sub={`${formatInt(data.documents)} всего · ${formatInt(data.documents_error)} ошибок`} />
         <Stat
-          label="Normalization rate"
+          label="Уровень нормализации"
           value={formatPercent(data.normalization_rate)}
-          sub={`${formatInt(data.items_matched_auto + data.items_matched_manual)} of ${formatInt(
+          sub={`${formatInt(data.items_matched_auto + data.items_matched_manual)} из ${formatInt(
             data.price_items,
-          )} items`}
+          )} позиций`}
           accent
         />
         <Stat
-          label="Auto-normalization"
+          label="Авто-нормализация"
           value={formatPercent(data.auto_normalization_rate)}
-          sub={`${formatInt(data.items_matched_auto)} auto-matched`}
+          sub={`${formatInt(data.items_matched_auto)} авто-сопоставлено`}
         />
         <Stat
-          label="Verification rate"
+          label="Уровень верификации"
           value={formatPercent(data.verification_rate)}
-          sub={`${formatInt(data.items_verified)} verified`}
+          sub={`${formatInt(data.items_verified)} проверено`}
         />
         <Stat
-          label="Needs review"
+          label="Требует проверки"
           value={formatInt(data.items_needs_review)}
-          sub="awaiting verification"
+          sub="ожидает верификации"
           tone={data.items_needs_review > 0 ? 'warn' : undefined}
           to="/admin/verification"
         />
         <Stat
-          label="Unmatched"
+          label="Несопоставленные"
           value={formatInt(data.items_unmatched)}
-          sub="no catalog match"
+          sub="нет совпадения в каталоге"
           tone={data.items_unmatched > 0 ? 'danger' : undefined}
           to="/admin/unmatched"
         />
@@ -65,34 +65,34 @@ export function DashboardPage() {
 
       {/* Secondary counters */}
       <div className="stat-grid">
-        <Stat label="Partners" value={formatInt(data.partners)} to="/partners" />
-        <Stat label="Services" value={formatInt(data.services)} to="/services" />
-        <Stat label="Price items" value={formatInt(data.price_items)} />
+        <Stat label="Партнёры" value={formatInt(data.partners)} to="/partners" />
+        <Stat label="Услуги" value={formatInt(data.services)} to="/services" />
+        <Stat label="Позиции" value={formatInt(data.price_items)} />
         <Stat
-          label="With anomalies"
+          label="С аномалиями"
           value={formatInt(data.items_with_anomalies)}
           tone={data.items_with_anomalies > 0 ? 'warn' : undefined}
         />
-        <Stat label="Queue total" value={formatInt(queueTotal)} sub="review + unmatched" />
-        <Stat label="Pending docs" value={formatInt(data.documents_pending)} />
+        <Stat label="Итого в очереди" value={formatInt(queueTotal)} sub="проверка + несопоставленные" />
+        <Stat label="Документы в очереди" value={formatInt(data.documents_pending)} />
       </div>
 
       {/* Distributions */}
       <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
         <Card>
-          <h3>By category</h3>
-          <BarList data={data.by_category} emptyLabel="No category data yet." />
+          <h3>По категориям</h3>
+          <BarList data={data.by_category} emptyLabel="Нет данных по категориям." />
         </Card>
         <Card>
-          <h3>By city</h3>
-          <BarList data={data.by_city} emptyLabel="No city data yet." />
+          <h3>По городам</h3>
+          <BarList data={data.by_city} emptyLabel="Нет данных по городам." />
         </Card>
       </div>
 
       <div className="section" />
 
       <Card>
-        <h3>Recent batches</h3>
+        <h3>Последние пакеты</h3>
         <RecentBatches batches={data.recent_batches} />
       </Card>
     </section>
@@ -161,8 +161,8 @@ function BarList({ data, emptyLabel }: { data: Record<string, number>; emptyLabe
 function RecentBatches({ batches }: { batches: BatchOut[] }) {
   if (!batches || batches.length === 0)
     return (
-      <EmptyState icon="📦" title="No batches yet">
-        Upload an archive to see ingestion batches here.
+      <EmptyState icon="📦" title="Нет пакетов">
+        Загрузите архив, чтобы увидеть здесь пакеты загрузки.
       </EmptyState>
     );
 
@@ -171,11 +171,11 @@ function RecentBatches({ batches }: { batches: BatchOut[] }) {
       <table className="data-table">
         <thead>
           <tr>
-            <th>Batch</th>
-            <th>Archive</th>
-            <th>Status</th>
-            <th className="num">Files (done / total)</th>
-            <th>Created</th>
+            <th>Пакет</th>
+            <th>Архив</th>
+            <th>Статус</th>
+            <th className="num">Файлы (готово / всего)</th>
+            <th>Создан</th>
           </tr>
         </thead>
         <tbody>
@@ -188,7 +188,7 @@ function RecentBatches({ batches }: { batches: BatchOut[] }) {
               </td>
               <td className="num mono">
                 {formatInt(b.processed_files)} / {formatInt(b.total_files)}
-                {b.error_files ? ` (${formatInt(b.error_files)} err)` : ''}
+                {b.error_files ? ` (${formatInt(b.error_files)} ош.)` : ''}
               </td>
               <td className="faint">{formatDateTime(b.created_at)}</td>
             </tr>

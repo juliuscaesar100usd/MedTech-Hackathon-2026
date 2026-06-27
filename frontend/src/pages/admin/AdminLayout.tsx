@@ -1,21 +1,21 @@
 import { NavLink, Outlet } from 'react-router-dom';
 
 const subnav = [
-  { to: 'dashboard', label: 'Dashboard' },
-  { to: 'upload', label: 'Upload' },
-  { to: 'documents', label: 'Documents' },
-  { to: 'verification', label: 'Verification' },
-  { to: 'unmatched', label: 'Unmatched' },
+  { to: 'dashboard', label: 'Дашборд' },
+  { to: 'upload', label: 'Загрузка' },
+  { to: 'documents', label: 'Документы' },
+  { to: 'verification', label: 'Очередь верификации' },
+  { to: 'unmatched', label: 'Несопоставленные' },
 ];
 
 export function AdminLayout() {
   return (
     <main className="page">
       <header className="page-header">
-        <div className="eyebrow">Operations</div>
-        <h1>Admin console</h1>
+        <div className="eyebrow">Операции</div>
+        <h1>Консоль администратора</h1>
         <p className="subtitle">
-          Ingest archives, monitor parsing, and curate the normalization queues.
+          Загружайте архивы, отслеживайте разбор файлов и управляйте очередями нормализации.
         </p>
       </header>
 

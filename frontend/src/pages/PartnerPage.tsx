@@ -20,43 +20,43 @@ export function PartnerPage() {
   return (
     <main className="page">
       <Link to="/partners" className="back-link">
-        ← All partners
+        ← Все партнёры
       </Link>
 
       {partnerState.loading ? (
-        <Loading label="Loading partner…" />
+        <Loading label="Загрузка партнёра…" />
       ) : partnerState.error ? (
         <ErrorState error={partnerState.error} onRetry={partnerState.reload} />
       ) : partner ? (
         <>
           <header className="page-header">
-            <div className="eyebrow">Partner clinic</div>
+            <div className="eyebrow">Клиника-партнёр</div>
             <div className="row wrap" style={{ gap: 12 }}>
               <h1 style={{ marginBottom: 0 }}>{partner.name}</h1>
               {partner.is_active ? (
                 <Badge tone="success" dot>
-                  Active
+                  Активна
                 </Badge>
               ) : (
-                <Badge tone="neutral">Inactive</Badge>
+                <Badge tone="neutral">Неактивна</Badge>
               )}
             </div>
           </header>
 
           <div className="two-col">
             <Card>
-              <h3>Contacts</h3>
+              <h3>Контакты</h3>
               <ul className="contact-list">
                 <li>
-                  <span className="ci-label">City</span>
+                  <span className="ci-label">Город</span>
                   <span>{partner.city || '—'}</span>
                 </li>
                 <li>
-                  <span className="ci-label">Address</span>
+                  <span className="ci-label">Адрес</span>
                   <span>{partner.address || '—'}</span>
                 </li>
                 <li>
-                  <span className="ci-label">Email</span>
+                  <span className="ci-label">Эл. почта</span>
                   <span>
                     {partner.contact_email ? (
                       <a href={`mailto:${partner.contact_email}`}>{partner.contact_email}</a>
@@ -66,7 +66,7 @@ export function PartnerPage() {
                   </span>
                 </li>
                 <li>
-                  <span className="ci-label">Phone</span>
+                  <span className="ci-label">Телефон</span>
                   <span>
                     {partner.contact_phone ? (
                       <a href={`tel:${partner.contact_phone}`}>{partner.contact_phone}</a>
@@ -108,45 +108,45 @@ function PriceList({
     });
     const map = new Map<string, ServicePriceOut[]>();
     for (const it of filtered) {
-      const cat = it.category || 'Uncategorized';
+      const cat = it.category || 'Без категории';
       if (!map.has(cat)) map.set(cat, []);
       map.get(cat)!.push(it);
     }
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [items, text]);
 
-  if (state.loading) return <Loading label="Loading price list…" />;
+  if (state.loading) return <Loading label="Загрузка прайс-листа…" />;
   if (state.error) return <ErrorState error={state.error} onRetry={state.reload} />;
 
   return (
     <section>
       <div className="row between wrap" style={{ marginBottom: 14 }}>
-        <h3 style={{ marginBottom: 0 }}>Price list</h3>
+        <h3 style={{ marginBottom: 0 }}>Прайс-лист</h3>
         <input
           className="input"
           style={{ maxWidth: 260 }}
-          placeholder="Filter services…"
+          placeholder="Фильтр услуг…"
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
       </div>
 
       {items.length === 0 ? (
-        <EmptyState icon="📋" title="No price items">
-          No price items have been ingested for this partner yet.
+        <EmptyState icon="📋" title="Нет позиций прайс-листа">
+          Для этого партнёра ещё не загружено ни одной позиции.
         </EmptyState>
       ) : grouped.length === 0 ? (
-        <EmptyState icon="🔍" title="No services match the filter" />
+        <EmptyState icon="🔍" title="Ничего не найдено" />
       ) : (
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Service</th>
-                <th className="num">Resident</th>
-                <th className="num">Non-resident</th>
-                <th>Effective</th>
-                <th>Status</th>
+                <th>Услуга</th>
+                <th className="num">Резидент</th>
+                <th className="num">Нерезидент</th>
+                <th>Актуально с</th>
+                <th>Статус</th>
               </tr>
             </thead>
             <tbody>
@@ -177,7 +177,7 @@ function CategoryGroup({ category, rows }: { category: string; rows: ServicePric
           <tr key={String(it.item_id)}>
             <td>
               <span className="cell-strong">{normalized || raw || '—'}</span>
-              {showRaw && <div className="cell-sub">raw: “{raw}”</div>}
+              {showRaw && <div className="cell-sub">исходное: «{raw}»</div>}
               {!normalized && it.match_status && (
                 <div className="cell-sub">
                   <Badge tone="warning">{it.match_status}</Badge>

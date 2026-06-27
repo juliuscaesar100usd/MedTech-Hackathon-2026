@@ -11,9 +11,9 @@ import { formatDate, toNumber } from '../../lib/format';
 
 function errMessage(err: unknown): string {
   if (err instanceof ApiError)
-    return err.status === 0 ? 'Could not reach the API.' : `${err.message} (HTTP ${err.status})`;
+    return err.status === 0 ? 'Не удалось связаться с API.' : `${err.message} (HTTP ${err.status})`;
   if (err instanceof Error) return err.message;
-  return 'Action failed.';
+  return 'Действие не выполнено.';
 }
 
 export function VerificationQueuePage() {
@@ -32,20 +32,28 @@ export function VerificationQueuePage() {
     <section>
       <div className="row between wrap" style={{ marginBottom: 16 }}>
         <p className="faint" style={{ margin: 0 }}>
-          {items.length} item{items.length === 1 ? '' : 's'} awaiting review
+          {items.length}{' '}
+          {items.length % 100 >= 11 && items.length % 100 <= 14
+            ? 'позиций'
+            : items.length % 10 === 1
+            ? 'позиция'
+            : items.length % 10 >= 2 && items.length % 10 <= 4
+            ? 'позиции'
+            : 'позиций'}{' '}
+          на проверке
         </p>
         <button className="btn btn-secondary btn-sm" onClick={reload}>
-          ↻ Refresh
+          ↻ Обновить
         </button>
       </div>
 
       {loading ? (
-        <Loading label="Loading verification queue…" />
+        <Loading label="Загрузка очереди верификации…" />
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : items.length === 0 ? (
-        <EmptyState icon="✅" title="Queue is clear">
-          No price items currently need manual verification.
+        <EmptyState icon="✅" title="Очередь пуста">
+          Нет позиций, требующих ручной проверки.
         </EmptyState>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -96,7 +104,7 @@ function VerificationRow({
         note: note.trim() || undefined,
         operator: 'web-admin',
       });
-      toast.success(approve ? 'Approved.' : 'Rejected.');
+      toast.success(approve ? 'Подтверждено.' : 'Отклонено.');
       onResolved(item.item_id);
     } catch (err) {
       toast.error(errMessage(err));
@@ -111,17 +119,17 @@ function VerificationRow({
         <div>
           <div className="row wrap" style={{ gap: 8 }}>
             <h3 style={{ marginBottom: 0 }}>
-              {item.service_name_raw || `Item #${item.item_id}`}
+              {item.service_name_raw || `Позиция #${item.item_id}`}
             </h3>
             <VerifiedBadge verified={item.is_verified} />
           </div>
           <div className="cell-sub" style={{ marginTop: 4 }}>
-            {item.partner_name || 'Unknown partner'}
-            {item.effective_date ? ` · effective ${formatDate(item.effective_date)}` : ''}
+            {item.partner_name || 'Партнёр не указан'}
+            {item.effective_date ? ` · актуально с ${formatDate(item.effective_date)}` : ''}
             {item.currency_original ? ` · ${item.currency_original}` : ''}
           </div>
         </div>
-        <div className="faint mono">item #{item.item_id}</div>
+        <div className="faint mono">позиция #{item.item_id}</div>
       </div>
 
       {anomalies.length > 0 && (
@@ -138,20 +146,20 @@ function VerificationRow({
 
       <div className="row wrap" style={{ gap: 24, alignItems: 'flex-start' }}>
         <div>
-          <span className="pricetag-label">Extracted resident</span>
+          <span className="pricetag-label">Цена для резидента (извлечено)</span>
           <PriceTag value={item.price_resident_kzt} />
         </div>
         <div>
-          <span className="pricetag-label">Extracted non-resident</span>
+          <span className="pricetag-label">Цена для нерезидента (извлечено)</span>
           <PriceTag value={item.price_nonresident_kzt} />
         </div>
         <div>
-          <span className="pricetag-label">Proposed match</span>
+          <span className="pricetag-label">Предложенное сопоставление</span>
           <div>
             {item.service_name ? (
               <Badge tone="primary">{item.service_name}</Badge>
             ) : (
-              <Badge tone="warning">no proposal</Badge>
+              <Badge tone="warning">нет предложения</Badge>
             )}
           </div>
         </div>
@@ -161,7 +169,7 @@ function VerificationRow({
 
       <div className="filters" style={{ marginBottom: 0 }}>
         <div className="field">
-          <label className="field-label">Resident price (₸)</label>
+          <label className="field-label">Цена для резидента (₸)</label>
           <input
             className="input"
             type="number"
@@ -171,7 +179,7 @@ function VerificationRow({
           />
         </div>
         <div className="field">
-          <label className="field-label">Non-resident price (₸)</label>
+          <label className="field-label">Цена для нерезидента (₸)</label>
           <input
             className="input"
             type="number"
@@ -181,31 +189,31 @@ function VerificationRow({
           />
         </div>
         <div className="field">
-          <label className="field-label">Override service ID</label>
+          <label className="field-label">ID услуги (изменить)</label>
           <input
             className="input"
             value={serviceId}
             onChange={(e) => setServiceId(e.target.value)}
-            placeholder="(keep proposed)"
+            placeholder="(оставить предложенное)"
           />
         </div>
         <div className="field grow">
-          <label className="field-label">Note (optional)</label>
+          <label className="field-label">Примечание (необязательно)</label>
           <input
             className="input"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Reason / comment"
+            placeholder="Причина / комментарий"
           />
         </div>
       </div>
 
       <div className="btn-row" style={{ marginTop: 16 }}>
         <button className="btn btn-success" disabled={busy !== null} onClick={() => submit(true)}>
-          {busy === 'approve' ? <Spinner /> : null} Approve
+          {busy === 'approve' ? <Spinner /> : null} Подтвердить
         </button>
         <button className="btn btn-danger" disabled={busy !== null} onClick={() => submit(false)}>
-          {busy === 'reject' ? <Spinner /> : null} Reject
+          {busy === 'reject' ? <Spinner /> : null} Отклонить
         </button>
       </div>
     </Card>

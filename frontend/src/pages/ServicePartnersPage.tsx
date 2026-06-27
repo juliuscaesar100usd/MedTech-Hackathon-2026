@@ -107,13 +107,13 @@ function PriceHistoryChart({
 
   const hasAnomaly = points.some((p) => p.is_anomaly);
 
-  if (isLoading) return <Loading label="Loading price history…" />;
+  if (isLoading) return <Loading label="Загрузка истории цен…" />;
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
   if (points.length === 0) {
     return (
-      <EmptyState icon="📈" title="No price history yet">
-        Once more than one dated price list for this partner is ingested, the trend will
-        appear here.
+      <EmptyState icon="📈" title="История цен пока отсутствует">
+        Как только будет загружено более одного прайс-листа с датами для этого партнёра,
+        здесь появится динамика цен.
       </EmptyState>
     );
   }
@@ -131,13 +131,13 @@ function PriceHistoryChart({
           />
           <Tooltip
             formatter={(value, name) => [formatKzt(value as Money), name]}
-            labelFormatter={(label) => `Effective: ${String(label)}`}
+            labelFormatter={(label) => `Актуально с: ${String(label)}`}
           />
           <Legend />
           <Line
             type="monotone"
             dataKey="resident"
-            name="Resident (₸)"
+            name="Резидент (₸)"
             stroke="#2563eb"
             strokeWidth={2}
             dot={<AnomalyDot />}
@@ -147,7 +147,7 @@ function PriceHistoryChart({
           <Line
             type="monotone"
             dataKey="nonresident"
-            name="Non-resident (₸)"
+            name="Нерезидент (₸)"
             stroke="#94a3b8"
             strokeWidth={2}
             strokeDasharray="5 3"
@@ -159,12 +159,12 @@ function PriceHistoryChart({
       <p className="muted" style={{ marginTop: 8, fontSize: 13 }}>
         {hasAnomaly ? (
           <>
-            <span style={{ color: '#dc2626', fontWeight: 600 }}>● Red</span> marks a price
-            anomaly — a change of more than 50% versus the previous version, flagged for
-            review.
+            <span style={{ color: '#dc2626', fontWeight: 600 }}>● Красная точка</span> обозначает
+            аномалию цены — изменение более чем на 50% по сравнению с предыдущей версией,
+            требует проверки.
           </>
         ) : (
-          'No price anomalies detected for this partner. A red marker would flag any >50% jump.'
+          'Аномалий цен для этого партнёра не обнаружено. Красная точка отметила бы любой скачок >50%.'
         )}
       </p>
     </div>
@@ -239,7 +239,7 @@ function ServicePartnersPageInner() {
   const columns: Column<PartnerPriceOut>[] = [
     {
       key: 'partner',
-      header: 'Partner',
+      header: 'Партнёр',
       sortable: true,
       render: (r) => (
         <div>
@@ -255,27 +255,27 @@ function ServicePartnersPageInner() {
     },
     {
       key: 'price_resident_kzt',
-      header: 'Resident',
+      header: 'Резидент',
       numeric: true,
       sortable: true,
       render: (r) => <PriceTag value={r.price_resident_kzt} />,
     },
     {
       key: 'price_nonresident_kzt',
-      header: 'Non-resident',
+      header: 'Нерезидент',
       numeric: true,
       sortable: true,
       render: (r) => <PriceTag value={r.price_nonresident_kzt} />,
     },
     {
       key: 'effective_date',
-      header: 'Effective',
+      header: 'Актуально с',
       sortable: true,
       render: (r) => <span className="muted">{formatDate(r.effective_date)}</span>,
     },
     {
       key: 'match_confidence',
-      header: 'Confidence',
+      header: 'Уверенность',
       numeric: true,
       render: (r) => {
         const c = toNumber(r.match_confidence as number | string | null);
@@ -285,7 +285,7 @@ function ServicePartnersPageInner() {
     },
     {
       key: 'is_verified',
-      header: 'Status',
+      header: 'Статус',
       render: (r) => <VerifiedBadge verified={r.is_verified} />,
     },
   ];
@@ -297,27 +297,26 @@ function ServicePartnersPageInner() {
   return (
     <main className="page">
       <Link to="/services" className="back-link">
-        ← All services
+        ← Все услуги
       </Link>
 
       {loading ? (
-        <Loading label="Loading partners…" />
+        <Loading label="Загрузка партнёров…" />
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : (
         <>
           <header className="page-header">
-            <div className="eyebrow">Service</div>
+            <div className="eyebrow">Услуга</div>
             <h1>{serviceName}</h1>
             <p className="subtitle">
-              {rows.length} partner{rows.length === 1 ? '' : 's'} provide this service. Sort by price
-              to compare.
+              {rows.length} {rows.length === 1 ? 'партнёр предоставляет' : 'партнёров предоставляют'} эту услугу. Сортируйте по цене для сравнения.
             </p>
           </header>
 
           {rows.length === 0 ? (
-            <EmptyState icon="🏥" title="No partners offer this service yet">
-              Once price lists referencing this service are ingested, partners will appear here.
+            <EmptyState icon="🏥" title="Пока нет партнёров, предлагающих эту услугу">
+              Как только будут загружены прайс-листы, ссылающиеся на эту услугу, здесь появятся партнёры.
             </EmptyState>
           ) : (
             <>
@@ -341,12 +340,12 @@ function ServicePartnersPageInner() {
                   }}
                 >
                   <div>
-                    <div className="eyebrow">Price history</div>
-                    <h2 style={{ margin: '4px 0 0' }}>Price over time</h2>
+                    <div className="eyebrow">История цен</div>
+                    <h2 style={{ margin: '4px 0 0' }}>Динамика цен</h2>
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span className="muted" style={{ fontSize: 13 }}>
-                      Partner
+                      Партнёр
                     </span>
                     <select
                       className="select"
@@ -372,7 +371,7 @@ function ServicePartnersPageInner() {
 
                 {activePartnerName ? (
                   <p className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-                    Showing the full version timeline for{' '}
+                    Полная история версий для{' '}
                     <strong>{activePartnerName}</strong>.
                   </p>
                 ) : null}

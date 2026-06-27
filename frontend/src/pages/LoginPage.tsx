@@ -22,7 +22,7 @@ export function LoginPage() {
       const user = await login(email, password);
       navigate(user.role === 'admin' ? '/admin' : dest, { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Login failed.');
+      setError(err instanceof ApiError ? err.message : 'Ошибка входа.');
     } finally {
       setBusy(false);
     }
@@ -31,23 +31,23 @@ export function LoginPage() {
   return (
     <div className="auth-wrap">
       <form className="auth-card" onSubmit={onSubmit}>
-        <h1 className="auth-title">Sign in</h1>
+        <h1 className="auth-title">Войти</h1>
         <label className="auth-label">
-          Email
+          Эл. почта
           <input className="auth-input" type="email" value={email}
                  onChange={(e) => setEmail(e.target.value)} required autoFocus />
         </label>
         <label className="auth-label">
-          Password
+          Пароль
           <input className="auth-input" type="password" value={password}
                  onChange={(e) => setPassword(e.target.value)} required />
         </label>
         {error && <p className="auth-error">{error}</p>}
         <button className="auth-btn" type="submit" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
+          {busy ? 'Вход…' : 'Войти'}
         </button>
         <p className="auth-alt">
-          No account? <Link to="/register">Register</Link>
+          Нет аккаунта? <Link to="/register">Регистрация</Link>
         </p>
       </form>
     </div>

@@ -19,7 +19,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> TokenRespo
     try:
         user = register_user(db, body.email, body.password)
     except EmailTakenError:
-        raise HTTPException(status_code=409, detail="Email already registered.")
+        raise HTTPException(status_code=409, detail="Эта эл. почта уже зарегистрирована.")
     return TokenResponse(token=make_token(user.id, user.role), user=UserOut.model_validate(user))
 
 
@@ -27,12 +27,12 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> TokenRespo
 def login(body: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     user = authenticate(db, body.email, body.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password.")
+        raise HTTPException(status_code=401, detail="Неверная эл. почта или пароль.")
     return TokenResponse(token=make_token(user.id, user.role), user=UserOut.model_validate(user))
 
 
 @router.get("/me", response_model=UserOut)
 def me(user: User | None = Depends(get_current_user)) -> User:
     if user is None:
-        raise HTTPException(status_code=401, detail="Authentication required.")
+        raise HTTPException(status_code=401, detail="Требуется авторизация.")
     return user

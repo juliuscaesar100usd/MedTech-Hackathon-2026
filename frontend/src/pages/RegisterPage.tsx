@@ -15,7 +15,7 @@ export function RegisterPage() {
     e.preventDefault();
     setError(null);
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError('Пароль должен содержать не менее 8 символов.');
       return;
     }
     setBusy(true);
@@ -23,7 +23,7 @@ export function RegisterPage() {
       await register(email, password);
       navigate('/search', { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Registration failed.');
+      setError(err instanceof ApiError ? err.message : 'Ошибка регистрации.');
     } finally {
       setBusy(false);
     }
@@ -32,23 +32,23 @@ export function RegisterPage() {
   return (
     <div className="auth-wrap">
       <form className="auth-card" onSubmit={onSubmit}>
-        <h1 className="auth-title">Create account</h1>
+        <h1 className="auth-title">Создать аккаунт</h1>
         <label className="auth-label">
-          Email
+          Эл. почта
           <input className="auth-input" type="email" value={email}
                  onChange={(e) => setEmail(e.target.value)} required autoFocus />
         </label>
         <label className="auth-label">
-          Password
+          Пароль
           <input className="auth-input" type="password" value={password}
                  onChange={(e) => setPassword(e.target.value)} required minLength={8} />
         </label>
         {error && <p className="auth-error">{error}</p>}
         <button className="auth-btn" type="submit" disabled={busy}>
-          {busy ? 'Creating…' : 'Create account'}
+          {busy ? 'Создание…' : 'Создать аккаунт'}
         </button>
         <p className="auth-alt">
-          Have an account? <Link to="/login">Sign in</Link>
+          Уже есть аккаунт? <Link to="/login">Войти</Link>
         </p>
       </form>
     </div>

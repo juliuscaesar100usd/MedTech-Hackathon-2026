@@ -71,7 +71,7 @@ export function ChatPage() {
         prev.map((t) => (t.id === pendingId ? { id: pendingId, role: 'assistant', reply } : t)),
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Request failed.';
+      const msg = err instanceof Error ? err.message : 'Запрос не выполнен.';
       setTurns((prev) =>
         prev.map((t) => (t.id === pendingId ? { id: pendingId, role: 'assistant', error: msg } : t)),
       );
@@ -89,15 +89,15 @@ export function ChatPage() {
     <main className="page chat-page">
       <div className="chat-head">
         <div>
-          <h1>AI Assistant</h1>
+          <h1>AI-ассистент</h1>
           <p className="lede">
-            Describe what you need in plain language — a service, a budget, a city, resident or
-            non-resident pricing — and get the matching clinics and prices instantly.
+            Опишите, что вам нужно, простыми словами — услуга, бюджет, город, цены для резидента
+            или нерезидента — и сразу получите подходящие клиники с ценами.
           </p>
         </div>
         {status && (
           <span className={`assistant-mode ${status.llm_available ? 'live' : 'local'}`}>
-            {status.llm_available ? `✨ Claude (${status.model})` : '⚡ Smart parser'}
+            {status.llm_available ? `✨ Claude (${status.model})` : '⚡ Умный парсер'}
           </span>
         )}
       </div>
@@ -115,14 +115,14 @@ export function ChatPage() {
         <input
           className="input"
           value={input}
-          placeholder="e.g. “УЗИ щитовидной железы дешевле 8000 ₸ в Алматы”"
+          placeholder='Например: «УЗИ щитовидной железы дешевле 8000 ₸ в Алматы»'
           autoFocus
           disabled={sending}
           onChange={(e) => setInput(e.target.value)}
-          aria-label="Your preferences"
+          aria-label="Введите запрос"
         />
         <button className="btn btn-primary" type="submit" disabled={sending || !input.trim()}>
-          {sending ? '…' : 'Ask'}
+          {sending ? '…' : 'Отправить'}
         </button>
       </form>
     </main>
@@ -134,8 +134,8 @@ function Welcome({ onPick }: { onPick: (t: string) => void }) {
     <div className="chat-welcome">
       <div className="chat-bubble assistant">
         <p style={{ margin: 0 }}>
-          👋 Hi! Tell me which medical service you’re after and any preferences — price limit, city,
-          resident vs non-resident. For example:
+          👋 Привет! Расскажите, какая медицинская услуга вас интересует и какие у вас пожелания —
+          ценовой лимит, город, резидент или нерезидент. Например:
         </p>
       </div>
       <div className="chat-examples">
@@ -201,19 +201,19 @@ function PreferenceChips({ reply }: { reply: AssistantReply }) {
   if (p.max_price_kzt != null) chips.push({ label: `≤ ${formatKzt(p.max_price_kzt)}` });
   if (p.min_price_kzt != null) chips.push({ label: `≥ ${formatKzt(p.min_price_kzt)}` });
   if (p.resident !== 'any')
-    chips.push({ label: p.resident === 'nonresident' ? 'Non-resident' : 'Resident' });
-  if (p.sort !== 'relevance') chips.push({ label: p.sort === 'cheapest' ? '⬇ Cheapest' : '⬆ Premium' });
+    chips.push({ label: p.resident === 'nonresident' ? 'Нерезидент' : 'Резидент' });
+  if (p.sort !== 'relevance') chips.push({ label: p.sort === 'cheapest' ? '⬇ Дешевле' : '⬆ Премиум' });
 
   if (chips.length === 0) return null;
   return (
     <div className="pref-chips">
-      <span className="pref-label">Understood:</span>
+      <span className="pref-label">Распознано:</span>
       {chips.map((c, i) => (
         <Badge key={i} tone={c.tone ?? 'neutral'}>
           {c.label}
         </Badge>
       ))}
-      <span className="pref-parser">{reply.used_llm ? 'via Claude' : 'via smart parser'}</span>
+      <span className="pref-parser">{reply.used_llm ? 'через Claude' : 'через умный парсер'}</span>
     </div>
   );
 }
@@ -256,7 +256,7 @@ function ServiceCard({
         {service.category && <Badge tone="primary">{service.category}</Badge>}
       </div>
       <div className="rc-meta">
-        <span>{formatInt(service.partner_count)} clinics</span>
+        <span>{formatInt(service.partner_count)} клиник</span>
         <span className="rc-price">{formatKztRange(service.min_price_kzt, service.max_price_kzt)}</span>
       </div>
       <table className="offers-table">
@@ -271,7 +271,7 @@ function ServiceCard({
 }
 
 function OfferRow({ offer, resident }: { offer: AssistantOffer; resident: string }) {
-  const priceLabel = resident === 'nonresident' ? 'non-resident' : 'resident';
+  const priceLabel = resident === 'nonresident' ? 'нерезидент' : 'резидент';
   return (
     <tr>
       <td>
@@ -299,7 +299,7 @@ function PartnerCard({ partner }: { partner: AssistantPartnerResult }) {
       <div className="rc-title">{partner.name}</div>
       <div className="rc-meta">
         {partner.city && <span>📍 {partner.city}</span>}
-        <span>{formatInt(partner.service_count)} services</span>
+        <span>{formatInt(partner.service_count)} услуг</span>
       </div>
     </Link>
   );

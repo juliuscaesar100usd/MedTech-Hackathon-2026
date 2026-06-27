@@ -43,7 +43,7 @@ export function Dropzone({
       <div className="dz-icon">📦</div>
       <div className="dz-title">{title}</div>
       <div className="dz-sub">{subtitle}</div>
-      {file && <div className="dz-file">Selected: {file.name}</div>}
+      {file && <div className="dz-file">Выбран: {file.name}</div>}
       <input
         ref={inputRef}
         type="file"

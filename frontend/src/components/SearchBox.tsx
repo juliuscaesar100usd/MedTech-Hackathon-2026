@@ -2,8 +2,8 @@ import { useState, type FormEvent } from 'react';
 
 export function SearchBox({
   initial = '',
-  placeholder = 'Search…',
-  buttonLabel = 'Search',
+  placeholder = 'Поиск…',
+  buttonLabel = 'Найти',
   hero = false,
   autoFocus = false,
   onSearch,
@@ -31,7 +31,7 @@ export function SearchBox({
         placeholder={placeholder}
         autoFocus={autoFocus}
         onChange={(e) => setValue(e.target.value)}
-        aria-label="Search query"
+        aria-label="Поисковый запрос"
       />
       <button className="btn btn-primary" type="submit">
         {buttonLabel}

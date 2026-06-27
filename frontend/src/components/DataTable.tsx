@@ -26,7 +26,7 @@ export function DataTable<T>({
   rowKey,
   sort,
   onSort,
-  emptyMessage = 'No rows.',
+  emptyMessage = 'Нет данных.',
 }: {
   columns: Column<T>[];
   rows: T[];

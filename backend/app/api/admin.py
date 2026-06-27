@@ -36,7 +36,7 @@ def upload_archive(file: UploadFile, db: Session = Depends(get_db)) -> Ingestion
     """Upload a ZIP of clinic price lists; ingest then queue async processing."""
     name = file.filename or "upload.zip"
     if not name.lower().endswith(".zip"):
-        raise HTTPException(status_code=400, detail="Only .zip archives are accepted.")
+        raise HTTPException(status_code=400, detail="Принимаются только ZIP-архивы.")
 
     uploads_dir = Path(settings.data_dir) / "uploads"
     uploads_dir.mkdir(parents=True, exist_ok=True)

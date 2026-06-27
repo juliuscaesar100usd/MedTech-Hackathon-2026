@@ -52,7 +52,7 @@ export function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value; // show raw if unparseable
-  return d.toLocaleDateString('en-GB', {
+  return d.toLocaleDateString('ru-RU', {
     year: 'numeric',
     month: 'short',
     day: '2-digit',
@@ -66,7 +66,7 @@ export function formatDateTime(value: string | null | undefined): string {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString('en-GB', {
+  return d.toLocaleString('ru-RU', {
     year: 'numeric',
     month: 'short',
     day: '2-digit',

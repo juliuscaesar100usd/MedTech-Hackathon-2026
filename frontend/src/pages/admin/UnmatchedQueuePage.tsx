@@ -11,9 +11,9 @@ import { formatConfidence } from '../../lib/format';
 
 function errMessage(err: unknown): string {
   if (err instanceof ApiError)
-    return err.status === 0 ? 'Could not reach the API.' : `${err.message} (HTTP ${err.status})`;
+    return err.status === 0 ? 'Не удалось связаться с API.' : `${err.message} (HTTP ${err.status})`;
   if (err instanceof Error) return err.message;
-  return 'Action failed.';
+  return 'Действие не выполнено.';
 }
 
 export function UnmatchedQueuePage() {
@@ -32,20 +32,27 @@ export function UnmatchedQueuePage() {
     <section>
       <div className="row between wrap" style={{ marginBottom: 16 }}>
         <p className="faint" style={{ margin: 0 }}>
-          {items.length} unmatched item{items.length === 1 ? '' : 's'}
+          {items.length}{' '}
+          {items.length % 100 >= 11 && items.length % 100 <= 14
+            ? 'несопоставленных позиций'
+            : items.length % 10 === 1
+            ? 'несопоставленная позиция'
+            : items.length % 10 >= 2 && items.length % 10 <= 4
+            ? 'несопоставленные позиции'
+            : 'несопоставленных позиций'}
         </p>
         <button className="btn btn-secondary btn-sm" onClick={reload}>
-          ↻ Refresh
+          ↻ Обновить
         </button>
       </div>
 
       {loading ? (
-        <Loading label="Loading unmatched queue…" />
+        <Loading label="Загрузка несопоставленных позиций…" />
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : items.length === 0 ? (
-        <EmptyState icon="✅" title="Nothing unmatched">
-          Every ingested price item has been mapped to a catalog service.
+        <EmptyState icon="✅" title="Нет несопоставленных">
+          Все загруженные позиции сопоставлены с услугами каталога.
         </EmptyState>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -83,11 +90,11 @@ function UnmatchedRow({
 
   async function submit() {
     if (!creatingNew && !selected) {
-      toast.error('Pick a candidate or create a new service.');
+      toast.error('Выберите кандидата или создайте новую услугу.');
       return;
     }
     if (creatingNew && !newName.trim()) {
-      toast.error('New service needs a name.');
+      toast.error('Укажите название новой услуги.');
       return;
     }
     setBusy(true);
@@ -108,7 +115,7 @@ function UnmatchedRow({
           : undefined,
         operator: 'web-admin',
       });
-      toast.success('Matched.');
+      toast.success('Сопоставлено.');
       onResolved(item.item_id);
     } catch (err) {
       toast.error(errMessage(err));
@@ -121,15 +128,15 @@ function UnmatchedRow({
     <Card>
       <div className="row between wrap" style={{ alignItems: 'flex-start' }}>
         <div>
-          <h3 style={{ marginBottom: 2 }}>{item.service_name_raw || `Item #${item.item_id}`}</h3>
+          <h3 style={{ marginBottom: 2 }}>{item.service_name_raw || `Позиция #${item.item_id}`}</h3>
           <div className="cell-sub">
-            {item.partner_name || 'Unknown partner'}
-            {item.service_code_source ? ` · code ${item.service_code_source}` : ''}
+            {item.partner_name || 'Партнёр не указан'}
+            {item.service_code_source ? ` · код ${item.service_code_source}` : ''}
           </div>
         </div>
         <div className="row" style={{ gap: 12 }}>
           <div style={{ textAlign: 'right' }}>
-            <span className="pricetag-label">Resident</span>
+            <span className="pricetag-label">Резидент</span>
             <PriceTag value={item.price_resident_kzt} />
           </div>
           {item.match_status && <Badge tone="danger">{item.match_status}</Badge>}
@@ -139,10 +146,10 @@ function UnmatchedRow({
       <div className="divider" />
 
       <div className="field-label" style={{ marginBottom: 8 }}>
-        Suggested catalog services
+        Предложения из каталога
       </div>
       {candidates.length === 0 ? (
-        <p className="faint">No automatic suggestions — create a new service below.</p>
+        <p className="faint">Автоматических предложений нет — создайте новую услугу ниже.</p>
       ) : (
         <div className="tag-list" style={{ gap: 8, flexDirection: 'column' }}>
           {candidates.map((c) => {
@@ -172,7 +179,7 @@ function UnmatchedRow({
                     <Badge tone={Number(c.score) >= 0.85 ? 'success' : 'warning'}>
                       {formatConfidence(c.score)}
                     </Badge>
-                    {active && <Badge tone="primary">selected</Badge>}
+                    {active && <Badge tone="primary">выбрано</Badge>}
                   </div>
                 </div>
               </button>
@@ -192,45 +199,45 @@ function UnmatchedRow({
             if (e.target.checked) setSelected('');
           }}
         />
-        Create a new catalog service instead
+        Создать новую услугу в каталоге
       </label>
 
       {creatingNew && (
         <div className="filters" style={{ marginTop: 12, marginBottom: 0 }}>
           <div className="field grow">
-            <label className="field-label">Service name</label>
+            <label className="field-label">Название услуги</label>
             <input
               className="input"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Canonical service name"
+              placeholder="Каноническое название"
             />
           </div>
           <div className="field">
-            <label className="field-label">Category</label>
+            <label className="field-label">Категория</label>
             <input
               className="input"
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              placeholder="e.g. Diagnostics"
+              placeholder="напр. Диагностика"
             />
           </div>
           <div className="field">
-            <label className="field-label">ICD code</label>
+            <label className="field-label">Код МКБ</label>
             <input
               className="input"
               value={newIcd}
               onChange={(e) => setNewIcd(e.target.value)}
-              placeholder="(optional)"
+              placeholder="(необязательно)"
             />
           </div>
           <div className="field grow">
-            <label className="field-label">Synonyms (comma-separated)</label>
+            <label className="field-label">Синонимы (через запятую)</label>
             <input
               className="input"
               value={newSynonyms}
               onChange={(e) => setNewSynonyms(e.target.value)}
-              placeholder="alias 1, alias 2"
+              placeholder="синоним 1, синоним 2"
             />
           </div>
         </div>
@@ -242,7 +249,7 @@ function UnmatchedRow({
           disabled={busy || (!creatingNew && !selected)}
           onClick={submit}
         >
-          {busy ? <Spinner /> : null} {creatingNew ? 'Create & match' : 'Confirm match'}
+          {busy ? <Spinner /> : null} {creatingNew ? 'Создать и сопоставить' : 'Назначить'}
         </button>
       </div>
     </Card>

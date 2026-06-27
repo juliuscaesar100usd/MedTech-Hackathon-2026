@@ -9,6 +9,14 @@ import { formatDate, formatDateTime, formatInt } from '../../lib/format';
 
 const STATUS_OPTIONS = ['', 'pending', 'processing', 'done', 'error'];
 
+const STATUS_LABELS: Record<string, string> = {
+  '': 'Все статусы',
+  pending: 'в очереди',
+  processing: 'обработка',
+  done: 'готово',
+  error: 'ошибка',
+};
+
 function isPending(status: string | null | undefined): boolean {
   const s = (status || '').toLowerCase();
   return /pending|processing|queued|running/.test(s);
@@ -34,35 +42,35 @@ export function DocumentsPage() {
   const columns: Column<PriceDocumentOut>[] = [
     {
       key: 'file_name',
-      header: 'File',
+      header: 'Файл',
       render: (d) => (
         <div>
-          <span className="cell-strong">{d.file_name || `Doc #${d.doc_id}`}</span>
+          <span className="cell-strong">{d.file_name || `Документ #${d.doc_id}`}</span>
           <div className="cell-sub">
-            {d.batch_id != null && <>batch #{d.batch_id} · </>}
-            {d.partner_id != null ? `partner #${d.partner_id}` : 'unassigned partner'}
+            {d.batch_id != null && <>пакет #{d.batch_id} · </>}
+            {d.partner_id != null ? `партнёр #${d.partner_id}` : 'партнёр не назначен'}
           </div>
         </div>
       ),
     },
     {
       key: 'file_format',
-      header: 'Format',
+      header: 'Формат',
       render: (d) => (d.file_format ? <Badge tone="neutral">{d.file_format}</Badge> : '—'),
     },
     {
       key: 'parse_status',
-      header: 'Status',
+      header: 'Статус',
       render: (d) => <StatusBadge status={d.parse_status} />,
     },
     {
       key: 'language',
-      header: 'Lang',
+      header: 'Язык',
       render: (d) => <span className="muted">{d.language || '—'}</span>,
     },
     {
       key: 'items',
-      header: 'Matched / Items',
+      header: 'Сопоставлено / Позиций',
       numeric: true,
       render: (d) => (
         <span className="mono">
@@ -72,12 +80,12 @@ export function DocumentsPage() {
     },
     {
       key: 'effective_date',
-      header: 'Effective',
+      header: 'Актуально с',
       render: (d) => <span className="muted">{formatDate(d.effective_date)}</span>,
     },
     {
       key: 'parsed_at',
-      header: 'Parsed at',
+      header: 'Обработано в',
       render: (d) => <span className="faint">{formatDateTime(d.parsed_at)}</span>,
     },
   ];
@@ -87,7 +95,7 @@ export function DocumentsPage() {
       <div className="row between wrap" style={{ marginBottom: 18 }}>
         <div className="field" style={{ minWidth: 220 }}>
           <label className="field-label" htmlFor="doc-status">
-            Filter by status
+            Фильтр по статусу
           </label>
           <select
             id="doc-status"
@@ -97,7 +105,7 @@ export function DocumentsPage() {
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
-                {s === '' ? 'All statuses' : s}
+                {STATUS_LABELS[s] ?? s}
               </option>
             ))}
           </select>
@@ -106,27 +114,34 @@ export function DocumentsPage() {
           {anyPending && (
             <span className="row" style={{ gap: 6 }}>
               <Spinner />
-              <span className="faint">auto-refreshing…</span>
+              <span className="faint">автообновление…</span>
             </span>
           )}
           <button className="btn btn-secondary btn-sm" onClick={reload}>
-            ↻ Refresh
+            ↻ Обновить
           </button>
         </div>
       </div>
 
       {loading && docs.length === 0 ? (
-        <Loading label="Loading documents…" />
+        <Loading label="Загрузка документов…" />
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : docs.length === 0 ? (
-        <EmptyState icon="📄" title="No documents">
-          Upload an archive to populate this list.
+        <EmptyState icon="📄" title="Нет документов">
+          Загрузите архив, чтобы заполнить список.
         </EmptyState>
       ) : (
         <>
           <p className="faint" style={{ marginBottom: 10 }}>
-            {docs.length} document{docs.length === 1 ? '' : 's'}
+            {docs.length}{' '}
+            {docs.length % 100 >= 11 && docs.length % 100 <= 14
+              ? 'документов'
+              : docs.length % 10 === 1
+              ? 'документ'
+              : docs.length % 10 >= 2 && docs.length % 10 <= 4
+              ? 'документа'
+              : 'документов'}
           </p>
           <DataTable<PriceDocumentOut>
             columns={columns}
