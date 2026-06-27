@@ -16,7 +16,11 @@ function loadStoredUser(): AuthUser | null {
   const raw = localStorage.getItem(USER_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as AuthUser;
+    const u = JSON.parse(raw) as Partial<AuthUser>;
+    if (u && typeof u.id === 'string' && typeof u.email === 'string' && (u.role === 'user' || u.role === 'admin')) {
+      return u as AuthUser;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -33,7 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const onUnauth = () => persist(null);
+    const onUnauth = () => {
+      setAuthToken(null);
+      setUser(null);
+      localStorage.removeItem(USER_KEY);
+    };
     window.addEventListener('medarchive:unauthorized', onUnauth);
     if (getAuthToken()) {
       api
