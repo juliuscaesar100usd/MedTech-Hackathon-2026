@@ -1517,3 +1517,23 @@ p {
 .lp-anim { margin: var(--sp-5) auto 0; max-width: 920px; }
 .lp-anim-wide { max-width: 100%; }
 .lp-anim img { display: block; width: 100%; height: auto; }
+
+/* Metrics band v3: clean stat tiles (the tick treatment still read as broken).
+   Unambiguous contained cards, no floating vertical lines. */
+.lp-metrics-band { background: transparent; border-top: none; border-bottom: none; }
+.lp-metrics {
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-5);
+}
+.lp-metric,
+.lp-metric:first-child {
+  padding: var(--sp-5);
+  border-left: none;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+.lp-metric:first-child { border-left: 1px solid var(--c-border); }
+@media (max-width: 760px) { .lp-metrics { grid-template-columns: repeat(2, 1fr); } }
