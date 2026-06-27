@@ -72,9 +72,9 @@ def verify_token(token: str, now: int | None = None) -> dict | None:
     try:
         payload_b64, sig = token.split(".")
         expected_sig = _sign(payload_b64)
-    except (ValueError, AttributeError):
-        return None
-    if not hmac.compare_digest(expected_sig, sig):
+        if not hmac.compare_digest(expected_sig, sig):
+            return None
+    except (ValueError, AttributeError, TypeError):
         return None
     try:
         payload = json.loads(_b64d(payload_b64))

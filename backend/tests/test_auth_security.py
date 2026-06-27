@@ -45,3 +45,14 @@ def test_token_tampered_is_rejected():
     payload_b64, _sig = tok.split(".")
     forged = f"{payload_b64}.{'A' * 43}"
     assert security.verify_token(forged, now=1001) is None
+
+
+def test_token_non_ascii_signature_returns_none():
+    # non-ASCII in the SIGNATURE segment must not raise (TypeError from compare_digest)
+    assert security.verify_token("abc.\xe9", now=1001) is None
+    assert security.verify_token("abc.signatureé", now=1001) is None
+
+
+def test_token_multidot_returns_none():
+    # too many segments -> split unpack fails -> None, not a raise
+    assert security.verify_token("a.b.c", now=1001) is None
