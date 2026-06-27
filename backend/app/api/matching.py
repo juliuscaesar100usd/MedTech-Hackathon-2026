@@ -8,9 +8,10 @@ from ..enums import MatchMethod, MatchStatus
 from ..models import MatchEvent, Partner, PriceItem, Service
 from ..normalization import build_matcher, seed_services
 from ..schemas import MatchCandidate, MatchRequest, PriceItemOut, UnmatchedItemOut
+from ..auth.deps import require_admin
 from .deps import Pagination, get_db, pagination
 
-router = APIRouter(tags=["matching"])
+router = APIRouter(tags=["matching"], dependencies=[Depends(require_admin)])
 
 # needs_review surfaces before unmatched in the operator queue.
 _STATUS_ORDER = {

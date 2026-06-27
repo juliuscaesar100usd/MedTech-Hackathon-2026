@@ -132,3 +132,14 @@ def test_admin_dashboard_requires_admin(client):
 def test_public_endpoint_stays_open(client):
     # A user-facing endpoint must still work with no auth at all.
     assert client.get("/api/services").status_code == 200
+
+
+def test_matching_endpoints_require_admin(client):
+    # no token -> 401
+    assert client.get("/api/unmatched").status_code == 401
+    # user token -> 403
+    user_tok = _token_for(client, "user")
+    assert client.get("/api/unmatched", headers={"Authorization": f"Bearer {user_tok}"}).status_code == 403
+    # admin token -> 200
+    admin_tok = _token_for(client, "admin")
+    assert client.get("/api/unmatched", headers={"Authorization": f"Bearer {admin_tok}"}).status_code == 200

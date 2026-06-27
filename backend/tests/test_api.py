@@ -283,8 +283,8 @@ def test_search(client, seed):
     assert r.json()["partners"] == []
 
 
-def test_unmatched_with_candidates(client, seed):
-    r = client.get("/api/unmatched")
+def test_unmatched_with_candidates(client, seed, admin_headers):
+    r = client.get("/api/unmatched", headers=admin_headers)
     assert r.status_code == 200
     out = r.json()
     raws = {i["service_name_raw"] for i in out}
@@ -298,10 +298,11 @@ def test_unmatched_with_candidates(client, seed):
     assert "МРТ головного мозга" in cand_names
 
 
-def test_match_assigns_service(client, seed):
+def test_match_assigns_service(client, seed, admin_headers):
     r = client.post(
         "/api/match",
         json={"item_id": seed["unmatched_item"], "service_id": seed["s_mri"], "note": "manual"},
+        headers=admin_headers,
     )
     assert r.status_code == 200
     body = r.json()
@@ -311,15 +312,15 @@ def test_match_assigns_service(client, seed):
     assert body["needs_review"] is False
 
     # neither service_id nor new_service -> 400
-    r = client.post("/api/match", json={"item_id": seed["unmatched_item"]})
+    r = client.post("/api/match", json={"item_id": seed["unmatched_item"]}, headers=admin_headers)
     assert r.status_code == 400
 
     # unknown item -> 404
-    r = client.post("/api/match", json={"item_id": "nope", "service_id": seed["s_mri"]})
+    r = client.post("/api/match", json={"item_id": "nope", "service_id": seed["s_mri"]}, headers=admin_headers)
     assert r.status_code == 404
 
 
-def test_match_creates_new_service(client, seed, db):
+def test_match_creates_new_service(client, seed, db, admin_headers):
     r = client.post(
         "/api/match",
         json={
@@ -330,6 +331,7 @@ def test_match_creates_new_service(client, seed, db):
                 "category": "Консультации",
             },
         },
+        headers=admin_headers,
     )
     assert r.status_code == 200
     new_sid = r.json()["service_id"]
