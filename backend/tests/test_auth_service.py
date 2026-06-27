@@ -93,9 +93,7 @@ def test_make_admin_cli_promotes(tmp_path, monkeypatch):
         s.close()
 
     # Import the CLI and redirect its DB handle to our temp session factory.
-    import importlib
     from scripts import make_admin
-    importlib.reload(make_admin)
     monkeypatch.setattr(make_admin, "SessionLocal", TempSession)
     monkeypatch.setattr(make_admin, "init_db", lambda: None)
 
