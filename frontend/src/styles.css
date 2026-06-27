@@ -1457,7 +1457,7 @@ p {
 .lp-metrics-band { background: transparent; border: none; }
 .lp-metrics {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4);
-  align-items: stretch; padding: var(--sp-6) var(--sp-5); list-style: none; margin: 0;
+  align-items: stretch; padding: var(--sp-6) var(--sp-5); list-style: none; margin: 0 auto;
 }
 .lp-metric,
 .lp-metric:first-child {
