@@ -45,6 +45,16 @@ def test_authenticate(db):
     assert service.authenticate(db, "missing@example.com", "password123") is None
 
 
+def test_seed_admin_promotes_preexisting_account(db):
+    from app.config import settings
+    from app.enums import UserRole
+    service.register_user(db, settings.admin_email, "password123")  # plain user first
+    service.seed_admin(db)  # must NOT raise
+    admins = [u for u in db.query(service.User).all() if u.role == UserRole.admin.value]
+    assert len(admins) == 1
+    assert admins[0].email == settings.admin_email.strip().lower()
+
+
 def test_seed_admin_idempotent_and_promote(db):
     service.seed_admin(db)
     service.seed_admin(db)  # second call is a no-op

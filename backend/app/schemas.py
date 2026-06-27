@@ -233,15 +233,15 @@ class RegisterRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def _looks_like_email(cls, v: str) -> str:
-        v = v.strip()
+        v = v.strip().lower()
         if "@" not in v or v.startswith("@") or v.endswith("@"):
             raise ValueError("invalid email")
         return v
 
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    email: str = Field(max_length=256)
+    password: str = Field(max_length=128)
 
 
 class UserOut(ORMModel):

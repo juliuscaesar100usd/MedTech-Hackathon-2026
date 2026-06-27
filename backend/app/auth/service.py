@@ -60,7 +60,10 @@ def get_user_by_id(db: Session, uid: str) -> User | None:
 def seed_admin(db: Session) -> None:
     if db.scalar(select(User).where(User.role == UserRole.admin.value)):
         return
-    register_user(db, settings.admin_email, settings.admin_password, role=UserRole.admin.value)
+    try:
+        register_user(db, settings.admin_email, settings.admin_password, role=UserRole.admin.value)
+    except EmailTakenError:
+        promote_to_admin(db, settings.admin_email)
     if settings.admin_password == "admin12345":
         print(
             f"⚠️  Seeded default admin {settings.admin_email!r} with the DEFAULT password. "
