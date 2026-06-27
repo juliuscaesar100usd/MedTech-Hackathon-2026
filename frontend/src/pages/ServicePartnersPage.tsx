@@ -73,8 +73,16 @@ function AnomalyDot(props: {
   const { cx, cy, payload } = props;
   if (cx == null || cy == null) return null;
   if (payload?.is_anomaly) {
+    // A diamond (not just a red circle) so an anomaly is distinguishable by
+    // SHAPE, not colour alone — colour-blind-safe, alongside the text caption.
+    const r = 6.5;
     return (
-      <circle cx={cx} cy={cy} r={6} fill="#dc2626" stroke="#fff" strokeWidth={1.5} />
+      <polygon
+        points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
+        fill="#dc2626"
+        stroke="#fff"
+        strokeWidth={1.5}
+      />
     );
   }
   return <circle cx={cx} cy={cy} r={3.5} fill="#0e7490" />;
@@ -106,6 +114,12 @@ function PriceHistoryChart({
   );
 
   const hasAnomaly = points.some((p) => p.is_anomaly);
+  const anomalyCount = points.filter((p) => p.is_anomaly).length;
+  const chartSummary =
+    `График динамики цен: ${points.length} точек. ` +
+    (anomalyCount > 0
+      ? `Аномалий цены: ${anomalyCount} (изменение более 50% от предыдущей версии).`
+      : 'Аномалий цены не обнаружено.');
 
   if (isLoading) return <Loading label="Загрузка истории цен…" />;
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
@@ -120,6 +134,7 @@ function PriceHistoryChart({
 
   return (
     <div>
+      <div role="img" aria-label={chartSummary}>
       <ResponsiveContainer width="100%" height={320}>
         <LineChart data={points} margin={{ top: 16, right: 24, bottom: 8, left: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.08)" />
@@ -156,15 +171,16 @@ function PriceHistoryChart({
           />
         </LineChart>
       </ResponsiveContainer>
+      </div>
       <p className="muted" style={{ marginTop: 8, fontSize: 13 }}>
         {hasAnomaly ? (
           <>
-            <span style={{ color: '#dc2626', fontWeight: 600 }}>● Красная точка</span> обозначает
+            <span style={{ color: '#dc2626', fontWeight: 600 }}>◆ Красный ромб</span> обозначает
             аномалию цены — изменение более чем на 50% по сравнению с предыдущей версией,
             требует проверки.
           </>
         ) : (
-          'Аномалий цен для этого партнёра не обнаружено. Красная точка отметила бы любой скачок >50%.'
+          'Аномалий цен для этого партнёра не обнаружено. Красный ромб отметил бы любой скачок >50%.'
         )}
       </p>
     </div>

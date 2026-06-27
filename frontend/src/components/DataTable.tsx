@@ -43,19 +43,38 @@ export function DataTable<T>({
             {columns.map((col) => {
               const isSorted = sort?.key === col.key;
               const clickable = col.sortable && onSort;
+              const indicator = col.sortable && (
+                <span className="sort-ind" aria-hidden="true">
+                  {isSorted ? (sort!.dir === 'asc' ? '▲' : '▼') : ''}
+                </span>
+              );
               return (
                 <th
                   key={col.key}
+                  scope="col"
                   className={[col.numeric ? 'num' : '', clickable ? 'sortable' : '']
                     .filter(Boolean)
                     .join(' ')}
-                  onClick={clickable ? () => onSort!(col.key) : undefined}
+                  aria-sort={
+                    col.sortable
+                      ? isSorted
+                        ? sort!.dir === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                      : undefined
+                  }
                 >
-                  {col.header}
-                  {col.sortable && (
-                    <span className="sort-ind">
-                      {isSorted ? (sort!.dir === 'asc' ? '▲' : '▼') : ''}
-                    </span>
+                  {clickable ? (
+                    <button type="button" className="th-sort-btn" onClick={() => onSort!(col.key)}>
+                      {col.header}
+                      {indicator}
+                    </button>
+                  ) : (
+                    <>
+                      {col.header}
+                      {indicator}
+                    </>
                   )}
                 </th>
               );

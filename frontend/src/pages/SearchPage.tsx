@@ -56,21 +56,21 @@ function ProductExplainer() {
   return (
     <section className="card-grid" style={{ maxWidth: 900, margin: '0 auto' }}>
       <div className="card">
-        <h3>📥 Загрузка архивов</h3>
+        <h2><span aria-hidden="true">📥</span> Загрузка архивов</h2>
         <p className="muted">
           Загружайте ZIP-архивы прайс-листов клиник (PDF, сканы, Excel, Word). MedArchive
           автоматически обрабатывает и нормализует их.
         </p>
       </div>
       <div className="card">
-        <h3>🔎 Поиск по услуге</h3>
+        <h2><span aria-hidden="true">🔎</span> Поиск по услуге</h2>
         <p className="muted">
           Найдите нормализованную медицинскую услугу и сразу сравните, какие клиники-партнёры
           её предлагают и по каким ценам для резидентов / нерезидентов.
         </p>
       </div>
       <div className="card">
-        <h3>🏥 Просмотр партнёров</h3>
+        <h2><span aria-hidden="true">🏥</span> Просмотр партнёров</h2>
         <p className="muted">
           Откройте любую клинику, чтобы увидеть контакты и полный прайс-лист с датами вступления
           в силу и статусом верификации.
@@ -105,12 +105,14 @@ function SearchResults({ query }: { query: string }) {
       <div className="row wrap" style={{ marginBottom: 20 }}>
         <button
           className={`btn ${tab === 'services' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+          aria-pressed={tab === 'services'}
           onClick={() => setTab('services')}
         >
           Услуги ({services.length})
         </button>
         <button
           className={`btn ${tab === 'partners' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+          aria-pressed={tab === 'partners'}
           onClick={() => setTab('partners')}
         >
           Партнёры ({partners.length})

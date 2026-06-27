@@ -30,20 +30,20 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="auth-wrap">
+    <main className="auth-wrap">
       <form className="auth-card" onSubmit={onSubmit}>
         <h1 className="auth-title">Создать аккаунт</h1>
         <label className="auth-label">
           Эл. почта
-          <input className="auth-input" type="email" value={email}
+          <input className="auth-input" type="email" value={email} autoComplete="email"
                  onChange={(e) => setEmail(e.target.value)} required autoFocus />
         </label>
         <label className="auth-label">
           Пароль
-          <input className="auth-input" type="password" value={password}
+          <input className="auth-input" type="password" value={password} autoComplete="new-password"
                  onChange={(e) => setPassword(e.target.value)} required minLength={8} />
         </label>
-        {error && <p className="auth-error">{error}</p>}
+        {error && <p className="auth-error" role="alert">{error}</p>}
         <button className="auth-btn" type="submit" disabled={busy}>
           {busy ? 'Создание…' : 'Создать аккаунт'}
         </button>
@@ -51,6 +51,6 @@ export function RegisterPage() {
           Уже есть аккаунт? <Link to="/login">Войти</Link>
         </p>
       </form>
-    </div>
+    </main>
   );
 }

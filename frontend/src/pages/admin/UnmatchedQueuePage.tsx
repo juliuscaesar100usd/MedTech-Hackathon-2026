@@ -128,7 +128,7 @@ function UnmatchedRow({
     <Card>
       <div className="row between wrap" style={{ alignItems: 'flex-start' }}>
         <div>
-          <h3 style={{ marginBottom: 2 }}>{item.service_name_raw || `Позиция #${item.item_id}`}</h3>
+          <h2 style={{ marginBottom: 2, fontSize: 18 }}>{item.service_name_raw || `Позиция #${item.item_id}`}</h2>
           <div className="cell-sub">
             {item.partner_name || 'Партнёр не указан'}
             {item.service_code_source ? ` · код ${item.service_code_source}` : ''}
@@ -204,42 +204,42 @@ function UnmatchedRow({
 
       {creatingNew && (
         <div className="filters" style={{ marginTop: 12, marginBottom: 0 }}>
-          <div className="field grow">
-            <label className="field-label">Название услуги</label>
+          <label className="field grow">
+            <span className="field-label">Название услуги</span>
             <input
               className="input"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Каноническое название"
             />
-          </div>
-          <div className="field">
-            <label className="field-label">Категория</label>
+          </label>
+          <label className="field">
+            <span className="field-label">Категория</span>
             <input
               className="input"
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
               placeholder="напр. Диагностика"
             />
-          </div>
-          <div className="field">
-            <label className="field-label">Код МКБ</label>
+          </label>
+          <label className="field">
+            <span className="field-label">Код МКБ</span>
             <input
               className="input"
               value={newIcd}
               onChange={(e) => setNewIcd(e.target.value)}
               placeholder="(необязательно)"
             />
-          </div>
-          <div className="field grow">
-            <label className="field-label">Синонимы (через запятую)</label>
+          </label>
+          <label className="field grow">
+            <span className="field-label">Синонимы (через запятую)</span>
             <input
               className="input"
               value={newSynonyms}
               onChange={(e) => setNewSynonyms(e.target.value)}
               placeholder="синоним 1, синоним 2"
             />
-          </div>
+          </label>
         </div>
       )}
 

@@ -1,6 +1,8 @@
+import { Suspense } from 'react';
 import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useScrollReveal } from '../lib/useScrollReveal';
+import { Loading } from './States';
 
 /* Brand mark: teal chip + medical cross over a faint "archive" shelf line.
    Kept in sync with public/logo.svg (favicon). The mark carries the medical
@@ -83,9 +85,14 @@ export function Layout() {
   useScrollReveal();
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        Перейти к содержимому
+      </a>
       <NavBar />
-      <div className="route-view" key={pathname}>
-        <Outlet />
+      <div className="route-view" id="main-content" tabIndex={-1} key={pathname}>
+        <Suspense fallback={<Loading />}>
+          <Outlet />
+        </Suspense>
       </div>
     </div>
   );

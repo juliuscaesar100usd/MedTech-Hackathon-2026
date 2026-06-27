@@ -102,7 +102,7 @@ export function ChatPage() {
         )}
       </div>
 
-      <div className="chat-window">
+      <div className="chat-window" role="log" aria-live="polite" aria-relevant="additions">
         {turns.length === 0 ? (
           <Welcome onPick={send} />
         ) : (
@@ -134,7 +134,7 @@ function Welcome({ onPick }: { onPick: (t: string) => void }) {
     <div className="chat-welcome">
       <div className="chat-bubble assistant">
         <p style={{ margin: 0 }}>
-          👋 Привет! Расскажите, какая медицинская услуга вас интересует и какие у вас пожелания —
+          <span aria-hidden="true">👋</span> Привет! Расскажите, какая медицинская услуга вас интересует и какие у вас пожелания —
           ценовой лимит, город, резидент или нерезидент. Например:
         </p>
       </div>
@@ -162,6 +162,7 @@ function TurnView({ turn, onPick }: { turn: Turn; onPick: (t: string) => void })
       <div className="chat-row assistant">
         <div className="chat-bubble assistant typing">
           <span /> <span /> <span />
+          <span className="visually-hidden">Ассистент печатает ответ…</span>
         </div>
       </div>
     );
@@ -169,7 +170,10 @@ function TurnView({ turn, onPick }: { turn: Turn; onPick: (t: string) => void })
   if ('error' in turn) {
     return (
       <div className="chat-row assistant">
-        <div className="chat-bubble assistant error">⚠️ {turn.error}</div>
+        <div className="chat-bubble assistant error">
+          <span aria-hidden="true">⚠️ </span>
+          {turn.error}
+        </div>
       </div>
     );
   }
@@ -285,7 +289,8 @@ function OfferRow({ offer, resident }: { offer: AssistantOffer; resident: string
       <td className="offer-verified">
         {offer.is_verified && (
           <Badge tone="success" dot>
-            ✓
+            <span aria-hidden="true">✓</span>
+            <span className="visually-hidden">проверено</span>
           </Badge>
         )}
       </td>

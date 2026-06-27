@@ -52,6 +52,7 @@
   --c-primary-700: #0e7490;
   --c-primary-50: #ecfeff;
   --c-primary-100: #cffafe;
+  --c-primary-800: #155e75;    /* teal-800 — hover/pressed on solid CTAs */
 
   /* Accent locked to the clinical-cyan hue (was a competing blue #2563eb).
      One brand hue across the whole product; blue lives only as semantic info.
@@ -162,6 +163,7 @@ p {
 
 .app-shell {
   min-height: 100vh;
+  min-height: 100dvh;          /* avoid the mobile URL-bar height jump */
   display: flex;
   flex-direction: column;
 }
@@ -286,6 +288,14 @@ p {
   gap: var(--sp-4);
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 }
+/* Large result grids (services/partners fetch up to 500 rows): let the browser
+   skip layout/paint of off-screen cards instead of pulling in a virtualizer.
+   `auto` remembers each card's real height after first paint so scrolling stays
+   accurate; older browsers without support just render everything as before. */
+.card-grid > * {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 150px;
+}
 
 /* Service / partner result card */
 .result-card {
@@ -375,7 +385,7 @@ p {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);   /* faint #94a3b8 fails AA; this label names data */
 }
 
 /* ----------------------------- Tables ----------------------------------- */
@@ -543,11 +553,13 @@ p {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: var(--c-primary-600);
+  /* teal-700 (not cyan-600): white-on-teal is 5.36:1 (AA); white-on-cyan-600
+     is only 3.68:1 and fails for button-size text. */
+  background: var(--c-primary-700);
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--c-primary-700);
+  background: var(--c-primary-800);
   text-decoration: none;
 }
 .btn-secondary {
@@ -794,7 +806,7 @@ p {
 }
 .stat-card .stat-sub {
   font-size: 12px;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
   margin-top: 4px;
 }
 .stat-card.accent {
@@ -947,7 +959,7 @@ p {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--c-text-faint);
+  color: var(--c-text-muted);
   font-weight: 600;
 }
 .tag-list {
@@ -1008,6 +1020,10 @@ p {
   .data-table {
     font-size: 13px;
   }
+  /* Let wide tables scroll instead of clipping unreachable columns on phones. */
+  .table-wrap {
+    overflow-x: auto;
+  }
 }
 
 /* ===========================================================================
@@ -1064,6 +1080,7 @@ p {
   box-shadow: var(--shadow-sm);
   overflow-y: auto;
   max-height: 64vh;
+  max-height: 64dvh;
 }
 
 .chat-welcome {
@@ -1267,10 +1284,13 @@ p {
 .auth-input:focus { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.18); }
 .auth-btn {
   margin-top: 4px; padding: 11px 14px; border: none; border-radius: 8px;
-  background: linear-gradient(135deg, var(--c-primary-600), var(--c-primary-700));
+  /* solid teal-700 (5.36:1 with white) — the gradient's cyan end was only 3.68:1 */
+  background: var(--c-primary-700);
   color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: background 0.12s ease;
 }
-.auth-btn:disabled { opacity: 0.6; cursor: default; }
+.auth-btn:hover:not(:disabled) { background: var(--c-primary-800); }
+.auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .auth-error { margin: 0; color: #b42318; font-size: 13px; }
 .auth-alt { margin: 4px 0 0; font-size: 13px; color: #475467; }
 
@@ -1294,7 +1314,7 @@ p {
 
 .lp-kicker {
   display: inline-flex; align-items: center; gap: var(--sp-2);
-  margin: 0 0 var(--sp-3); color: var(--c-primary-600);
+  margin: 0 0 var(--sp-3); color: var(--c-primary-700);
   font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
 }
 .lp-kicker-icon { width: 18px; height: 18px; }
@@ -1342,8 +1362,8 @@ p {
 .lp-btn:hover { text-decoration: none; transform: translateY(-1px); }
 .lp-btn:active { transform: translateY(0); }
 .lp-btn-icon { width: 18px; height: 18px; flex: 0 0 auto; }
-.lp-btn-primary { background: var(--c-primary-600); color: #fff; box-shadow: var(--shadow-sm); }
-.lp-btn-primary:hover { background: var(--c-primary-700); box-shadow: var(--shadow-md); }
+.lp-btn-primary { background: var(--c-primary-700); color: #fff; box-shadow: var(--shadow-sm); }
+.lp-btn-primary:hover { background: var(--c-primary-800); box-shadow: var(--shadow-md); }
 .lp-btn-ghost { background: var(--c-surface); color: var(--c-primary-700); border-color: var(--c-border-strong); }
 .lp-btn-ghost:hover { background: var(--c-primary-50); border-color: var(--c-primary-600); }
 
@@ -1358,7 +1378,7 @@ p {
 .lp-stat:first-child { border-left: none; }
 .lp-stat-value { margin: 0; font-size: clamp(26px, 3.6vw, 34px); font-weight: 800; letter-spacing: -0.02em; color: var(--c-primary-700); font-variant-numeric: tabular-nums; }
 .lp-stat-label { margin: 2px 0 0; font-size: 14px; font-weight: 650; color: var(--c-text); display: flex; flex-direction: column; }
-.lp-stat-sub { font-size: 12px; font-weight: 500; color: var(--c-text-faint); }
+.lp-stat-sub { font-size: 12px; font-weight: 500; color: var(--c-text-muted); }
 @media (max-width: 760px) { .lp-stat-strip { grid-template-columns: repeat(2, 1fr); row-gap: var(--sp-5); } .lp-stat, .lp-stat:first-child { border-left: none; padding: 0; } }
 
 /* ---- Pipeline ---- */
@@ -1366,7 +1386,7 @@ p {
 .lp-pipe-step { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .lp-pipe-num {
   display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: var(--r-pill);
-  background: var(--c-primary-600); color: #fff; font-size: 13px; font-weight: 700;
+  background: var(--c-primary-700); color: #fff; font-size: 13px; font-weight: 700;
 }
 .lp-pipe-name {
   padding: 8px 14px; background: var(--c-surface); border: 1px solid var(--c-border);
@@ -1511,7 +1531,7 @@ p {
 }
 .lp-metric-value { margin: 0; font-family: var(--font-display); font-size: clamp(28px, 3.4vw, 38px); font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: var(--c-primary-700); font-variant-numeric: tabular-nums; }
 .lp-metric-label { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 14px; font-weight: 650; color: var(--c-text); }
-.lp-metric-sub { font-size: 12px; font-weight: 500; line-height: 1.4; color: var(--c-text-faint); }
+.lp-metric-sub { font-size: 12px; font-weight: 500; line-height: 1.4; color: var(--c-text-muted); }
 
 /* Capabilities showcase: real search shot + icon list */
 .lp-showcase { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--sp-7); align-items: start; }
@@ -1582,4 +1602,63 @@ p {
     will-change: opacity, transform;
   }
   .reveal.is-visible { opacity: 1; transform: none; }
+}
+
+/* ===========================================================================
+   A11y & polish pass (UI/UX review): SR-only text, skip link, keyboard-operable
+   sortable headers, consistent focus rings, touch targets, disabled inputs.
+   =========================================================================== */
+
+/* Screen-reader-only text (status words sitting behind an icon/glyph). */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Skip-to-content: off-screen until focused, then pinned top-left. */
+.skip-link {
+  position: absolute; left: var(--sp-3); top: -60px; z-index: 200;
+  padding: 10px 16px; border-radius: var(--r-sm);
+  background: var(--c-primary-700); color: #fff; font-weight: 600;
+  box-shadow: var(--shadow-md); transition: top 0.15s ease;
+}
+.skip-link:focus { top: var(--sp-2); text-decoration: none; outline: 3px solid var(--c-primary-100); }
+
+/* Sortable header reset — a real <button> so sorting is keyboard-operable. */
+.th-sort-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: none; padding: 0; margin: 0;
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
+  color: inherit; cursor: pointer;
+}
+.th-sort-btn:hover { color: var(--c-text); }
+
+/* Consistent visible focus ring across interactive controls (keyboard users). */
+.btn:focus-visible,
+.nav-link:focus-visible,
+.nav-logout:focus-visible,
+.chip:focus-visible,
+.th-sort-btn:focus-visible,
+.toggle:focus-within {
+  outline: 3px solid var(--c-primary-600);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* Disabled inputs read as inert (e.g. the chat input while a reply is in flight). */
+.input:disabled,
+.select:disabled,
+.textarea:disabled,
+.auth-input:disabled {
+  background: var(--c-surface-2);
+  color: var(--c-text-muted);
+  cursor: not-allowed;
+}
+
+/* Coarse pointers (touch): meet the 44px minimum hit area on small controls. */
+@media (pointer: coarse) {
+  .chip { min-height: 44px; display: inline-flex; align-items: center; }
+  .btn-sm { min-height: 44px; }
+  .nav-link { min-height: 44px; display: inline-flex; align-items: center; }
+  .toast-close { min-width: 44px; min-height: 44px; }
 }

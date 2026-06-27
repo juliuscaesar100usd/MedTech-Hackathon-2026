@@ -1,25 +1,32 @@
+import { lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { RequireAdmin } from './components/RequireAdmin';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider } from './auth/AuthContext';
 
-import { LandingPage } from './pages/LandingPage';
-import { SearchPage } from './pages/SearchPage';
-import { ChatPage } from './pages/ChatPage';
-import { ServicesPage } from './pages/ServicesPage';
-import { ServicePartnersPage } from './pages/ServicePartnersPage';
-import { PartnersPage } from './pages/PartnersPage';
-import { PartnerPage } from './pages/PartnerPage';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
+// Route-level code splitting: each page is its own async chunk, so heavy
+// route-specific deps (recharts + react-query on services/:id) stay out of the
+// initial bundle. Layout renders a <Suspense> fallback while a chunk loads.
+const named = <T,>(p: Promise<Record<string, T>>, key: string) =>
+  p.then((m) => ({ default: m[key] }));
 
-import { AdminLayout } from './pages/admin/AdminLayout';
-import { UploadPage } from './pages/admin/UploadPage';
-import { DocumentsPage } from './pages/admin/DocumentsPage';
-import { VerificationQueuePage } from './pages/admin/VerificationQueuePage';
-import { UnmatchedQueuePage } from './pages/admin/UnmatchedQueuePage';
-import { DashboardPage } from './pages/admin/DashboardPage';
+const LandingPage = lazy(() => named(import('./pages/LandingPage'), 'LandingPage'));
+const SearchPage = lazy(() => named(import('./pages/SearchPage'), 'SearchPage'));
+const ChatPage = lazy(() => named(import('./pages/ChatPage'), 'ChatPage'));
+const ServicesPage = lazy(() => named(import('./pages/ServicesPage'), 'ServicesPage'));
+const ServicePartnersPage = lazy(() => named(import('./pages/ServicePartnersPage'), 'ServicePartnersPage'));
+const PartnersPage = lazy(() => named(import('./pages/PartnersPage'), 'PartnersPage'));
+const PartnerPage = lazy(() => named(import('./pages/PartnerPage'), 'PartnerPage'));
+const LoginPage = lazy(() => named(import('./pages/LoginPage'), 'LoginPage'));
+const RegisterPage = lazy(() => named(import('./pages/RegisterPage'), 'RegisterPage'));
+
+const AdminLayout = lazy(() => named(import('./pages/admin/AdminLayout'), 'AdminLayout'));
+const UploadPage = lazy(() => named(import('./pages/admin/UploadPage'), 'UploadPage'));
+const DocumentsPage = lazy(() => named(import('./pages/admin/DocumentsPage'), 'DocumentsPage'));
+const VerificationQueuePage = lazy(() => named(import('./pages/admin/VerificationQueuePage'), 'VerificationQueuePage'));
+const UnmatchedQueuePage = lazy(() => named(import('./pages/admin/UnmatchedQueuePage'), 'UnmatchedQueuePage'));
+const DashboardPage = lazy(() => named(import('./pages/admin/DashboardPage'), 'DashboardPage'));
 
 export function App() {
   return (

@@ -36,11 +36,18 @@ export function Dropzone({
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
+      onKeyDown={(e) => {
+        if (disabled) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
       role="button"
       tabIndex={0}
       aria-disabled={disabled}
     >
-      <div className="dz-icon">📦</div>
+      <div className="dz-icon" aria-hidden="true">📦</div>
       <div className="dz-title">{title}</div>
       <div className="dz-sub">{subtitle}</div>
       {file && <div className="dz-file">Выбран: {file.name}</div>}

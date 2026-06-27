@@ -29,20 +29,20 @@ export function LoginPage() {
   }
 
   return (
-    <div className="auth-wrap">
+    <main className="auth-wrap">
       <form className="auth-card" onSubmit={onSubmit}>
         <h1 className="auth-title">Войти</h1>
         <label className="auth-label">
           Эл. почта
-          <input className="auth-input" type="email" value={email}
+          <input className="auth-input" type="email" value={email} autoComplete="email"
                  onChange={(e) => setEmail(e.target.value)} required autoFocus />
         </label>
         <label className="auth-label">
           Пароль
-          <input className="auth-input" type="password" value={password}
+          <input className="auth-input" type="password" value={password} autoComplete="current-password"
                  onChange={(e) => setPassword(e.target.value)} required />
         </label>
-        {error && <p className="auth-error">{error}</p>}
+        {error && <p className="auth-error" role="alert">{error}</p>}
         <button className="auth-btn" type="submit" disabled={busy}>
           {busy ? 'Вход…' : 'Войти'}
         </button>
@@ -50,6 +50,6 @@ export function LoginPage() {
           Нет аккаунта? <Link to="/register">Регистрация</Link>
         </p>
       </form>
-    </div>
+    </main>
   );
 }

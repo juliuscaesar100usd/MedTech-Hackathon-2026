@@ -91,6 +91,9 @@ function VerificationRow({
   const anomalies = item.anomaly_flags ?? [];
 
   async function submit(approve: boolean) {
+    if (!approve && !window.confirm('Отклонить эту позицию? Действие нельзя отменить.')) {
+      return;
+    }
     setBusy(approve ? 'approve' : 'reject');
     try {
       const res = toNumber(priceRes);
@@ -118,9 +121,9 @@ function VerificationRow({
       <div className="row between wrap" style={{ alignItems: 'flex-start' }}>
         <div>
           <div className="row wrap" style={{ gap: 8 }}>
-            <h3 style={{ marginBottom: 0 }}>
+            <h2 style={{ marginBottom: 0, fontSize: 18 }}>
               {item.service_name_raw || `Позиция #${item.item_id}`}
-            </h3>
+            </h2>
             <VerifiedBadge verified={item.is_verified} />
           </div>
           <div className="cell-sub" style={{ marginTop: 4 }}>
@@ -168,8 +171,8 @@ function VerificationRow({
       <div className="divider" />
 
       <div className="filters" style={{ marginBottom: 0 }}>
-        <div className="field">
-          <label className="field-label">Цена для резидента (₸)</label>
+        <label className="field">
+          <span className="field-label">Цена для резидента (₸)</span>
           <input
             className="input"
             type="number"
@@ -177,9 +180,9 @@ function VerificationRow({
             onChange={(e) => setPriceRes(e.target.value)}
             placeholder="—"
           />
-        </div>
-        <div className="field">
-          <label className="field-label">Цена для нерезидента (₸)</label>
+        </label>
+        <label className="field">
+          <span className="field-label">Цена для нерезидента (₸)</span>
           <input
             className="input"
             type="number"
@@ -187,25 +190,25 @@ function VerificationRow({
             onChange={(e) => setPriceNon(e.target.value)}
             placeholder="—"
           />
-        </div>
-        <div className="field">
-          <label className="field-label">ID услуги (изменить)</label>
+        </label>
+        <label className="field">
+          <span className="field-label">ID услуги (изменить)</span>
           <input
             className="input"
             value={serviceId}
             onChange={(e) => setServiceId(e.target.value)}
             placeholder="(оставить предложенное)"
           />
-        </div>
-        <div className="field grow">
-          <label className="field-label">Примечание (необязательно)</label>
+        </label>
+        <label className="field grow">
+          <span className="field-label">Примечание (необязательно)</span>
           <input
             className="input"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Причина / комментарий"
           />
-        </div>
+        </label>
       </div>
 
       <div className="btn-row" style={{ marginTop: 16 }}>

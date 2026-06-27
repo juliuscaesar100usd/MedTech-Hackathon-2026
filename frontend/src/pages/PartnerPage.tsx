@@ -45,7 +45,7 @@ export function PartnerPage() {
 
           <div className="two-col">
             <Card>
-              <h3>Контакты</h3>
+              <h2>Контакты</h2>
               <ul className="contact-list">
                 <li>
                   <span className="ci-label">Город</span>
@@ -121,10 +121,12 @@ function PriceList({
   return (
     <section>
       <div className="row between wrap" style={{ marginBottom: 14 }}>
-        <h3 style={{ marginBottom: 0 }}>Прайс-лист</h3>
+        <h2 style={{ marginBottom: 0 }}>Прайс-лист</h2>
         <input
           className="input"
           style={{ maxWidth: 260 }}
+          type="search"
+          aria-label="Фильтр услуг"
           placeholder="Фильтр услуг…"
           value={text}
           onChange={(e) => setText(e.target.value)}

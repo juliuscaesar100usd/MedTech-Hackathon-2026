@@ -25,7 +25,7 @@ export function EmptyState({
 }) {
   return (
     <div className="center-state empty-state">
-      <div className="es-icon">{icon}</div>
+      <div className="es-icon" aria-hidden="true">{icon}</div>
       <div className="es-title">{title}</div>
       {children && <div className="muted">{children}</div>}
     </div>
@@ -49,8 +49,8 @@ export function ErrorState({
     message = error.message;
   }
   return (
-    <div className="center-state error-state">
-      <div className="es-icon">⚠️</div>
+    <div className="center-state error-state" role="alert">
+      <div className="es-icon" aria-hidden="true">⚠️</div>
       <div className="es-title">Не удалось загрузить данные</div>
       <div>{message}</div>
       {onRetry && (
