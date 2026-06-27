@@ -4,11 +4,13 @@ import {
   Scan,
   Brain,
   SealCheck,
-  MagnifyingGlass,
   ShieldCheck,
   StackSimple,
   ArrowRight,
   ChatCircleDots,
+  Translate,
+  CloudSlash,
+  Database,
 } from '@phosphor-icons/react';
 
 /* MedArchive landing page.
@@ -60,10 +62,18 @@ export function LandingPage() {
                 <ChatCircleDots size={18} weight="bold" /> Попробовать ассистент
               </Link>
             </div>
+            <ul className="lp-trust-row" aria-label="Что важно знать">
+              <li className="lp-trust-item"><Database size={18} weight="bold" aria-hidden="true" /> Каталог открыт без регистрации</li>
+              <li className="lp-trust-item"><Translate size={18} weight="bold" aria-hidden="true" /> ru · kz · en</li>
+              <li className="lp-trust-item"><CloudSlash size={18} weight="bold" aria-hidden="true" /> Работает офлайн</li>
+            </ul>
           </div>
           <figure className="lp-hero-media">
             <div className="lp-shot">
               <img src="/shots/dashboard-ru.png" alt="Дашборд оператора MedArchive с метриками качества" loading="eager" width={1360} height={900} />
+              <span className="lp-shot-callout">
+                <SealCheck size={18} weight="fill" aria-hidden="true" /> <b>93.9%</b> авто-нормализация
+              </span>
             </div>
           </figure>
         </div>
@@ -71,14 +81,16 @@ export function LandingPage() {
 
       {/* ---- Metrics band (moved out of the hero) ---- */}
       <section className="lp-metrics-band">
-        <dl className="lp-container lp-metrics">
-          {METRICS.map((m) => (
-            <div key={m.label} className="lp-metric">
-              <dt className="lp-metric-value">{m.value}</dt>
-              <dd className="lp-metric-label">{m.label}<span className="lp-metric-sub">{m.sub}</span></dd>
-            </div>
-          ))}
-        </dl>
+        <div className="lp-container">
+          <dl className="lp-metrics">
+            {METRICS.map((m) => (
+              <div key={m.label} className="lp-metric">
+                <dt className="lp-metric-value">{m.value}</dt>
+                <dd className="lp-metric-label">{m.label}<span className="lp-metric-sub">{m.sub}</span></dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </section>
 
       {/* ---- Pipeline (no eyebrow) ---- */}
@@ -182,19 +194,39 @@ export function LandingPage() {
         </ul>
       </section>
 
-      {/* ---- Final CTA ---- */}
-      <section className="lp-cta-band">
+      {/* ---- Final CTA (inverted teal panel — the closing moment) ---- */}
+      <section className="lp-cta-band lp-cta-band--dark">
         <div className="lp-container lp-cta-band-inner">
           <h2 className="lp-h2 lp-cta-band-h">Посмотрите на реальных прайс-листах</h2>
           <p className="lp-section-lead">
             Поищите в начальном каталоге, спросите ассистента или войдите в дашборд оператора.
           </p>
           <div className="lp-cta-row lp-cta-row-center">
-            <Link to="/search" className="lp-btn lp-btn-primary">Поиск в каталоге <ArrowRight size={18} weight="bold" /></Link>
-            <Link to="/login" className="lp-btn lp-btn-ghost">Вход для оператора</Link>
+            <Link to="/search" className="lp-btn lp-btn-on-dark">Поиск в каталоге <ArrowRight size={18} weight="bold" /></Link>
+            <Link to="/login" className="lp-btn lp-btn-on-dark-ghost">Вход для оператора</Link>
           </div>
         </div>
       </section>
+
+      {/* ---- Footer ---- */}
+      <footer className="lp-footer">
+        <div className="lp-container lp-footer-inner">
+          <div className="lp-footer-brand">
+            <span className="lp-footer-word">Med<b>Archive</b></span>
+            <p className="lp-footer-tag">
+              Прайс-листы клиник — в единую, поисковую, версионированную базу услуг и цен.
+            </p>
+          </div>
+          <nav className="lp-footer-nav" aria-label="Footer">
+            <Link to="/search">Поиск</Link>
+            <Link to="/assistant">Ассистент</Link>
+            <Link to="/services">Услуги</Link>
+            <Link to="/partners">Партнёры</Link>
+            <Link to="/login">Вход</Link>
+          </nav>
+          <p className="lp-footer-legal">© 2026 MedArchive · MedTech Hackathon 2026, Кейс 2</p>
+        </div>
+      </footer>
     </main>
   );
 }
