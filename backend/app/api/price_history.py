@@ -12,6 +12,7 @@ or duplicate either.
 """
 from __future__ import annotations
 
+from collections import OrderedDict
 from datetime import date
 from decimal import Decimal
 
@@ -70,13 +71,37 @@ def service_partner_price_history(
         .all()
     )
 
+    # ONE point per effective_date. A single price list (one date) routinely maps
+    # several raw rows onto the same (service, partner) — without this they'd plot
+    # as many points stacked at the same x, drawing a vertical line instead of a
+    # trend. Per date we take the median price (robust to over-matched outliers).
+    by_date: "OrderedDict[date | None, list[PriceItem]]" = OrderedDict()
+    for item in items:
+        by_date.setdefault(item.effective_date, []).append(item)
+
     return [
         PriceHistoryPoint(
-            effective_date=item.effective_date,
-            price_resident_kzt=item.price_resident_kzt,
-            price_nonresident_kzt=item.price_nonresident_kzt,
-            is_anomaly="PRICE_ANOMALY" in (item.anomaly_flags or []),
-            version=item.version or 1,
+            effective_date=eff,
+            price_resident_kzt=_median(
+                [i.price_resident_kzt for i in group if i.price_resident_kzt is not None]
+            ),
+            price_nonresident_kzt=_median(
+                [i.price_nonresident_kzt for i in group if i.price_nonresident_kzt is not None]
+            ),
+            is_anomaly=any("PRICE_ANOMALY" in (i.anomaly_flags or []) for i in group),
+            version=max((i.version or 1) for i in group),
         )
-        for item in items
+        for eff, group in by_date.items()
     ]
+
+
+def _median(values: list[Decimal]) -> Decimal | None:
+    """Median of a list of Decimals (returns a Decimal, not float), or None."""
+    if not values:
+        return None
+    s = sorted(values)
+    n = len(s)
+    mid = n // 2
+    if n % 2:
+        return s[mid]
+    return (s[mid - 1] + s[mid]) / 2

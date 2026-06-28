@@ -30,12 +30,17 @@ _NOISE_TOKENS = {
     "скан", "scan", "правки", "правка", "лист",
     "обновление", "update", "new", "final", "версия", "version",
     "v1", "v2", "v3", "copy", "копия",
+    "год", "года", "year",  # trails a year ("прайс 2025 год") — not a clinic name
 }
 
 # yyyy-mm-dd / yyyy.mm.dd / yyyy_mm_dd
 _DATE_ISO = re.compile(r"(20\d{2})[._-](\d{1,2})[._-](\d{1,2})")
 # dd.mm.yyyy / dd-mm-yyyy / dd_mm_yyyy
 _DATE_DMY = re.compile(r"(\d{1,2})[._-](\d{1,2})[._-](20\d{2})")
+# A bare 4-digit year, the common case in KZ price lists ("Клиника 1 2026.pdf",
+# "прайс 2025 год"). Anchored so it never eats a digit out of a longer run. Maps
+# to Jan 1 of that year — enough to order yearly price lists on a timeline.
+_DATE_YEAR = re.compile(r"(?<!\d)(20\d{2})(?!\d)")
 
 _BIN_RE = re.compile(r"\b(\d{12})\b")
 
@@ -59,14 +64,22 @@ def _extract_date(stem: str) -> date | None:
         dt = _safe_date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
         if dt:
             return dt
+    # Year only ("Клиника 1 2026") -> Jan 1 of that year.
+    m = _DATE_YEAR.search(stem)
+    if m:
+        dt = _safe_date(int(m.group(1)), 1, 1)
+        if dt:
+            return dt
     return None
 
 
 def _guess_name(stem: str) -> str | None:
     """Guess a clinic name from a filename stem by stripping noise + dates."""
-    # Drop any date substrings so their digits do not survive as a token.
+    # Drop any date substrings (incl. a bare year) so their digits do not survive
+    # as a token — otherwise the year would read as a clinic number.
     cleaned = _DATE_ISO.sub(" ", stem)
     cleaned = _DATE_DMY.sub(" ", cleaned)
+    cleaned = _DATE_YEAR.sub(" ", cleaned)
     # Split on the common filename separators.
     raw_tokens = re.split(r"[\s._\-]+", cleaned)
     kept: list[str] = []
@@ -76,8 +89,9 @@ def _guess_name(stem: str) -> str | None:
             continue
         if t.lower() in _NOISE_TOKENS:
             continue
-        # Drop pure-numeric leftovers (e.g. a stray year or counter).
-        if t.isdigit():
+        # Drop long numeric leftovers (stray counters), but KEEP a short clinic
+        # number ("Клиника 1" vs "Клиника 2" are different partners).
+        if t.isdigit() and len(t) > 2:
             continue
         kept.append(t)
     if not kept:

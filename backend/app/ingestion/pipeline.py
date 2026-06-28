@@ -71,8 +71,13 @@ def process_document(
 
         fn_hints = filename_hints(doc.file_name)
 
-        # 3) resolve partner (parsed hints, with filename fallback for name).
-        name_hint = _first(parsed.partner_name_hint, fn_hints["partner_name"])
+        # 3) resolve partner. Prefer the filename clinic name ("Клиника 1") over
+        # the parsed document header: KZ price lists are reliably named by clinic,
+        # whereas the header text is often a stray column label ("Стоимость,",
+        # "приложение"). This also MERGES a clinic's yearly files (2024 + 2026)
+        # into one partner so a price-over-time history exists. Falls back to the
+        # parsed name when the filename yields nothing.
+        name_hint = _first(fn_hints["partner_name"], parsed.partner_name_hint)
         partner = resolve_partner(
             db,
             name_hint=name_hint,

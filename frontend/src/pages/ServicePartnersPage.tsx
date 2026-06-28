@@ -123,11 +123,13 @@ function PriceHistoryChart({
 
   if (isLoading) return <Loading label="Загрузка истории цен…" />;
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
-  if (points.length === 0) {
+  // A trend needs at least two dated points. With one (or none) we show the info
+  // state rather than a single dot / a degenerate vertical line at one date.
+  if (points.length < 2) {
     return (
       <EmptyState icon="📈" title="История цен пока отсутствует">
-        Как только будет загружено более одного прайс-листа с датами для этого партнёра,
-        здесь появится динамика цен.
+        Динамика цен появится, когда для этого партнёра будет загружено более одного
+        прайс-листа с разными датами.
       </EmptyState>
     );
   }

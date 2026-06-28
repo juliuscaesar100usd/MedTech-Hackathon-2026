@@ -9,8 +9,10 @@ from ..database import get_db  # re-exported for routers
 
 __all__ = ["get_db", "Pagination", "pagination"]
 
-# Caps so a client can never ask for an unbounded result set.
-MAX_LIMIT = 500
+# Caps so a client can never ask for an unbounded result set. The catalog browse
+# (Услуги) lists the whole normalized catalog (~1.2k services) on one page, so
+# the ceiling must clear it; 5000 stays a sane guard against unbounded queries.
+MAX_LIMIT = 5000
 DEFAULT_LIMIT = 100
 
 
