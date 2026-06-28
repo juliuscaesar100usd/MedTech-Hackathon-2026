@@ -9,6 +9,7 @@ import type {
   AssistantServiceResult,
   AssistantStatus,
 } from '../lib/api';
+import { Check, Warning } from '@phosphor-icons/react';
 import { Badge } from '../components/Badge';
 import { formatKzt, formatKztRange, formatInt } from '../lib/format';
 
@@ -97,7 +98,7 @@ export function ChatPage() {
         </div>
         {status && (
           <span className={`assistant-mode ${status.llm_available ? 'live' : 'local'}`}>
-            {status.llm_available ? `✨ Claude (${status.model})` : '⚡ Умный парсер'}
+            {status.llm_available ? `Claude (${status.model})` : 'Умный парсер'}
           </span>
         )}
       </div>
@@ -134,7 +135,7 @@ function Welcome({ onPick }: { onPick: (t: string) => void }) {
     <div className="chat-welcome">
       <div className="chat-bubble assistant">
         <p style={{ margin: 0 }}>
-          <span aria-hidden="true">👋</span> Привет! Расскажите, какая медицинская услуга вас интересует и какие у вас пожелания —
+          Привет! Расскажите, какая медицинская услуга вас интересует и какие у вас пожелания —
           ценовой лимит, город, резидент или нерезидент. Например:
         </p>
       </div>
@@ -171,7 +172,7 @@ function TurnView({ turn, onPick }: { turn: Turn; onPick: (t: string) => void })
     return (
       <div className="chat-row assistant">
         <div className="chat-bubble assistant error">
-          <span aria-hidden="true">⚠️ </span>
+          <Warning size={16} weight="fill" aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: 6 }} />
           {turn.error}
         </div>
       </div>
@@ -200,13 +201,13 @@ function TurnView({ turn, onPick }: { turn: Turn; onPick: (t: string) => void })
 function PreferenceChips({ reply }: { reply: AssistantReply }) {
   const p = reply.preferences;
   const chips: { label: string; tone?: 'primary' | 'info' | 'neutral' }[] = [];
-  if (p.raw_query) chips.push({ label: `🔎 ${p.raw_query}`, tone: 'primary' });
-  if (p.city) chips.push({ label: `📍 ${p.city}`, tone: 'info' });
+  if (p.raw_query) chips.push({ label: p.raw_query, tone: 'primary' });
+  if (p.city) chips.push({ label: p.city, tone: 'info' });
   if (p.max_price_kzt != null) chips.push({ label: `≤ ${formatKzt(p.max_price_kzt)}` });
   if (p.min_price_kzt != null) chips.push({ label: `≥ ${formatKzt(p.min_price_kzt)}` });
   if (p.resident !== 'any')
     chips.push({ label: p.resident === 'nonresident' ? 'Нерезидент' : 'Резидент' });
-  if (p.sort !== 'relevance') chips.push({ label: p.sort === 'cheapest' ? '⬇ Дешевле' : '⬆ Премиум' });
+  if (p.sort !== 'relevance') chips.push({ label: p.sort === 'cheapest' ? 'Дешевле' : 'Премиум' });
 
   if (chips.length === 0) return null;
   return (
@@ -289,7 +290,7 @@ function OfferRow({ offer, resident }: { offer: AssistantOffer; resident: string
       <td className="offer-verified">
         {offer.is_verified && (
           <Badge tone="success" dot>
-            <span aria-hidden="true">✓</span>
+            <Check size={12} weight="bold" aria-hidden="true" />
             <span className="visually-hidden">проверено</span>
           </Badge>
         )}
@@ -303,7 +304,7 @@ function PartnerCard({ partner }: { partner: AssistantPartnerResult }) {
     <Link to={`/partners/${partner.partner_id}`} className="card hoverable result-card">
       <div className="rc-title">{partner.name}</div>
       <div className="rc-meta">
-        {partner.city && <span>📍 {partner.city}</span>}
+        {partner.city && <span>{partner.city}</span>}
         <span>{formatInt(partner.service_count)} услуг</span>
       </div>
     </Link>

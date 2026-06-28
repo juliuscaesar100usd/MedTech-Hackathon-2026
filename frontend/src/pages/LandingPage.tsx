@@ -11,7 +11,11 @@ import {
   Translate,
   CloudSlash,
   Database,
+  TextT,
+  TextAa,
+  FilePdf,
 } from '@phosphor-icons/react';
+import type { Icon } from '@phosphor-icons/react';
 
 /* MedArchive landing page.
    Content from README.md; on the app's existing clinical cyan + green tokens.
@@ -35,7 +39,23 @@ const CAPS = [
   { icon: ShieldCheck, title: 'Аккаунты и доступ', body: 'Каталог открыт для всех; админ-панель только для администраторов (HMAC-токены, pbkdf2-пароли).' },
 ];
 
-const TECH = ['Python 3.11+', 'FastAPI', 'React 18', 'TypeScript', 'SQLite → PostgreSQL', 'SQLAlchemy', 'Tesseract OCR', 'RapidFuzz', 'multilingual-e5', 'pdfplumber', 'PyMuPDF', 'Vite'];
+/* Brand `logo` → vendored SVG in /public/logos (offline-safe); libraries without
+   a brand mark fall back to a duotone Phosphor `icon`. */
+type Tech = { name: string; logo?: string; icon?: Icon };
+const TECH: Tech[] = [
+  { name: 'Python 3.11+', logo: 'python' },
+  { name: 'FastAPI', logo: 'fastapi' },
+  { name: 'React 18', logo: 'react' },
+  { name: 'TypeScript', logo: 'typescript' },
+  { name: 'SQLite → PostgreSQL', logo: 'postgresql' },
+  { name: 'SQLAlchemy', logo: 'sqlalchemy' },
+  { name: 'Vite', logo: 'vite' },
+  { name: 'Tesseract OCR', icon: TextT },
+  { name: 'RapidFuzz', icon: TextAa },
+  { name: 'multilingual-e5', icon: Translate },
+  { name: 'pdfplumber', icon: FilePdf },
+  { name: 'PyMuPDF', icon: FilePdf },
+];
 
 export function LandingPage() {
   return (
@@ -191,7 +211,16 @@ export function LandingPage() {
         <h2 id="lp-tech-h" className="lp-h2">Надёжный, проверенный стек</h2>
         <ul className="lp-tech">
           {TECH.map((t) => (
-            <li key={t} className="lp-tech-chip">{t}</li>
+            <li key={t.name} className="lp-tech-chip">
+              <span className="lp-tech-logo">
+                {t.logo ? (
+                  <img src={`/logos/${t.logo}.svg`} alt="" width={24} height={24} loading="lazy" />
+                ) : (
+                  t.icon && <t.icon size={22} weight="duotone" aria-hidden="true" />
+                )}
+              </span>
+              <span className="lp-tech-name">{t.name}</span>
+            </li>
           ))}
         </ul>
       </section>

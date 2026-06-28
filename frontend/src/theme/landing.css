@@ -579,26 +579,53 @@
    TECH CHIPS
    ------------------------------------------------------------------------- */
 .lp-tech {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .lp-tech-chip {
-  padding: 9px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
   background: var(--pq-surface);
-  border: 1px solid var(--pq-border-strong);
-  border-radius: var(--pq-pill);
-  font: 600 14px / 1 var(--pq-sans);
+  border: 1px solid var(--pq-border);
+  border-radius: var(--pq-r);
+  box-shadow: var(--pq-shadow-sm);
+  font: 600 14.5px / 1.25 var(--pq-sans);
   color: var(--pq-ink);
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 .lp-tech-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--pq-shadow-md);
   border-color: var(--pq-blue-200);
-  color: var(--pq-blue-700);
-  background: var(--pq-blue-50);
+}
+/* Logo tile: vendored brand SVG, or a duotone Phosphor fallback (blue). */
+.lp-tech-logo {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: var(--pq-surface-2);
+  color: var(--pq-blue-600);
+}
+.lp-tech-logo img {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+.lp-tech-logo svg {
+  width: 22px;
+  height: 22px;
+}
+.lp-tech-name {
+  min-width: 0;
 }
 
 /* ---------------------------------------------------------------------------
@@ -685,8 +712,8 @@
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 24px 40px;
-  padding-block: 72px 40px;
+  gap: 40px;
+  padding-block: 120px 64px;
 }
 .lp-footer-brand {
   max-width: 46ch;
@@ -915,6 +942,6 @@
     bottom: 8px;
   }
   .lp-footer-inner {
-    padding-block: 56px 32px;
+    padding-block: 88px 48px;
   }
 }
