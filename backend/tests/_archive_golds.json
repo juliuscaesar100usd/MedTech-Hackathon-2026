@@ -1,0 +1,1515 @@
+{
+ "Клиника 1 прайс 2024.docx": {
+  "file": "/home/juliuscaesar/Desktop/MedTech-Hackathon-2026/data/archive/Клиника 1 прайс 2024.docx",
+  "format": "docx",
+  "detect_format_correct": true,
+  "current_rows": 2724,
+  "estimated_true_rows": 2646,
+  "estimate_method": "Opened the docx with python-docx after accept_revisions(); it has ONE table of 2727 rows x 3 cols (Код | Наименование услуги | Стоимость, тенге). I classified rows: 79 are merged full-width banner rows where col0==col1 (e.g. 'Раздел 1.Консультации специалистов', '12.1 Хирургия общая', 'CHECK-UP'), of which 1 is the document title before the column-header row; plus 1 column-header row ('Код | Наименование услуги | Стоимость'). Counting the remaining rows that carry a numeric value in the cost column yields exactly 2646 priced service lines. Cross-checked by mapping every parser output row back to its source row index: all 2646 real priced rows ARE emitted (0 missing), and the parser ADDITIONALLY emits 78 banner rows (70 with a fake numeric price = the section number).",
+  "coverage_summary": "Coverage of real services is complete: all 2646 priced service lines are emitted, with clean names, correct prices, and codes correctly placed in service_code_source (e.g. 'U1.1', 'KR5.3', '10401', 'B06.415.006'). There are NO missing pages/sections, NO glyph-digit prices, NO leading-index or leading-code glued into names, NO spaced-glyph names, and NO wrong-column selection. The doc has a single resident-price column (no non-resident column), so every price_nonresident=None is legitimate. The ONLY problem is OVER-extraction: 78 merged full-width section/sub-section banner rows are emitted as data rows (70 of them with a fake numeric price derived from the section number), inflating the priced count and polluting results with non-service junk rows.",
+  "defects": [
+   {
+    "kind": "section-as-price",
+    "severity": "critical",
+    "description": "Merged full-width 'Раздел N.' section-header rows (in docx the merged cell expands to 3 identical cells) are emitted as priced service rows. parse_price reads the section number out of the cost cell as the price (Раздел 1. -> 1.0, Раздел 3. -> 3.0, ... Раздел 31. -> 31.0). Root cause: _section_label() in table_extract.py returns None whenever the row has more than one non-empty cell, so a merged banner (3 identical cells) is never recognized as a heading.",
+    "example_current": "name='Раздел 1.Консультации специалистов'  res=1.0  nonres=None  code='Раздел 1.Консультации специалистов'  src=table=1;row=2",
+    "example_expected": "row DROPPED (it is a section heading) and 'Раздел 1.Консультации специалистов' carried onto the following rows as their section label",
+    "affected_fraction": "~36 'Раздел …' banner rows"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "high",
+    "description": "Numbered SUB-section banners that do NOT begin with the word 'Раздел' (e.g. '12.1 Хирургия общая', '31.20.Определение специфических IgE…', '2.2.Выездные услуги в пригород', '21.1  УЗИ для взрослых') are also emitted as priced rows, with the leading sub-section number misread as the price. These are not caught even by the existing _SECTION_LEAD_RE (which only matches раздел/категори/…), because of the guard 'if val is not None and not lead_heading: return None'.",
+    "example_current": "name='12.1 Хирургия общая'  res=12.1  nonres=None  code='12.1 Хирургия общая'  src=table=1;row=404",
+    "example_expected": "row DROPPED (sub-section heading); '12.1 Хирургия общая' used as the section label for the following rows",
+    "affected_fraction": "~34 numbered sub-section banner rows"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "medium",
+    "description": "Non-numbered merged banners are emitted as junk rows with price=None (still not real services). Same root cause: _section_label rejects multi-cell merged banners.",
+    "example_current": "name='CHECK-UP'  res=None  nonres=None  code='CHECK-UP'  src=table=1;row=1148",
+    "example_expected": "row DROPPED (heading). NOTE: real services like 'CHECK-UP \"Мужское здоровье\"' must be KEPT — only the bare-word banner is a heading.",
+    "affected_fraction": "8 rows (CHECK-UP, Микробиологические исследования, Диагностика инфекционных заболеваний, Объем медицинского осмотра…, Раздел 18.1 Инфекционист, Раздел 19.Онкология-маммология, Обязательный медицинский осмотр…, Предсменное медицинское освидетельствование)"
+   },
+   {
+    "kind": "missing-section",
+    "severity": "low",
+    "description": "Because the merged banners are never recognized as headings, current_section is never set, so extra['section'] is None for ALL 2646 real rows — the specialty/section grouping (Кардиология, Лаборатория, Онкомаркеры, …) is lost. Fixing the banner detection also fixes this for free (the heading text flows onto following rows).",
+    "example_current": "name='ЭКГ' res=3600.0 … extra has no 'section' key (sec=None)",
+    "example_expected": "name='ЭКГ' res=3600.0 … extra['section']='Раздел 5.Кардиология'",
+    "affected_fraction": "all 2646 rows"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "Консультативный прием врача д.м.н.",
+    "res": 14400,
+    "nonres": null,
+    "section": null,
+    "note": "First row of section 1; code 'U1.1' lives in the separate Код column and must NOT appear in the name. Expected section label after fix: 'Раздел 1.Консультации специалистов'."
+   },
+   {
+    "expected_name": "ЭКГ",
+    "res": 3600,
+    "nonres": null,
+    "section": null,
+    "note": "Short name, code 'KR5.3'. Expected section after fix: 'Раздел 5.Кардиология'."
+   },
+   {
+    "expected_name": "Осмотр ответственным медицинским работником за пределами клиники",
+    "res": 1000,
+    "nonres": null,
+    "section": null,
+    "note": "Tricky price cell 'от 1000' must yield 1000, not None. code 'MO30.75.2'."
+   },
+   {
+    "expected_name": "25-ОН витамин Д",
+    "res": 5830,
+    "nonres": null,
+    "section": null,
+    "note": "Digit-LEADING lab name — must be kept intact, never index-stripped. code '10401' (a 5-digit code in the Код column, not part of the name)."
+   },
+   {
+    "expected_name": "17-ОН прогестерон",
+    "res": 3390,
+    "nonres": null,
+    "section": null,
+    "note": "Digit-leading hormone name — must be kept intact. code 'B03.573.005'."
+   },
+   {
+    "expected_name": "Антиген СА 19-9 (желудок, поджелудочная железа)",
+    "res": 3440,
+    "nonres": null,
+    "section": null,
+    "note": "Digit-embedding oncomarker (Cyrillic СА). code 'B06.415.006'."
+   },
+   {
+    "expected_name": "CYFRA 21-1",
+    "res": 5590,
+    "nonres": null,
+    "section": null,
+    "note": "Digit-embedding latin name. code 'B06.411.006'."
+   },
+   {
+    "expected_name": "Лечение ожогов, отморожений 1-2 ст.",
+    "res": 4000,
+    "nonres": null,
+    "section": null,
+    "note": "Digit-embedding mid-name ('1-2 ст.'); must not be confused with a price. code 'HR12.2'."
+   }
+  ],
+  "forbidden_name_patterns": [
+   "^Раздел\\b",
+   "^\\d+\\.\\d"
+  ],
+  "min_rows": 2640,
+  "real_names_starting_with_digit": [
+   "1 точечный тейп (сухая игла)",
+   "10,11-дигидро-10- гидроксикарбамазепин (Активный метаболит Окскарбазепина)",
+   "11-дезоксикортикостерон (11-deoxycorticosterone) в крови",
+   "11-деоксикортизол (11-deoxycortisol) в крови",
+   "17-ОН прогестерон",
+   "17-ОН прогестерон в крови (ВЭЖХ-МС/МС)",
+   "17-ОН прогестерон (17-OH-рrogesterone) в крови (хромотография)",
+   "21-дезоксикортизол (21-deoxycortisol) в крови",
+   "25-ОН витамин Д",
+   "25-ОН витамин Д (мужчина)",
+   "Антиген СА 19-9 (желудок, поджелудочная железа)",
+   "Антиген СА 72-4 (желудок, яичники)",
+   "Антиген CA 15-3 (молочная железа)",
+   "Антиген СА 125 (яичники)",
+   "CYFRA 21-1",
+   "Trisomy test (13,18 и 21)",
+   "Исследование крови методом ИФА на АТ к ВИЧ 1,2",
+   "Бычий тиреоглобулин Gal-alpha-1,3-Gal (alpha-Gal) IgE, o215"
+  ],
+  "fix_recommendations": [
+   "app/parsers/table_extract.py :: _section_label(): recognize merged full-width banners. Replace the early guard 'if len(nonempty) != 1: return None' with logic that also accepts a merged banner — i.e. compute merged_banner = (len(nonempty) >= 2 and len(set(nonempty)) == 1) and proceed (collapsing to that single text) when either len(nonempty)==1 OR merged_banner. This is what makes docx merged section rows (3 identical cells) detectable; in pdfplumber/xlsx this same condition only triggers on genuinely repeated/merged banner cells, so it is safe for all formats sharing this function.",
+   "app/parsers/table_extract.py :: _section_label(): a merged banner is STRUCTURALLY a heading even when it embeds a number, so bypass the value-vs-heading guard for it. Change 'if val is not None and not lead_heading: return None' to 'if val is not None and not lead_heading and not merged_banner: return None', and add merged_banner to the final accept condition ('if lead_heading or merged_banner or upper_ratio >= 0.6 or _SECTION_HINT_RE.search(text)'). This drops the numbered sub-section banners ('12.1 Хирургия общая', '31.20.…', '2.2.Выездные…') whose leading number would otherwise be read as a price.",
+   "Net effect in rows_from_table(): the 78 banner rows are skipped (continue on section detection) instead of emitted, so the 70 fake-price rows and 8 None-price junk rows disappear, leaving exactly the 2646 real priced services; current_section now flows the banner text onto following rows via extra['section'], restoring specialty/section grouping.",
+   "Guard against over-stripping: keep the existing letters>=3 check so a bare numeric/merged cell with no real text is not labeled a section, and do NOT add any leading-digit name-stripping — real lab names legitimately start with digits (17-ОН прогестерон, 25-ОН витамин Д, 11-деоксикортизол, '1 точечный тейп'); the codes are already isolated in service_code_source so no name-side index/code stripping is needed for this file.",
+   "Add a regression fixture for this file asserting: row count >= 2640 (expected 2646), every must_appear_rows name+res present exactly, no emitted name matches forbidden patterns '^Раздел\\b' or '^\\d+\\.\\d', and price_nonresident is None for all rows (single-column price list)."
+  ]
+ },
+ "Клиника 1 2026.pdf": {
+  "file": "/home/juliuscaesar/Desktop/MedTech-Hackathon-2026/data/archive/Клиника 1 2026.pdf",
+  "format": "pdf",
+  "detect_format_correct": true,
+  "current_rows": 1441,
+  "estimated_true_rows": 2750,
+  "estimate_method": "85-page born-digital PDF with NO ruled tables, so pdfplumber.extract_tables returns nothing and the parser uses the word-geometry path (_rows_from_pdf_words). Anchor: counted space-grouped thousands price tokens (e.g. '16 600', '149 700', '2 400') with value 1000-400000 across all pages = 2674; each priced service line carries exactly ONE price (single 'Стоимость, тенге (2026 год)' column, no non-resident column, so every nonres is null). That misses (a) glyph-corrupted prices that are not pure digits ('21 ООО', 'И 600', '6 90 С', '3 ООО') and (b) ungrouped 3-digit prices ('Холодовая проба 600', 'Забор крови с вены 800') which both ADD real rows, so true count is somewhat higher -> ~2750. Cross-check: 2127 same-line name+price lines + 689 standalone price-only (wrapped) lines = ~2816 price-bearing lines, consistent with ~2750 after removing a little page furniture. Code-token counting is unreliable here (codes are heavily OCR-mangled: 'и 1.2','ОТ7.Ю','МОЗО.47','01121').",
+  "coverage_summary": "Severe under-extraction: 1441 of ~2750 priced lines (~52%) are emitted. No whole specialty section is missing (all 31 'Раздел' headers, pages 1-77, are visited; page 78 is genuinely blank), but EVERY section is heavily under-extracted. Three structural causes: (1) the service code is rendered on its own vertical baseline, so pdfplumber's _pdf_lines splits it onto a separate one-token line — the code is then lost entirely AND single-token code lines plus wrapped name/price lines never form rows (~550 rows lost); (2) _row_from_line treats ANY cell that merely contains a digit as a price, so any service name with an embedded number is consumed and the row is dropped with an empty name (686 rows lost); (3) on the ~74 repeated 'Приложение № 1' page footers the line 'медицинских услуг' is mis-detected as a section header and clobbers the real 'Раздел N' for the rest of that page. The parser is NOT over-extracting (no price=1.0 section-rows leaked), but among the rows it DOES keep, ~775 carry a glued specialty code, ~45+ carry a glued numeric lab code, and dozens have glyph-corrupted prices.",
+  "defects": [
+   {
+    "kind": "missing-rows",
+    "severity": "critical",
+    "description": "_row_from_line (app/parsers/pdf_text.py) walks cells right-to-left calling parse_price; parse_price returns a value for ANY string containing a digit, so a service-name cell with an embedded number (e.g. '...до 60 минут', '1 год', '25-ОН', '0,5 см') is consumed as a price, cut reaches 0, name becomes empty and the row returns None and is dropped. Affects same-line name+price rows whose name embeds a digit, and almost all lab rows whose name starts with a digit.",
+    "example_current": "(row not emitted) — 'Услуги сотрудника переводчика (до 60 минут) 6 900' produces no ParsedRow",
+    "example_expected": "name='Услуги сотрудника переводчика (до 60 минут)', price_resident=6900",
+    "affected_fraction": "686 same-line rows + many lab rows (~700+ total, ~26% of doc)"
+   },
+   {
+    "kind": "missing-rows",
+    "severity": "critical",
+    "description": "Wrapped / multi-line rows. The code sits on its own y-line and the name or price frequently wraps to a separate line, so a price-only line ('3 900') or code-only line ('U2.1.6') never joins its name. _rows_from_pdf_words processes each visual line independently and emits nothing for these fragments.",
+    "example_current": "(row not emitted) — source has 'U2.1.2' / '3 900' / 'Забор крови' on three separate lines; no row produced",
+    "example_expected": "name='Забор крови', price_resident=3900 (code U2.1.2)",
+    "affected_fraction": "~550 rows (689 standalone price-only lines minus a little furniture)"
+   },
+   {
+    "kind": "leading-code",
+    "severity": "high",
+    "description": "When the code happens to share the name's visual line, _row_from_line never strips it: the assembled name keeps the leading specialty code, and service_code_source is never populated for the word-geometry path. Includes OCR-garbled codes where Latin 'U' was read as Cyrillic 'и'.",
+    "example_current": "'U1.5 Консультация второго врача' (and 'KR5.1 Прием врача кардиолога', 'и 1.2 Консультативный прием врача к.м.н')",
+    "example_expected": "name='Консультация второго врача', service_code_source='U1.5'",
+    "affected_fraction": "775 kept rows (~54% of current output)"
+   },
+   {
+    "kind": "leading-code",
+    "severity": "high",
+    "description": "Lab pages (Раздел 31.ЛАБОРАТОРИЯ) use pure-numeric / dotted codes ('1151', '01121', '40.080', '10401', 'B06.127.006') glued to the start of the name. When the name has no embedded digit the row survives but keeps the numeric code as a leading token; when the name embeds a digit the whole row is dropped (see first defect).",
+    "example_current": "'1151 Клинический анализ крови с лейкоцитарной формулой (ОАК)'",
+    "example_expected": "name='Клинический анализ крови с лейкоцитарной формулой (ОАК)', service_code_source='1151'",
+    "affected_fraction": "45 surviving rows + the dropped lab rows"
+   },
+   {
+    "kind": "glyph-digit",
+    "severity": "critical",
+    "description": "Prices contain look-alike Cyrillic/Latin glyphs for digits: 'О/о'->0, 'С/с'->0, 'И'->'11'. parse_price keeps only the runs that are real digits, silently collapsing the price by orders of magnitude. No glyph normalization exists in table_extract.parse_price.",
+    "example_current": "'Прием врача трихолога' res=600 (source 'И 600'); 'Лимфодренажный массаж всего тела' res=21 (source '21 ООО'); 'Гинеколог (мазок на степень чистоты)' res=3 (source '3 ООО')",
+    "example_expected": "11600 ; 21000 ; 3000",
+    "affected_fraction": "dozens (most of the 34 rows with res<1000, plus others)"
+   },
+   {
+    "kind": "price-merge",
+    "severity": "high",
+    "description": "A normal space-grouped price whose high group is a single digit ('6 320', '6 900') is split by _cells_by_gap into two cells, then the qty/index guard `while prices[0][0] < 10 <= prices[1][0]` in _row_from_line discards the leading thousands digit, yielding a price 10x too small.",
+    "example_current": "'40.00.590 Корь IgG' res=320 (source '6 320'); 'Расширенная первязка' res=690 (source '6 90 С' i.e. 6 900)",
+    "example_expected": "6320 ; 6900",
+    "affected_fraction": "all single-leading-digit thousands prices that get gap-split (tens of rows)"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "medium",
+    "description": "table_extract._section_label accepts the repeated page-footer line 'медицинских услуг' (matches _SECTION_HINT_RE via 'услуг', has no price, single cell) as a section header, so it overrides the real 'Раздел N' label for every row until the next real header. Appears on the ~74 'Приложение № 1' footer pages.",
+    "example_current": "'AL4.9 Проба на непереносимость лекарственных средств' section='медицинских услуг'",
+    "example_expected": "section='Раздел 4.Аллергология'",
+    "affected_fraction": "~80 rows tagged 'медицинских услуг' + several other footer fragments"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "low",
+    "description": "Section-header digit glyphs are passed through verbatim: 'З'->3, 'Ю'->10, comma-for-dot. Cosmetic but makes section grouping inconsistent.",
+    "example_current": "section='Раздел З.Дерматовенерология' ; 'Раздел Ю.Ведение Беременности' ; 'Раздел 8,Офтальмология' ; 'Раздел 19.0 нкология-маммология'",
+    "example_expected": "'Раздел 3.Дерматовенерология' ; 'Раздел 10.Ведение Беременности' ; 'Раздел 8.Офтальмология' ; 'Раздел 19.Онкология-маммология'",
+    "affected_fraction": "~6 of 30 section headers"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "low",
+    "description": "Header-hint extraction picks the price-column header as the partner name and a fragment of '(2026 год)' as the city. extract_header_hints/_first_partner_line in pdf_text.py do not exclude column-header tokens.",
+    "example_current": "partner_name_hint='Стоимость,' city_hint='од'",
+    "example_expected": "partner/city should be left None (this document has no org header block) rather than column furniture",
+    "affected_fraction": "document-level (2 hint fields)"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "Консультативный прием врача д.м.н",
+    "res": 16600,
+    "nonres": null,
+    "section": "Раздел 1.Консультации специалистов",
+    "note": "First row of section 1. Code U1.1 sits on its own visual line and must stay out of the name (already correct today — anchor row)."
+   },
+   {
+    "expected_name": "Консультация второго врача",
+    "res": 4200,
+    "nonres": null,
+    "section": "Раздел 1.Консультации специалистов",
+    "note": "Currently emitted as 'U1.5 Консультация второго врача' — leading specialty code U1.5 must be stripped into service_code_source."
+   },
+   {
+    "expected_name": "Консультативный прием врача к.м.н",
+    "res": 16600,
+    "nonres": null,
+    "section": "Раздел 1.Консультации специалистов",
+    "note": "Currently 'и 1.2 Консультативный прием врача к.м.н' — OCR-garbled code 'и 1.2' (= U1.2) must be stripped, not kept in the name."
+   },
+   {
+    "expected_name": "Услуги сотрудника переводчика (до 60 минут)",
+    "res": 6900,
+    "nonres": null,
+    "section": "Раздел 1.Консультации специалистов",
+    "note": "Currently MISSING (dropped): embedded '60' in the name is eaten as a price by _row_from_line. Code U1.7. Tests the embedded-digit drop fix."
+   },
+   {
+    "expected_name": "Прием врача трихолога",
+    "res": 11600,
+    "nonres": null,
+    "section": null,
+    "note": "Source 'DR3.2 Прием врача трихолога И 600' — Cyrillic 'И' glyph = 11, so price is 11 600 (consistent with sibling 'Прием врача...'=11600). Currently parsed as 600. Tests glyph-digit price fix."
+   },
+   {
+    "expected_name": "Проведение специфической иммунотерапии 1 год:-один аллерген",
+    "res": 149700,
+    "nonres": null,
+    "section": "Раздел 4.Аллергология",
+    "note": "Currently MISSING (dropped). Code AL4.6. The embedded '1 год' MUST be preserved in the name and not consumed as a price."
+   },
+   {
+    "expected_name": "Проба на непереносимость лекарственных средств",
+    "res": 4800,
+    "nonres": null,
+    "section": "Раздел 4.Аллергология",
+    "note": "Currently section='медицинских услуг' (page-footer mis-detected as section) and name='AL4.9 Проба...'. Tests both section-attribution fix and code strip."
+   },
+   {
+    "expected_name": "25-ОН витамин Д",
+    "res": 2700,
+    "nonres": null,
+    "section": null,
+    "note": "Source '10401 25-ОН витамин Д 2 700'. Currently MISSING (the leading '25' is eaten as a price). Must strip numeric code '10401' but PRESERVE the leading '25' of the lab-test name. (Name recurs with other prices on later pages — at least one row name='25-ОН витамин Д' res=2700 must exist.)"
+   }
+  ],
+  "forbidden_name_patterns": [
+   "^[A-Za-zА-Яа-яЁё]{1,3}\\s?\\d{1,2}\\.\\d",
+   "^\\d{3,}\\s"
+  ],
+  "min_rows": 2100,
+  "real_names_starting_with_digit": [
+   "25-ОН витамин Д",
+   "25-ОН витамин Д (мужчина)",
+   "17-ОН прогестерон в крови (ВЭЖХ-МС/МС)",
+   "10,11-дигидро-10- гидроксикарбамазепин (Активный метаболит)",
+   "1,25-дигидроксивитамин D (по контексту лаборатории)",
+   "Исследование крови методом ИФА на АТ к ВИЧ 1,2",
+   "РИФ на 2 инфекции",
+   "РИФ на 3 инфекции",
+   "Проведение специфической иммунотерапии 1 год:-один аллерген",
+   "Суточное мониторирование ЭКГ (Холтер ЭКГ- 12 ти канальный )",
+   "Удаление моллюска размером до 0,5 см (1 штука)",
+   "Антитела к коронавирусу SARS-CoV-2,IgG (anti-SARS-CoV-2,IgG)",
+   "Амброзия nAmb a 1 IgE",
+   "Береза rBet v 1 PR-10 IgE",
+   "Тимофеевка луговая rPhl р 1, rPhl р 5b IgE",
+   "Полынь nArt v 1 IgE",
+   "Кошка rFel d 1 IgE",
+   "Т4 (Тироксин) общий",
+   "трийодтиронин (Т3) общий",
+   "Альфа-1 -Антитрипсин",
+   "фолиевая кислота, витамин В12, гомоцистеин, лактат, ферритин",
+   "C-Реактивный белок кардио (Высокочувствительный)",
+   "HBsAg (V2) (гепатит В - поверхностный или австралийский антиген)",
+   "IgG4 (мониторинг АСИТ)"
+  ],
+  "fix_recommendations": [
+   "app/parsers/pdf_text.py :: _row_from_line — STOP treating any digit-containing cell as a price. Only consume a trailing cell as a price when it is purely price-like, e.g. re.fullmatch(r'[\\d\\s.,]+', cell) (after glyph normalization), NOT when the cell contains alphabetic characters. Also hard-guard: never return a row whose name is empty. This single change recovers the 686 embedded-digit drops and stops names being eaten. Highest priority.",
+   "app/parsers/pdf_text.py :: _rows_from_pdf_words / _pdf_lines — stitch the code-only line and wrapped name/price fragments back into one logical row. The service code is rendered on its own y-baseline; cluster lines into row-bands (or merge a line that is just a code token, and a standalone price-only line like '3 900', onto the adjacent name line) before calling _row_from_line. Recovers ~550 wrapped rows.",
+   "Add a shared leading-code extractor (new helper, call it from _row_from_line and from table_extract.rows_from_table) that moves a leading code token into service_code_source and strips it from the name. Match (a) specialty/OCR codes '^[A-Za-zА-Яа-яЁё]{1,3}\\s?\\d{1,2}(\\.\\d{1,2})+' (U1.5, KR5.1, ОТ7.66, 'и 1.2') and (b) pure/dotted numeric lab codes '^\\d{3,}(\\.\\d+)*\\b' / '^\\d{1,3}(\\.\\d{1,3})+\\b' (1151, 10401, 40.080, B06.127.006). CRITICAL SAFETY: only strip when the token is followed by whitespace+letter, and NEVER strip leading digits immediately followed by '-', ',', 'ОН', 'OH' (protect '25-ОН витамин Д', '17-ОН', '1,25-', '10,11-дигидро', 'ВИЧ 1,2').",
+   "app/parsers/table_extract.py :: parse_price (or a pre-pass) — add glyph-digit normalization for PRICE cells only: map look-alikes О/о/o/O->0, С/с/c->0, З/з->3 inside a numeric context, and handle the 'И'->'11' leading case ('И 600'->'11 600'). Re-parse after substitution. Guard so clean numeric cells are untouched. Fixes 'Прием врача трихолога' 600->11600, '21 ООО'->21000, '3 ООО'->3000, '6 90 С'->6900.",
+   "app/parsers/pdf_text.py :: _cells_by_gap / _row_from_line — do not split space-grouped thousands ('6 320','6 900') and tighten the qty-strip 'while prices[0][0] < 10 <= prices[1][0]'. Treat a 1-digit token immediately left of a 3-digit token within a normal inter-word space as one price; only drop a leading small integer when it is a genuinely separate wide-gap column. Fixes 'Корь IgG' 320->6320.",
+   "app/parsers/table_extract.py :: _section_label — reject page-furniture as section headers. Add a blacklist / require Раздел|Категория-style lead OR uppercase-dominant AND not matching repeated header/footer fragments ('медицинских услуг', 'к договору на оказание', 'Приложение', dates). Prevents 'медицинских услуг' from clobbering 'Раздел N' on the ~74 footer pages. NOTE: this file is shared by xlsx/docx/ocr parsers — guard the change so legitimate section rows in other formats still pass.",
+   "app/parsers/table_extract.py :: _section_label — optionally normalize section digit glyphs ('Раздел З.'->'Раздел 3.', 'Раздел Ю.'->'Раздел 10.', 'Раздел 8,'->'Раздел 8.', 'Раздел 19.0 нкология'->'Раздел 19.Онкология') for consistent grouping.",
+   "app/parsers/pdf_text.py :: extract_header_hints / _first_partner_line — exclude column-header tokens ('Стоимость', 'Наименование', 'Код', '(20NN год)', 'тенге') so partner_name_hint isn't 'Стоимость,' and city_hint isn't 'од'; leave hints None when only column furniture is present."
+  ]
+ },
+ "Клиника 2 прайс 2025 год.PDF": {
+  "file": "/home/juliuscaesar/Desktop/MedTech-Hackathon-2026/data/archive/Клиника 2 прайс 2025 год.PDF",
+  "format": "pdf",
+  "detect_format_correct": true,
+  "current_rows": 142,
+  "estimated_true_rows": 1076,
+  "estimate_method": "The № column numbers priced services sequentially and continuously from 1 to a maximum of 1076 (last line: '1076 Пакет услуг №2: артромот+ЛФК+реабилитационное кресло+ручная разработка 1 процедура 12 000'). Section/category headers use an INDEPENDENT 1..44 numbering ('8 Гинекология', '40 Онкология, маммология', etc.) plus 3 block headers ('Блок А/В/С'), and carry no unit/price, so they are excluded. An independent heuristic — counting lines that begin with an index AND contain a unit keyword (посещение/услуга/процедура/исследование/операция/пакет/единица/...) — found 1040 single-line priced rows; adding the ~30-40 rows whose descriptive name wraps so the index lands on a separate visual line lands at ~1076, matching the max sequential number. A few numbers may be skipped/duplicated, but 1076 is the best estimate.",
+  "coverage_summary": "Severe under-extraction: the parser emits only 142 of ~1076 priced rows (~13%). Pages 1-3 are partially captured (32/19/34 rows), but coverage collapses after page 3 — pages 4-23 yield only 0-9 rows each, and pages 6, 16, and 23 yield ZERO rows. The collapse tracks the right-margin glyph corruption that grows on later pages: when a price's trailing '0' is rendered as a lookalike glyph (Cyrillic С/О or '(') the rightmost cell is non-numeric, so _row_from_line breaks with no price and DROPS the whole row. Multi-line wrapped services (name on its own visual line, with №+unit+price on another) are also dropped or misread as section headers. There is minor over-extraction noise (wrapped service-name fragments leak into the 'section' field) but the dominant problem is the ~87% of rows missing entirely.",
+  "defects": [
+   {
+    "kind": "missing-rows",
+    "severity": "critical",
+    "description": "Whole pages/sections are dropped. The parser captures 142 of ~1076 priced rows; pages 4-23 yield only 0-9 rows each and pages 6/16/23 yield zero. Root cause is in app/parsers/pdf_text.py _row_from_line(): it walks cells right-to-left and breaks (returning None, dropping the entire row) the moment the rightmost cell fails to parse as a price>0 — which happens whenever the price's last digit is a lookalike glyph (С/О/'(') or the name wraps across lines.",
+    "example_current": "source line '1069 Консультация реабилитолога 1 посещение 9 600' (page 23) produces NO row at all; page 23 yields 0 parsed rows",
+    "example_expected": "name 'Консультация реабилитолога', price_resident 9600",
+    "affected_fraction": "~87% (about 934 of ~1076 true rows missing)"
+   },
+   {
+    "kind": "glyph-digit",
+    "severity": "critical",
+    "description": "Lookalike glyphs are used for the digit 0 in the price column: Cyrillic О (U+041E), Cyrillic С (U+0421), and '(' (U+0028). parse_price() in app/parsers/table_extract.py stops its _NUMBER_RE at the first glyph, truncating the value; and when the glyph is the rightmost token the row is dropped entirely (see missing-rows). E.g. '10 80С'->10800, '24 ООС'->24000, '60('->600, '108 ООО'->108000, '144 00С'->144000.",
+    "example_current": "'1 Прием врача первичный' | 1080.0   (and '7 Прием доктора медицинских наук, профессора первичный' | 24.0)",
+    "example_expected": "price_resident 10800 for service 1 ('10 80С'); price_resident 24000 for service 7 ('24 ООС')",
+    "affected_fraction": "most priced rows from page 2 onward; the direct cause of the row-dropping on pages 4-23"
+   },
+   {
+    "kind": "leading-index",
+    "severity": "critical",
+    "description": "The leading № row-index token is glued into service_name_raw for essentially every captured row. _row_from_line/_rows_from_pdf_words never strip the running index. SAFETY: stripping must remove only the running index, never legitimate digit-leading names like '3-х дневное лечение несовершенного остеогенеза' (idx 833) or '1 койка без питания' (idx 989).",
+    "example_current": "'51 Допуск к работе' | 60.0   ;   '7 Прием доктора медицинских наук, профессора первичный'",
+    "example_expected": "name 'Допуск к работе' (res 600) ; name 'Прием доктора медицинских наук, профессора первичный'",
+    "affected_fraction": "~100% of the 142 captured rows"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "high",
+    "description": "Wrapped service-NAME lines (a name fragment with no trailing price) are misclassified as section headers by _section_label() in table_extract.py because _SECTION_HINT_RE matches ordinary service words ('прием','консультац','услуг','исследован'...). The real priced row is then dropped, and the fragment is wrongly propagated as the 'section' of later rows. The document's TRUE sections are the 3 blocks ('Блок А. Поликлиника'/'Блок В. Лаборатория'/'Блок С. Отделение лучевой диагностики') and the short numbered category headers ('8 Гинекология','40 Онкология, маммология').",
+    "example_current": "sec='Прием врача-менеджера (заполнение медицинских и финансовых документов,' applied to dozens of unrelated rows; sec='Прием врача отоларинголога (взрослый, детский) с аппаратным исследованием'",
+    "example_expected": "those texts are service NAMES (service 13 res 8400; service 3 res 12000), not sections; section should be the category header e.g. 'Прием и консультация специалиста'",
+    "affected_fraction": "dozens of rows carry a wrong section; ~10-20 wrapped rows dropped because their name line was eaten as a 'section'"
+   },
+   {
+    "kind": "missing-rows",
+    "severity": "high",
+    "description": "Multi-line wrapped entries (descriptive name spanning 2-3 visual lines with №+unit+price on a separate line) are not reassembled, so they are dropped. _rows_from_pdf_words() treats each visual line independently and has no notion of the running index anchoring a logical row.",
+    "example_current": "source 'Транспортировка (плановая) пациента на реанимобиле в сопровождении' + '36 1 услуга 36 000' + 'медицинского работника в пределах г.Астаны (1 час)' produces NO row",
+    "example_expected": "name 'Транспортировка (плановая) пациента на реанимобиле в сопровождении медицинского работника в пределах г.Астаны (1 час)', price_resident 36000 (service 36)",
+    "affected_fraction": "~30-40 wrapped rows scattered throughout"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "medium",
+    "description": "Latin capital 'I' is substituted for the digit '1' in the unit column ('I посещение','I процедура','I исследование'). This breaks unit recognition so the unit phrase is glued onto the end of the service name.",
+    "example_current": "'8 Прием доктора медицинских наук, профессора повторный I посещение' | 16800.0",
+    "example_expected": "name 'Прием доктора медицинских наук, профессора повторный', price_resident 16800 (unit '1 посещение' kept out of the name)",
+    "affected_fraction": "rows where the unit '1' was OCR'd as 'I' (several dozen)"
+   },
+   {
+    "kind": "price-merge",
+    "severity": "medium",
+    "description": "On many later-page operation rows the right margin clips the final '0', so a 6-digit price is rendered with only 5 digits ('192 00' for 192000, '240 00' for 240000). When not dropped, these parse 10x too low. Harder to auto-correct; flag/round rather than silently mis-scale.",
+    "example_current": "'952 ... 1 операция 192 00' would parse to 19200 (or be dropped)",
+    "example_expected": "price_resident 192000",
+    "affected_fraction": "many operation rows on pages 20-22"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "Прием врача первичный",
+    "res": 10800,
+    "nonres": null,
+    "section": null,
+    "note": "Service №1, source '1 Прием врача первичный 1 посещение 10 80С'. Tests leading-index strip AND Cyrillic С(U+0421)->0 glyph. Current output: name '1 Прием врача первичный', res 1080.0."
+   },
+   {
+    "expected_name": "Прием доктора медицинских наук, профессора первичный",
+    "res": 24000,
+    "nonres": null,
+    "section": null,
+    "note": "Service №7, source '7 ... 24 ООС' where О,О,С are U+041E/U+041E/U+0421 = 000. Current output: name keeps '7 ', res 24.0."
+   },
+   {
+    "expected_name": "Допуск к работе",
+    "res": 600,
+    "nonres": null,
+    "section": null,
+    "note": "Service №51, source '51 Допуск к работе 1 единица 60(' where '(' (U+0028) = 0. Current output: name '51 Допуск к работе', res 60.0."
+   },
+   {
+    "expected_name": "Прием доктора медицинских наук, профессора повторный",
+    "res": 16800,
+    "nonres": null,
+    "section": null,
+    "note": "Service №8, source '8 ... повторный I посещение 16 800'. Price is clean; this row tests that leading index '8 ' is stripped AND the Latin-I unit 'I посещение' is NOT glued into the name. Current output: name '8 Прием доктора медицинских наук, профессора повторный I посещение'."
+   },
+   {
+    "expected_name": "Консультация реабилитолога",
+    "res": 9600,
+    "nonres": null,
+    "section": null,
+    "note": "Service №1069 on page 23 (clean digits '9 600'). Currently MISSING — page 23 yields 0 rows. Proves coverage extends past page 3."
+   },
+   {
+    "expected_name": "Радикальная мастэктомия с пластикой",
+    "res": 120000,
+    "nonres": null,
+    "section": null,
+    "note": "Service №972 on page 21 (clean '120 000'). Currently MISSING (page 21 yields only 2 rows)."
+   },
+   {
+    "expected_name": "3-х дневное лечение несовершенного остеогенеза",
+    "res": 216000,
+    "nonres": null,
+    "section": null,
+    "note": "Service №833, source '833 3-х дневное лечение несовершенного остеогенеза 1 операция 216 000'. SAFETY ROW: leading index 833 must be stripped but the name legitimately starts with '3-х'. Currently MISSING."
+   },
+   {
+    "expected_name": "Прием врача отоларинголога (взрослый, детский) с аппаратным исследованием первичный",
+    "res": 12000,
+    "nonres": null,
+    "section": null,
+    "note": "Service №3 — name wraps two visual lines: 'Прием врача отоларинголога (взрослый, детский) с аппаратным исследованием' + '3 первичный 1 посещение 12 ООС'. Currently the first line is emitted as a SECTION and the row is dropped. Tests wrapped-name reassembly + О/О/С->0 glyph (12000)."
+   }
+  ],
+  "forbidden_name_patterns": [
+   "^\\d{1,4}\\s+[А-ЯЁ]",
+   "\\bI\\s+(?:посещение|процедура|исследование|единица|операция|услуга|год|час)\\b"
+  ],
+  "min_rows": 950,
+  "real_names_starting_with_digit": [
+   "3-х дневное лечение несовершенного остеогенеза",
+   "1 койка без питания",
+   "Геморроидэктомия по Ferguson 1-2 стадия",
+   "Пакет услуг № 1: артромот+ЛФК+реабилитационное кресло"
+  ],
+  "fix_recommendations": [
+   "1. app/parsers/table_extract.py parse_price(): add a glyph-normalization pass BEFORE _NUMBER_RE. In a helper _normalize_price_glyphs(token), when a whitespace-separated token is composed only of digits + known lookalikes, map Cyrillic О/о(U+041E/U+043E)->0, Cyrillic С/с(U+0421/U+0441)->0, '('->0, Latin O/o->0, Latin I/l->1, Cyrillic З->3. Apply only to price-candidate tokens (mostly digits) so service NAMES are never altered. This recovers truncated values like '10 80С'->10800, '24 ООС'->24000, '60('->600.",
+   "2. app/parsers/pdf_text.py _row_from_line(): stop dropping rows whose rightmost cell is a non-numeric glyph. First glyph-normalize trailing cells, then scan trailing cells for the price instead of breaking on the first non-numeric token. This is the single change that recovers the ~900 dropped rows on pages 4-23.",
+   "3. app/parsers/pdf_text.py _rows_from_pdf_words(): make the running № index the row anchor. Detect lines whose first token is the next sequential index; a line that has no index and no price is a NAME continuation to be appended to the adjacent indexed row (handles 2-3 line wraps like service 3 'отоларинголог' and service 36 'Транспортировка'). Two-pass: collect indexed rows, then attach orphan name lines above/below.",
+   "4. app/parsers/pdf_text.py _row_from_line() (after name is built): strip the leading row-index with re.sub(r'^\\d{1,4}\\s+', '', name) GUARDED so it only fires when the stripped integer equals the expected running index — preserving legitimate digit-leading names ('3-х дневное лечение несовершенного остеогенеза' idx 833; '1 койка без питания' idx 989). Also detect and exclude the unit column ('1 посещение'/'I посещение' normalized) so units are not glued into the name.",
+   "5. app/parsers/table_extract.py _section_label() (and the PDF section path in _rows_from_pdf_words): tighten section detection so wrapped service-name lines are NOT treated as headers. Only treat as a section: the block lines ('Блок ...') and SHORT lines with a small leading number, no unit keyword, and no price (the numbered category headers '8 Гинекология','40 Онкология, маммология'). Remove reliance on _SECTION_HINT_RE matching ordinary service words ('прием','консультац','услуг','исследован') for PDF section detection.",
+   "6. (lower priority) Handle right-margin digit clipping ('192 00'->192000): after parsing, flag prices that are implausibly ~10x below neighbouring rows in the same section / not aligned to the column's typical granularity, rather than silently emitting the truncated value."
+  ]
+ },
+ "Клиника 2 прайс 2026.pdf": {
+  "file": "/home/juliuscaesar/Desktop/MedTech-Hackathon-2026/data/archive/Клиника 2 прайс 2026.pdf",
+  "format": "pdf",
+  "detect_format_correct": true,
+  "current_rows": 847,
+  "estimated_true_rows": 850,
+  "estimate_method": "The price list numbers every service line in a single running sequence; the highest printed № is 846 (last row: \"846 Маммография одной молочной железы с имплантом...\"). Those 1-846 numbered lines are the canonical priced services. Add ~8-10 un-numbered priced sub-rows that carry their own prices (the \"Медикаментозный аборт\" component breakdowns on p.5 — медикаментозное средство / ОАК / группа крови / прием гинеколога / УЗИ — and the \"Выезд врача на дом\" components). Subtract ~3 numbered entries that have NO numeric price (№50 \"договорная\", №75 Check-up \"Женский базовый\" shown as \"- -\", №577 \"Все анализы\" = \"коммерческие kdlolymp.kz\"). Also note a few OCR numbering anomalies (duplicate №534, out-of-order 826/827/839) that net out. Result ≈ 850 priced service lines.",
+  "coverage_summary": "All 15 pages are read and the raw row COUNT (847) coincidentally lands near the true ~850, so NO whole page/section is missing — coverage by count is fine. The damage is in content quality, not coverage. This is a poor-quality OCR text layer embedded in a text PDF (pdfplumber finds 0 ruled tables, so the word-geometry path `_rows_from_pdf_words` is used). ~96% of names carry a glued leading № and a glued trailing unit token; 55 multi-line services collapse to a bare \"№ + unit\" with the descriptive name DROPPED entirely (under-extraction of names); sections are ~100% wrong (page furniture \"НДС)\" assigned to 525 rows) — over-extraction of furniture as sections and total miss of the real numbered specialty headers; and ~15-20 rows get wrong res/nonres because lookalike-glyph digits (\"II 000\", \"II 900\", \"4 ЗОО\") and a stray table-border \"1\" break price parsing.",
+  "defects": [
+   {
+    "kind": "leading-index",
+    "severity": "critical",
+    "description": "The running service number (1..846) is glued to the front of nearly every name because in the word-geometry the number sits in the same cell as the start of the name (e.g. cell '1 Прием врача первичный'). _row_from_line never strips a leading integer token from the name.",
+    "example_current": "'1 Прием врача первичный прием' | res=9900 | nonres=15000",
+    "example_expected": "'Прием врача первичный' | res=9900 | nonres=15000",
+    "affected_fraction": "811/847 (~96%)"
+   },
+   {
+    "kind": "trailing-unit",
+    "severity": "critical",
+    "description": "The Единица измерения cell ('услуга' / 'прием' / 'Услуга') is a separate geometry cell that sits between the name and the prices, but _row_from_line joins everything before the first trailing numeric cell into the name, so the unit token is appended to the name.",
+    "example_current": "'116 УЗИ молочных желез услуга' | res=8800 | nonres=9700",
+    "example_expected": "'УЗИ молочных желез' | res=8800 | nonres=9700",
+    "affected_fraction": "815/847 (~96%)"
+   },
+   {
+    "kind": "missing-rows",
+    "severity": "critical",
+    "description": "Multi-line service names are NOT merged. When the descriptive text wraps onto the line(s) above/below the priced line, the priced line carries only the № and unit, so the emitted name is a bare 'NNN услуга' and the real name text is discarded (those text-only lines yield no price and are dropped). Prices are usually correct; the NAME is lost.",
+    "example_current": "'715 услуга' | res=55000 | nonres=55000   (and 'КТ органов брюшной полости...' dropped)",
+    "example_expected": "'КТ органов брюшной полости, забрюшинного пространства и малого таза с контрастированием' | res=55000 | nonres=55000",
+    "affected_fraction": "55 rows"
+   },
+   {
+    "kind": "glyph-digit",
+    "severity": "critical",
+    "description": "Price cells are riddled with lookalike-glyph digits: 'II'/'И'/'I' for 1, 'З' for 3, 'О'/'O' for 0, 'S' for 5. parse_price's _NUMBER_RE skips the leading letters, so 'II 000' parses to 0 -> the value<=0 break in _row_from_line stops the trailing-price scan, the glyph cell is absorbed into the name, and the remaining (third/insurance) column is misread as res. ocr_clean.fix_numeric_artifacts already fixes 'II 000'->'11 000' but is only wired into the OCR scan path, not this text-PDF path.",
+    "example_current": "'2 Прием врача повторный прием 8 800 II 000' | res=22000 | nonres=None",
+    "example_expected": "'Прием врача повторный' | res=8800 | nonres=11000",
+    "affected_fraction": "~15-20 rows wrong res/nonres; the 'II 000'=11000 glyph appears in hundreds of price cells doc-wide"
+   },
+   {
+    "kind": "glyph-digit",
+    "severity": "high",
+    "description": "Second instance of the glyph defect where the glyph is INSIDE the nonresident column: 'II 900' -> only '900' survives, losing the leading 11.",
+    "example_current": "'168 УЗДГ брюшного отдела аорты услуга' | res=10780 | nonres=900",
+    "example_expected": "'УЗДГ брюшного отдела аорты' | res=10780 | nonres=11900",
+    "affected_fraction": "dozens of rows containing 'II 9xx'/'И 9xx'"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "critical",
+    "description": "Section detection is fully broken for this file. _section_label requires exactly ONE non-empty cell, so the real numbered specialty headers come as TWO cells (['9','Гинекология'], ['20','Пульмонология'], ['1','Прием и консультации специалиста']) and are missed, while repeated page furniture ('НДС)') passes the one-cell + keyword test and becomes the carried section for everything below it.",
+    "example_current": "section='НДС)' (assigned to 525 rows); other garbage sections are random wrapped-text fragments",
+    "example_expected": "section='Прием и консультации специалиста' for rows 1-2; 'Вакцинация'; 'Гинекология'; 'Лаборатория ТОО Green Clinic- Клинические исследования'; etc.",
+    "affected_fraction": "~847/847 (every row's section is wrong)"
+   },
+   {
+    "kind": "price-merge",
+    "severity": "high",
+    "description": "A stray '1' glyph from a vertical table border merges into the adjacent price cell ('4 400' + border '1' -> '4 4001'), inflating the nonresident price by an order of magnitude.",
+    "example_current": "'530 Тиреотропный гормон (ТТГ) услуга' | res=4000 | nonres=44001",
+    "example_expected": "'Тиреотропный гормон (ТТГ)' | res=4000 | nonres=4400  (far-abroad=5800)",
+    "affected_fraction": "handful of rows (e.g. 530, 531)"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "medium",
+    "description": "Un-numbered package component sub-rows (parts of the 'Выезд врача на дом' / 'Медикаментозный аборт' packages) get their price cells mis-split, producing absurd sub-100 prices (a '24 000' read as '24').",
+    "example_current": "'консультация врача прием' | res=24.0 | nonres=24.0   ;   'транспортные расхооы услуга ( ШИ)' | res=6.0 | nonres=9.0",
+    "example_expected": "these are detail lines of №35 'Выезд врача на дом'; prices are in thousands (e.g. 24000) and should attach to the parent service",
+    "affected_fraction": "4 rows res<100"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "low",
+    "description": "There are THREE price columns (резиденты РК / нерезиденты ближнее зарубежье / страховые-дальнее зарубежье). The word-geometry path keeps only the first two (res=col1, nonres=col2) and silently drops the third, unlike rows_from_table which preserves near/far tiers into extra.",
+    "example_current": "'1 Прием врача первичный прием' res=9900 nonres=15000  (third column 30000 dropped)",
+    "example_expected": "res=9900, nonres=15000, plus extra price_far_abroad=30000 preserved",
+    "affected_fraction": "all rows (third tier never captured)"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "Прием врача первичный",
+    "res": 9900,
+    "nonres": 15000,
+    "section": "Прием и консультации специалиста",
+    "note": "Row №1, first row of its subsection. Tests leading-index strip ('1') AND trailing-unit strip ('прием' is the separate Единица cell). Current: '1 Прием врача первичный прием', sec='НДС)'."
+   },
+   {
+    "expected_name": "Прием врача повторный",
+    "res": 8800,
+    "nonres": 11000,
+    "section": "Прием и консультации специалиста",
+    "note": "Row №2. GLYPH test: source nonres is 'II 000' = 11000. Current is badly broken: '2 Прием врача повторный прием 8 800 II 000' with res=22000 (the third column), nonres=None."
+   },
+   {
+    "expected_name": "Превенар 13 (пневмококковая)",
+    "res": 26500,
+    "nonres": 26500,
+    "section": "Вакцинация",
+    "note": "Row №65. Tests that leading-index strip removes only the row № (65) and PRESERVES the internal model number '13'. Current: '65 Превенар 13 (пневмококковая) услуга'."
+   },
+   {
+    "expected_name": "УЗИ молочных желез",
+    "res": 8800,
+    "nonres": 9700,
+    "section": null,
+    "note": "Row №116. Clean simple row; verifies index+unit strip with no glyph noise. Current: '116 УЗИ молочных желез услуга'."
+   },
+   {
+    "expected_name": "УЗДГ брюшного отдела аорты",
+    "res": 10780,
+    "nonres": 11900,
+    "section": null,
+    "note": "Row №168. GLYPH-in-nonresident test: source 'II 900' = 11900. Current nonres=900 (the leading 11 was lost)."
+   },
+   {
+    "expected_name": "Общий анализ крови с лейкоцитарной формулой",
+    "res": 2900,
+    "nonres": 3200,
+    "section": "Лаборатория ТОО Green Clinic- Клинические исследования",
+    "note": "Row №484, first row of the laboratory block. Tests correct section carry-down for the lab section. Current: '484 Общий анализ крови с лейкоцитарной формулой услуга', sec='НДС)'."
+   },
+   {
+    "expected_name": "Онкомаркер СА-19-9",
+    "res": 5600,
+    "nonres": 6100,
+    "section": null,
+    "note": "Row №550. Digit-EMBEDDING lab name ('СА-19-9') — index strip must remove only leading '550' and leave 'СА-19-9' intact. Current: '550 Онкомаркер СА-19-9 услуга'."
+   },
+   {
+    "expected_name": "КТ органов брюшной полости, забрюшинного пространства и малого таза с контрастированием",
+    "res": 55000,
+    "nonres": 55000,
+    "section": null,
+    "note": "Row №715. MULTI-LINE MERGE test: name wraps over two lines ('...с' + 'контрастированием') with the № and prices on the middle line. Current emits the name-lost fragment '715 услуга'."
+   },
+   {
+    "expected_name": "Маммография одной молочной железы с имплантом в 2х проекциях (2снимка)",
+    "res": 8000,
+    "nonres": 8000,
+    "section": "Маммография",
+    "note": "Row №846, the LAST priced row — coverage-to-end check. Current: '846 Маммография одной молочной железы с имплантом в 2х проекциях (2снимка) услуга'."
+   }
+  ],
+  "forbidden_name_patterns": [
+   "^\\d{1,4}\\s",
+   "(?i)\\s(услуга|прием|приём|услуги)$",
+   "(?i)^(услуга|прием|приём)$",
+   "\\bII\\s+\\d{3}",
+   "^НДС\\b"
+  ],
+  "min_rows": 800,
+  "real_names_starting_with_digit": [
+   "Превенар 13 (пневмококковая)",
+   "Онкомаркер СА-125",
+   "Онкомаркер СА-15-3",
+   "Онкомаркер СА-19-9",
+   "Онкомаркер СА 72-4",
+   "Онкомаркер СYFRA 21-1",
+   "Онкомаркер СА242",
+   "Свободный трийодтиронин (Т3)",
+   "Свободный тироксин (Т4)",
+   "Витамин B12",
+   "КТ 1-ой кости (плеча, предплечья, бедра и голени) без контраста",
+   "Артикаин Гидрохлорид 4%, 1:100 000, Huons Co., Ltd., Корея",
+   "Молоко коровье. 12",
+   "Рис. 19",
+   "NOTE: in THIS document NO real service name STARTS with a digit — every leading digit token is a row index, so '^\\d{1,4}\\s' stripping is safe. The names listed here only EMBED digits and must be preserved."
+  ],
+  "fix_recommendations": [
+   "1. (pdf_text.py::_row_from_line, and helper in _cells_by_gap) Normalize glyph-digit price cells BEFORE parse_price by reusing app/parsers/ocr_clean.fix_numeric_artifacts on each trailing candidate cell. This turns 'II 000'->'11 000', 'II 900'->'11 900', '4 ЗОО'->'4 300', 'S 600'->'5 600', so the trailing-numeric scan no longer breaks at a glyph cell and res/nonres land in the correct columns. Also extend ocr_clean._looks_numeric / _DIGIT_FIXES to repair ALL-glyph tokens (e.g. 'ЗЗООО'=33000, which currently has no real digit so is skipped) when the cell sits among confirmed price cells.",
+   "2. (pdf_text.py::_row_from_line) After building `name`, strip a leading row-index token: re.sub(r'^\\s*\\d{1,4}\\s+(?=[^\\d])', '', name). Use the (?=[^\\d]) lookahead so a digit-leading lab code (none here, but e.g. '17-ОН...') is never truncated. In this doc no real name starts with a digit, so this is safe.",
+   "3. (pdf_text.py::_row_from_line) Treat the Единица-измерения cell as a separate cell and exclude it from the name: when the last non-price cell is a unit token, drop it. Add a _UNIT_VALUES set = {'услуга','услуги','прием','приём','Услуга','сеанс','коэфф'} and pop it from cells[:cut] before joining the name.",
+   "4. (pdf_text.py::_rows_from_pdf_words) Add multi-line NAME MERGING: buffer visual lines that are pure text (no trailing price cells, not a section header) and attach them to the adjacent priced row whose name cell is only '№ + unit'. Concretely, carry a pending text fragment from the line above, and also append the immediately-following text-only continuation line, then prepend/append to the priced row's reconstructed name. This recovers the 55 names currently emitted as bare 'NNN услуга'.",
+   "5. (table_extract.py::_section_label — shared by the word path via _section_label(cells)) Recognize a numbered specialty header given as TWO cells [<1-3 digit №>, <alphabetic title>] with no parseable price (e.g. ['9','Гинекология'], ['20','Пульмонология'], ['1','Прием и консультации специалиста']) and return the title as the section. Simultaneously add a furniture blocklist so repeated page headers are NEVER taken as a section: reject 'НДС)', titles starting with 'Цена для'/'Цены для', and the fragments 'зарубежье)', '(в том числе', 'Наименование услуг', 'Республики', 'Казахстан'. This fixes both the missed real sections and the 'НДС)'-as-section over-extraction.",
+   "6. (pdf_text.py::_row_from_line) Preserve the third price column (страховые / дальнее зарубежье) into extra['price_far_abroad'] when three prices are present, mirroring the near/far tier handling already in table_extract.rows_from_table, so the insurance tier is not silently dropped.",
+   "7. (pdf_text.py::_row_from_line) Re-validate the existing leading-tiny-price drop (`while len(prices)>1 and prices[0][0]<10<=prices[1][0]`) after the above changes; with index/unit/glyph fixes in place it should rarely fire, and must not discard a legitimately small first price."
+  ]
+ },
+ "Клиника 3 прайс 2026.PDF": {
+  "file": "data/archive/Клиника 3 прайс 2026.PDF",
+  "format": "pdf (24-page scanned PDF with a corrupted embedded OCR text layer; pdfplumber finds 0 ruled tables, so pdf_text.py reconstructs rows from word geometry via _rows_from_pdf_words/_row_from_line/_cells_by_gap)",
+  "current_rows": 712,
+  "estimated_true_rows": 745,
+  "estimate_method": "Counted, per page, source lines ending in two space-grouped price numbers (the \"Цена, тенге\" + \"Цена со ... партнёра\" columns): 723 across all 24 pages. Added the ~40 real services on the structurally-broken pages 1 and 3 whose price/code/material sit on a different visual line from the name (the 2-price heuristic only caught 24 on p1 and 2 on p3, vs ~14 and ~30 real services), plus a handful of single-price rows, and subtracted ~10 header/furniture lines. The document uses multiple restarting index sequences (main lab list ~1–389 across pp.1–17, an allergen-panel block renumbered 1–204 on pp.17–22, and a chromatography/ХМС-hormones block 63–75 on p.24), consistent with ~740–750 priced service lines.",
+  "coverage_summary": "No whole pages are dropped — all 24 pages emit rows and the total (712) is close to the true ~745. The parser is NOT under-extracting count-wise on the bulk of pages; instead it is corrupting almost every row. On the cleanly-OCR'd majority of pages it maps ~1 row per service but contaminates names with leading row-index tokens (~352 rows, 49%) and/or trailing tariff-code + material tokens, and frequently misreads glyph-garbled price cells or reads tariff codes as prices. Pages 1 and 3 are structurally broken: the service NAME sits on its own line with no price, so it is demoted to a bogus \"section\" while the material column ('кровь с ЭДТА', 'соскоб с') becomes the row name — both under-extraction (lost names) and over-extraction (garbage rows + ~20 bogus section labels) at once.",
+  "detect_format_correct": true,
+  "defects": [
+   {
+    "kind": "leading-index",
+    "severity": "high",
+    "description": "The № (row-number) column is a separate left-most cell that _row_from_line glues into the service name because it is non-numeric-adjacent and precedes the name cells. The leading-qty drop at pdf_text.py:206 only removes a leading PRICE cell <10, not a name-side index cell. Affects ~352 of 712 rows (names starting with 1-3 digits + space).",
+    "example_current": "'29 Глюкоза (сахар крови)' | res=1780 | nonres=1335",
+    "example_expected": "name 'Глюкоза (сахар крови)', res=1780, nonres=1335",
+    "affected_fraction": "~352 rows (49%)"
+   },
+   {
+    "kind": "leading-code",
+    "severity": "high",
+    "description": "Tariff code (e.g. В06.361.006) and the material/specimen token (сыв./моча/кал/плазма) are not split into separate price cells, so they remain inside cells[:cut] and are appended to the name. They should be stripped from the name (code captured into service_code_source).",
+    "example_current": "'Кортизол В06.361.006 сыв' | res=3780 | nonres=2835   (and '31 Триглицериды ВОЗ.486.002 сад')",
+    "example_expected": "name 'Кортизол' (code 'В06.361.006'), res=3780, nonres=2835",
+    "affected_fraction": "hundreds of rows (most single-price-region rows + all of pp.18-22 allergens)"
+   },
+   {
+    "kind": "glyph-digit",
+    "severity": "critical",
+    "description": "Price cells are OCR-garbled with lookalike glyphs (curly quotes/letters for digits): '1 “80'/'1 \"80'/'1 ~SO'/'I 7*0' all mean 1780. parse_price extracts only the leading '1' (→1.0), the leading-qty-drop then deletes that 1.0, so the resident price is LOST and the name absorbs the trailing code/material.",
+    "example_current": "'31 Триглицериды ВОЗ.486.002 сад' | res=1335 | nonres=None   (and '32 Холестерин общий' | res=401002 | nonres=43)",
+    "example_expected": "'Триглицериды' res=1780 nonres=1335 ; 'Холестерин общий' res=1780 nonres=1335",
+    "affected_fraction": "most biochem rows on pp.1-2 (~30-40 rows) plus scattered"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "critical",
+    "description": "When the real price cell is glyph-garbled/missing, _row_from_line's right-scan accepts the TARIFF CODE as a price because parse_price('СН.001.148')→1148, parse_price('В02.061.002')→2061002, parse_price('1151')→1151. The genuine prices are lost and absurd values are emitted.",
+    "example_current": "'Определение опиатов и их производных в моче' | res=1148 | nonres=None ; 'Измерение скорости оседания эритроцитов (СОЭ)' | res=2061002 ; 'Клинический анализ крови с лейкоцитарной' | res=1151",
+    "example_expected": "опиаты: res=14220 nonres=10665 ; СОЭ: res=3080 nonres=2310 ; Клинический анализ крови: res=3980 nonres=2985",
+    "affected_fraction": "25 rows with res>=100000 plus ~20 small code-as-price rows"
+   },
+   {
+    "kind": "missing-rows",
+    "severity": "critical",
+    "description": "On pages 1 and 3 the service name is on a separate visual line from its price/code/material line. The name line has no price, so _section_label promotes it to a bogus section and the priced row gets the MATERIAL column as its name. Real names are lost; material-as-name garbage rows and ~20 fake sections are emitted.",
+    "example_current": "name 'кровь с ЭДТА' | res=880 | nonres=1410 | sec='ГЕМАТОЛОГИЯ'  AND a separate bogus section 'Общий анализ крови (OAK без СОЭ)'",
+    "example_expected": "one row name 'Общий анализ крови (ОАК без СОЭ)' with its own prices; no 'кровь с ЭДТА' row; no name-as-section",
+    "affected_fraction": "~40 services on pp.1 & 3 (54 material-as-name rows total)"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "high",
+    "description": "Wrapped NAME-continuation fragments are misclassified as section headers by _section_label because _SECTION_HINT_RE matches 'анализ'/'исследован'/'консультац' inside them, so a fragment like 'сыворотке крови на анализаторе)' becomes the active section for many following rows, corrupting section attribution.",
+    "example_current": "sec='сыворотке крови на анализаторе)' (also sec='в крови на анализаторе', 'крови па анализаторе)', 'Микроскопическое исследование мазка')",
+    "example_expected": "section should remain the real uppercase header, e.g. 'БИОХИМИЧЕСКИЕ ИССЛЕДОВАНИЯ КРОВИ'",
+    "affected_fraction": "~20 of 52 emitted 'sections' are bogus name fragments"
+   },
+   {
+    "kind": "missing-rows",
+    "severity": "medium",
+    "description": "Multi-line service names are truncated at the visual line break — only the first line is kept; the continuation (e.g. closing words after a wrap) is dropped or emitted as a separate fragment.",
+    "example_current": "'Антиген СА 19-9 (желудок, поджелудочная' (continuation 'железа)' lost)",
+    "example_expected": "'Антиген СА 19-9 (желудок, поджелудочная железа)' res=4980 nonres=3735",
+    "affected_fraction": "~80-120 long names across the document"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "Глюкоза (сахар крови)",
+    "res": 1780,
+    "nonres": 1335,
+    "section": null,
+    "note": "page 2 row 29. Prices are already correct in current output; the ONLY defect is the leading index '29' that must be stripped. Currently '29 Глюкоза (сахар крови)'."
+   },
+   {
+    "expected_name": "Холестерин общий",
+    "res": 1780,
+    "nonres": 1335,
+    "section": null,
+    "note": "page 2 row 32. Glyph-digit price '1 \"80'→1780 must be recovered and tariff code 'ВОЗ.401.002' must NOT be read as price. Currently res=401002 nonres=43."
+   },
+   {
+    "expected_name": "Кортизол",
+    "res": 3780,
+    "nonres": 2835,
+    "section": "ГОРМОНЫ",
+    "note": "page 4 row 113. Tariff code 'В06.361.006' and material 'сыв.' must be stripped from the name. Currently 'Кортизол В06.361.006 сыв'."
+   },
+   {
+    "expected_name": "IgA (иммуноглобулин А)",
+    "res": 3800,
+    "nonres": 2850,
+    "section": "ИММУНОЛОГИЧЕСКИЕ ИССЛЕДОВАНИЯ",
+    "note": "page 4 row 124. Leading index '124' must be stripped. Currently '124 IgA (иммуноглобулин А) В06.405.012 сыв'."
+   },
+   {
+    "expected_name": "Определение опиатов и их производных в моче",
+    "res": 14220,
+    "nonres": 10665,
+    "section": null,
+    "note": "page 13 row 359. Tariff code 'СН.001.148' is currently misread as the price (res=1148, nonres=None); the real prices must be recovered."
+   },
+   {
+    "expected_name": "11-деоксикортизол в крови (хроматография)",
+    "res": 17600,
+    "nonres": 13200,
+    "section": null,
+    "note": "page 24 row 66. CRITICAL: digit-leading name — the '11-' must be preserved while the leading index '66' (and code 'СН.001.119', material 'сыв.') are stripped."
+   },
+   {
+    "expected_name": "Какао/шоколад. f93",
+    "res": 5280,
+    "nonres": 3960,
+    "section": null,
+    "note": "page 18 row 168. Allergen code 'f93' is part of the NAME and must be kept; only the tariff code 'В06.457.006.33' and material 'сыв.' must be stripped. Currently 'Какао/шоколад. f93 В06.457.006.33 сыв'."
+   }
+  ],
+  "forbidden_name_patterns": [
+   "^\\d{1,3}\\s+[А-ЯЁA-Za-zа-яё]",
+   "(?:В0[1-9]|ВОЗ|Q9[0-9]|СН)\\.\\d{2,3}",
+   "\\s(?:сыв\\.?|моча|плазма|слюна|сыворотка|кал)$",
+   "^(?:кровь с ЭДТА|сыв\\.?|моча|плазма|слюна|кал|соскоб(?: с)?)\\s*$"
+  ],
+  "min_rows": 690,
+  "real_names_starting_with_digit": [
+   "17-ОН Прогестерон (17-ОП)",
+   "25-ОН витамин D (25-ОН vitamin D, 25(OH)D, 25 hydroxycalciferol)",
+   "11-дезоксикортикостерон в крови (хроматография)",
+   "11-деоксикортизол в крови (хроматография)",
+   "СА 19-9 (желудок, поджелудочная железа)",
+   "СА 15-3 (молочная железа)",
+   "СА 72-4 (желудок, яичники)",
+   "СА 125 (яичники)",
+   "СА 242 (колоректальный рак)",
+   "Beta-Cross laps",
+   "S100 (меланома, головной мозг)",
+   "Омега-5 IgE, f416",
+   "ТЗ (трийодтиронин) общий",
+   "Т4 (тироксин) общий",
+   "Интерлейкин 6 (ИЛ-6, Interleukin 6, IL-6)"
+  ],
+  "fix_recommendations": [
+   "pdf_text.py::_row_from_line — strip a leading row-index token. After building `cells`, if `cells[0]` is a bare small integer (regex ^[.\\s]*\\d{1,3}[.'`\\s]*$, also tolerating OCR junk like '.40' / \"58'\" / '4 Г') and >=2 alphabetic cells remain, drop it before composing `name`. Additionally apply a string-level guard on the final name: re.sub(r\"^\\d{1,3}(?=\\s+[А-ЯЁA-Za-zа-яё])\", '', name) but ONLY when the digits are not immediately followed by '-', ',' or '.' so legit lab names ('17-ОН', '25-ОН', '11-деоксикортизол', '1,25-...') are preserved. Fixes ~352 rows.",
+   "pdf_text.py::_row_from_line — strip trailing tariff-code and material tokens from the name and capture the code into ParsedRow.service_code_source. After determining `cut`, pop name-tail tokens matching the tariff-code shape (?:В0[1-9]|ВОЗ|Q9\\d|СН)\\.\\d{2,3} and any token in a material set {сыв., моча, кал, плазма, слюна, кровь с ЭДТА, сыворотка, капиллярная кровь, мазки, соскоб, кол.}. Keep allergen-style codes like 'f93'/'gx4' that are part of the name (the tariff regex does not match them).",
+   "table_extract.py::parse_price (or a new is_price_cell guard used by _row_from_line's right-scan) — reject a cell as a price when it is not essentially numeric. parse_price('СН.001.148')→1148, parse_price('В02.061.002')→2061002, parse_price('ВОЗ.401.002')→401002 currently corrupt prices. Require a price cell to match ^[\\d\\s.,]+(?:тг|₸|тенге)?$ after glyph-normalization, and reject cells that contain Cyrillic/Latin letters or a leading code prefix. Kills the 25 res>=100000 rows and the 1148/1151/1151.2 cases.",
+   "Add glyph-digit price normalization (extend app/parsers/ocr_clean.py and call it from _row_from_line before parse_price) — within a cell that is predominantly digits+separators, map lookalikes to digits ('“'/'”'/'\"'/'~'/'*' → space/0/8 context-dependent; 'O'/'О'→0, 'l'/'I'/'|'→1, 'S'/'З'→3, 'З'→3) so '1 “80'/'1 \"80'/'1 ~SO'/'I 7*0' normalize to 1780. Crucially, do NOT silently delete an isolated 1.0 between two 4-digit prices in the leading-qty-drop at pdf_text.py:206 — treat it as a corrupted price to be re-read, not a quantity column.",
+   "pdf_text.py::_rows_from_pdf_words — handle the page-1/page-3 structural break where the name is on a separate visual line from the price/code/material line. Buffer text-only (price-less) lines that fall in the name column band and attach them to the adjacent priced line instead of dropping them or feeding them to _section_label. This recovers ~40 lost services and stops 'кровь с ЭДТА'/'соскоб с' from being emitted as names and 'Общий анализ крови (ОАК без СОЭ)' from being emitted as a section.",
+   "table_extract.py::_section_label — tighten so wrapped NAME fragments are not misclassified as section headers. The mixed-case keyword acceptance via _SECTION_HINT_RE ('анализ'/'исследован'/'консультац') matches continuation fragments like 'сыворотке крови на анализаторе)'. Require single-cell section rows to be uppercase-dominant (>=0.6 upper) OR match _SECTION_LEAD_RE; reject candidates that start lowercase or end with ')'. Removes the ~20 bogus sections.",
+   "pdf_text.py / detect.py — add a parse-quality gate: when a large fraction of extracted rows show glyph-garbage symptoms (prices equal to tariff codes, material-as-name, names with leading indices), the embedded text layer is unreliable; fall back to pdf_scan (re-OCR) or vision_fallback (currently disabled here). Highest leverage but largest change; the per-row fixes above are the immediate, low-risk wins shared across all formats via table_extract.py."
+  ]
+ },
+ "Клиника 5 прайс 2025.pdf": {
+  "file": "/home/juliuscaesar/Desktop/MedTech-Hackathon-2026/data/archive/Клиника 5 прайс 2025.pdf",
+  "format": "pdf",
+  "detect_format_correct": true,
+  "current_rows": 204,
+  "estimated_true_rows": 345,
+  "estimate_method": "Counted price-bearing money tokens across all 15 pages: a (glyph-)digit run immediately before тг/тенге, after normalizing lookalike glyphs (Cyrillic О/о→0, З→3, б→6, l→1). That yields 367 plausible price tokens (value >=100). Subtracted ~22 second-prices that belong to two-price doctor consultation lines (one service shown with перв./повт. приём, e.g. 'терапевт 9000 тг 7000 тг') to avoid double-counting. Two-column lab/san-book lines that carry two DIFFERENT services on one physical line were left counted as two (correct). Net distinct priced services ≈ 345 (±~20). This squares with a dense 15-page list: ~240 consultation/procedure/UZI lines (pages 1-10), ~105 lab tests (pages 11-14), ~17 physiotherapy/other (pages 14-15).",
+  "coverage_summary": "No page is skipped at the file level (all 15 pages are read via the word-geometry borderless path; pdfplumber finds zero ruled tables on every page). But the parser severely UNDER-extracts: ~204 of ~345 true priced services (~40% missing). The dominant cause is that this is a poor scanned text layer in a two-column-ish layout where the service NAME and its PRICE frequently sit on separate physical lines; the line-by-line splitter then drops both the name-only line and the price-only line. The entire physiotherapy block (pages 14-15: Электрофорез, ТОКИ Бернара/Дарсонваля, УФО, СВЧ, УВЧ, Ультразвук, Фонофорез, Лазеротерапия, Магнитотерапия, Ингаляция, Массажная кровать, Пульмонолог, Онколог/Маммолог, ФГДС/хеликобактер) is almost entirely lost. Many UZI (pages 9-10) and lab/hormone/oncomarker rows (pages 11-14) survive only as truncated fragment names ('(ГГТП)', 'поджелудочная железа)'). Separately, glyph-only prices vanish and digit-bearing lab names ('антиген СА 125') are dropped. It is NOT over-extracting much; there are some garbage fragment rows but the net is heavy under-extraction.",
+  "defects": [
+   {
+    "kind": "glyph-digit",
+    "severity": "critical",
+    "description": "Lookalike Cyrillic glyphs are used for digits in prices (О/о=0, З=3, б=6). parse_price() in table_extract.py only recognizes ASCII digits, so glyph digits are ignored. When the price is PARTLY ASCII the value is truncated; when it is fully glyph the row is dropped entirely (parse_price returns None).",
+    "example_current": "'поверхностный кариес' res=10.0 ; 'средний кариес' res=12.0 ; 'глубокий кариес' res=15.0 ; rows for 'удаление атеромы, липомы, папилломы' (ЗООООтг), 'Ампутация пальцев' (бООООтг), 'С-пептид' (ЗЗООтг) are MISSING",
+    "example_expected": "'поверхностный кариес' res=10000 ('10 ОООтг'); 'удаление атеромы, липомы, папилломы' res=30000 ('ЗООООтг'); 'Ампутация пальцев' res=60000 ('бООООтг'); 'С-пептид' res=3300 ('ЗЗООтг')",
+    "affected_fraction": "~15-20 rows"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "critical",
+    "description": "In pdf_text.py _row_from_line(), the trailing-numeric scan walks from the right and treats ANY cell whose text contains a number as a price. Lab names legitimately contain digits (СА 125, СА 19-9, В12), so the name cell is parsed as a price, the cut index moves to 0, the name becomes empty, and the whole row is dropped (or a fragment is emitted with the wrong price).",
+    "example_current": "row for 'антиген СА 125 (яичники)' is MISSING (cell ['антиген СА 125 (яичники)','2900'] -> name parsed as price 125, name emptied, dropped)",
+    "example_expected": "'антиген СА 125 (яичники)' res=2900",
+    "affected_fraction": "~5-10 digit-bearing lab rows"
+   },
+   {
+    "kind": "price-merge",
+    "severity": "high",
+    "description": "When two prices (первичный/повторный приём) fall into a single word-geometry cell because the inter-price gap is below the column-split threshold, parse_price returns only the FIRST number, so the non-resident/repeat-visit price is lost. _row_from_line never splits a multi-number cell.",
+    "example_current": "'невропатолог' res=9000.0 nonres=None (cell was '9000 тг 7000 тг'); 'терапевт' res=9000.0 nonres=None",
+    "example_expected": "'невропатолог' res=9000 nonres=7000 ; 'терапевт' res=9000 nonres=7000",
+    "affected_fraction": "~15 doctor-consultation rows"
+   },
+   {
+    "kind": "missing-rows",
+    "severity": "critical",
+    "description": "Two-column / scanned layout puts the price on its OWN physical line (and the name on a line with no number). The line splitter handles each visual line independently: the name-only line is dropped (no price) and the price-only line is dropped (no name), so the entire service disappears. No continuation/merge between adjacent lines exists in _rows_from_pdf_words.",
+    "example_current": "physiotherapy services entirely absent (no 'Электрофорез','СВЧ','Ультразвук','Магнитотерапия','Лазеротерапия','Ингаляция','Массажная кровать','Пульмонолог','Онколог/Маммолог','ФГДС'); page-1 'Холтер ЭКГ' and 'СМ АД' absent",
+    "example_expected": "'Электрофорез' res=2500 ; 'Холтер ЭКГ' res=10000 ; 'Пульмонолог' res=9000 ; 'Онколог /Маммолог' res=10000",
+    "affected_fraction": "~100+ rows (~30-40% of true total; pages 14-15 ~80% lost)"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "high",
+    "description": "For lab names that span two physical lines, only the second (price-bearing) fragment is kept as the service name; the leading name line is discarded. Result is a truncated, meaningless name attached to the right price.",
+    "example_current": "'(ГГТП)' res=1500 ; 'поджелудочная железа)' res=3200 ; 'тиреоглобулину)' res=2300 ; '(сахар крови)' res=800 ; 'железа)' res=3900",
+    "example_expected": "'гаммаглютамилтрансфераза (ГГТП)' res=1500 ; 'антиген СА 19-9 (желудок, поджелудочная железа)' res=3200 ; 'анти ТГ (антитела к тиреоглобулину)' res=2300 ; 'глюкоза экспресс-методом (сахар крови)' res=800 ; 'антиген СА 15-3 (молочная железа)' res=3900",
+    "affected_fraction": "~30-40 lab/hormone/oncomarker rows"
+   },
+   {
+    "kind": "price-merge",
+    "severity": "high",
+    "description": "The san-book / lab pages are physically two side-by-side tables. The word-geometry line groups the LEFT service+prices and the RIGHT service+price into one visual line and the gap-splitter fails to separate them, so two distinct services collapse into a single row whose name contains embedded price tokens ('тг').",
+    "example_current": "'терапевт 1800 тг 1800 тг Бак посев' res=1500 ; 'флюорография 2200 тг 2200 тг Сан минимум' res=700 ; 'микрореакция 1 ООО тг 1000 тг Стафилококк' res=1000 ; 'сан.книжка муж жен Кал на гельменты' res=700",
+    "example_expected": "two rows each, e.g. 'терапевт' (сан.книжка) res=1800 nonres=1800 AND 'Бак посев' res=1500 ; 'микрореакция' res=1000 AND 'Стафилококк' res=1000",
+    "affected_fraction": "~6-10 rows on page 2"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "medium",
+    "description": "Because service lines are split mid-phrase, leading fragments that match _SECTION_HINT_RE ('прием','узи', etc.) are mis-detected as section headers by _section_label and carried down onto unrelated following rows; the real service then loses its leading words. 'Прием врача-' becomes a section and 'физиотерапевта' becomes the name.",
+    "example_current": "'физиотерапевта' res=9000 sec='Прием врача' ; 'органы брюшной полости' res=8000 sec='врач-УЗИ' ; many rows tagged sec='низкоэнергетичная лазерная терапия'",
+    "example_expected": "'Прием врача-физиотерапевта' res=9000 (no bogus section)",
+    "affected_fraction": "~10-20 rows mis-sectioned"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "medium",
+    "description": "An embedded unit/quantity number ('1 час','1 сеанс','1 инъекция','1 уровень') is the only number on a name line and is mis-read as the price=1.0, because the qty-drop guard in _row_from_line only fires when a real larger price follows on the SAME line. The true price is on the next line and is never reached.",
+    "example_current": "'мочевой пузырь' res=1.0 (from 'Чаполнить за 1 час') ; 'инъекция парабульбарно' nonres=1.0 (from '1 инъекция') ; 'упражнение на аппарате' nonres=1.0 (from '1 сеанс')",
+    "example_expected": "'мочевой пузырь' res=4500 ; 'инъекция парабульбарно' res=1000 nonres=null ; 'упражнение на аппарате' res=1000 nonres=null",
+    "affected_fraction": "~5-10 rows with spurious price=1.0"
+   },
+   {
+    "kind": "spaced-glyphs",
+    "severity": "low",
+    "description": "The underlying OCR text layer itself is corrupted: spaced-out / mis-recognized glyphs in names. This is a source-text defect, largely unfixable inside table_extract.py; it argues for re-OCR via the vision fallback for this file.",
+    "example_current": "'алл ергол ог-дерматолог' res=9000 ; 'риноцитогоамма' ; '!ибромассаж перепонок на аппарате' ; 'icisio паратонзиллярного абсцесса' ; '(печень, яичники)' name from 'АФП - фльфафетопротеин'",
+    "example_expected": "'аллерголог-дерматолог' ; 'риноцитограмма' ; 'фибромассаж перепонок на аппарате' ; 'incisio паратонзиллярного абсцесса' ; 'АФП - альфафетопротеин (печень, яичники)'",
+    "affected_fraction": "~10-15 names with OCR noise"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "поверхностный кариес",
+    "res": 10000,
+    "nonres": null,
+    "section": null,
+    "note": "glyph-digit '10 ОООтг' (Cyrillic О=0) must become 10000; current output res=10.0"
+   },
+   {
+    "expected_name": "средний кариес",
+    "res": 12000,
+    "nonres": null,
+    "section": null,
+    "note": "glyph-digit '12 ОООтг' -> 12000; current res=12.0"
+   },
+   {
+    "expected_name": "глубокий кариес",
+    "res": 15000,
+    "nonres": null,
+    "section": null,
+    "note": "glyph-digit '15 ОООтг' -> 15000; current res=15.0"
+   },
+   {
+    "expected_name": "общий анализ мочи ОАМ",
+    "res": 1000,
+    "nonres": null,
+    "section": null,
+    "note": "glyph-digit '1 ООО тг' -> 1000; current res=1.0. Name keeps the 'ОАМ' token (must not be glyph-normalized to digits)"
+   },
+   {
+    "expected_name": "удаление атеромы, липомы, папилломы",
+    "res": 30000,
+    "nonres": null,
+    "section": null,
+    "note": "fully-glyph price 'ЗООООтг' (З=3,О=0) -> 30000; currently the row is MISSING (parse_price returns None)"
+   },
+   {
+    "expected_name": "Ампутация пальцев",
+    "res": 60000,
+    "nonres": null,
+    "section": null,
+    "note": "fully-glyph price 'бООООтг' (б=6,О=0) -> 60000; currently MISSING"
+   },
+   {
+    "expected_name": "С-пептид",
+    "res": 3300,
+    "nonres": null,
+    "section": null,
+    "note": "fully-glyph price 'ЗЗООтг' -> 3300; currently MISSING. Name 'С-пептид' must be preserved (С is a letter, not a glyph-0)"
+   },
+   {
+    "expected_name": "антиген СА 125 (яичники)",
+    "res": 2900,
+    "nonres": null,
+    "section": null,
+    "note": "digit-in-name defect: '125' is consumed as a price, name emptied, row dropped. Fixed parser must keep the full name and read 2900. Protects all СА/В12/Т3 lab names"
+   },
+   {
+    "expected_name": "невропатолог",
+    "res": 9000,
+    "nonres": 7000,
+    "section": null,
+    "note": "two prices merged into one cell '9000 тг 7000 тг'; current res=9000 nonres=None. Fixed parser must split into res=9000, nonres=7000 (перв./повт. приём)"
+   }
+  ],
+  "forbidden_name_patterns": [
+   "\\b(?:тг|тенге)\\b",
+   "[0-9ОоЗбIl]\\s*(?:тг|тенге)"
+  ],
+  "min_rows": 220,
+  "real_names_starting_with_digit": [
+   "антиген СА 19-9 (желудок, поджелудочная железа)",
+   "антиген СА 125 (яичники)",
+   "антиген СА 72-4 (желудок, яичники)",
+   "антиген СА 15-3 (молочная железа)",
+   "витамин В12",
+   "ТЗ(трийодтиронин) общий",
+   "Т4(тироксин) общий",
+   "СЗ компонент комплемента",
+   "С4 компонент комплемента",
+   "Форма 075 У+ ФГ",
+   "Форма 073 У+ФГ",
+   "Паспорт здоровья Форма 026/у",
+   "Форма 065/у",
+   "3 инфекции (хламидиоз, уреоплазмоз, микоплазмоз)",
+   "10 инфекций",
+   "1 день без стоимости медикаментов"
+  ],
+  "fix_recommendations": [
+   "table_extract.py parse_price(): add surgical glyph-digit normalization. Before _NUMBER_RE search, map lookalike glyphs to digits (Cyrillic О/о->0, З->3, б->6, l/I->1, latin O/o->0) ONLY inside price-shaped tokens — i.e. tokens adjacent to a currency unit (тг/тенге/₸/kzt) or tokens that are otherwise all-glyph/space. Do NOT normalize free text, so names like ОАМ, ОАК, СА, Ig, С-пептид, СЗ-комплемента stay intact. This is the shared parser used by xlsx/docx too, so gate strictly on currency-adjacency. Fixes '10 ОООтг'->10000, 'ЗООООтг'->30000, '1 ООО тг'->1000, 'ЗЗООтг'->3300.",
+   "pdf_text.py _row_from_line(): stop the trailing-numeric scan from consuming the NAME cell. Only treat a cell as a price when it is price-shaped: its non-numeric residue is empty or just a currency unit/separator (no Cyrillic letters). This prevents 'антиген СА 125 (яичники)' (and СА 19-9, В12, Т3) from having their embedded digits read as the price and the name zeroed; recovers those dropped lab rows.",
+   "pdf_text.py _row_from_line(): when a single price-shaped cell contains MULTIPLE numbers (e.g. '9000 тг 7000 тг'), extract all of them and map to res (first) / nonres (second) instead of returning only the first. Fixes lost перв./повт. non-resident prices for doctor consultations.",
+   "pdf_text.py _rows_from_pdf_words(): add line-continuation/merge for this borderless two-column layout — (a) buffer a visual line that has a name but NO price and prepend it to the next price-bearing line's name; (b) attach a price-only line ('2500 тг','10 000') to the buffered preceding name. Highest-value coverage fix: recovers ~100+ rows including the whole physiotherapy block (pages 14-15), page-1 'Холтер ЭКГ'/'СМ АД', and the many split lab/hormone names ('гаммаглютамилтрансфераза (ГГТП)', 'антиген СА 19-9 (желудок, поджелудочная железа)').",
+   "pdf_text.py _cells_by_gap()/_rows_from_pdf_words(): detect the genuine two-physical-column blocks (san-book page 2, lab pages) by clustering word x0 positions, and split each visual line into left/right (service+price) groups instead of merging them into one name with embedded 'тг'. Validate output against the forbidden \\bтг\\b-in-name regex.",
+   "table_extract.py _section_label() (used by _rows_from_pdf_words via _SECTION_HINT_RE): tighten so split fragments are not mistaken for section headers — reject one-cell candidates that end in a hyphen ('Прием врача-') or that are immediately followed by a continuation line that yields a price; this stops bogus sections ('Прием врача','врач-УЗИ','низкоэнергетичная лазерная терапия') and the truncation of names like 'Прием врача-физиотерапевта'.",
+   "pdf_text.py _row_from_line(): strengthen the unit/quantity guard so an embedded unit phrase ('1 час','1 сеанс','1 инъекция','1 уровень') is never taken as price=1.0; instead defer to next-line merge to fetch the real price. Eliminates spurious res/nonres=1.0 ('мочевой пузырь', 'инъекция парабульбарно', 'упражнение на аппарате').",
+   "Routing: because the OCR text layer itself is degraded (spaced/garbled glyphs: 'алл ергол ог', 'риноцитогоамма', '!ибромассаж', 'icisio', 'фльфафетопротеин'), consider sending THIS file through the vision fallback (vision_fallback.py) for a higher-fidelity re-OCR; table_extract.py cannot repair corrupted source characters."
+  ]
+ },
+ "Клиника 4 прайс 2026.pdf": {
+  "file": "/home/juliuscaesar/Desktop/MedTech-Hackathon-2026/data/archive/Клиника 4 прайс 2026.pdf",
+  "format": "pdf (text-layer / borderless whitespace-column PDF, 31 pages, 3 citizen-tier price columns: граждане РК / СНГ / дальнее зарубежье; parsed via pdfplumber word-geometry path in pdf_text.py, used_ocr=False)",
+  "current_rows": 444,
+  "estimated_true_rows": 428,
+  "estimate_method": "Counted price-triples (three space-grouped numeric tokens in sequence) across all 31 pages of pdfplumber text() AFTER normalizing lookalike-glyph digits (Cyrillic О/о→0, И/и→11): 428 triples. Each priced service has exactly one 3-tier price triple (РК / СНГ / дальнее зарубежье), so triples ≈ true priced rows. Cross-checks: a stricter extract_text >=3-group filter gives 340 (under-counts because pages 23-30 fragment their prices and page-3 names are split onto page 4, plus the '13-800' hyphen / 'ООО' glyph rows escape the filter); the current word-geometry parser emits 444 (slightly inflated by garbage/duplicate-split rows). 428 is the best central estimate; true value is ~420-435.",
+  "detect_format_correct": true,
+  "coverage_summary": "Count-wise the parser is roughly complete: 444 emitted vs ~428 true priced lines, and every one of the 31 pages yields rows (no blank page). The failure is QUALITY, not coverage. Three structural coverage gaps exist: (1) a cross-page table split — page 3 holds only the NAMES of rows 12-32 of подраздел 1.2 while page 4 holds only their unit+price columns, so ~21 service names are dropped and replaced by unit-only names ('операция','манипуляция','процедура'); (2) Раздел 7 ('7. Бактериологическая лаборатория') is never recognized as a section because it lacks the 'Раздел' prefix and its leading '7.' is read as a value; (3) the third citizen tier (дальнее зарубежье / col 3) is silently discarded on every row by the word-geometry path. The parser is NOT under-extracting row count — it is massively mis-naming rows and corrupting prices.",
+  "defects": [
+   {
+    "kind": "leading-index",
+    "severity": "critical",
+    "description": "The '№ п/п' row-index token is glued to the front of almost every service name. _row_from_line in pdf_text.py builds the name from all non-trailing-numeric cells, so the leading index cell stays in the name.",
+    "example_current": "1 Снятие металлоконструкций операция",
+    "example_expected": "Снятие металлоконструкций",
+    "affected_fraction": "392 of 444 rows (~88%)"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "high",
+    "description": "The unit-of-measurement column (операция / манипуляция / процедура / исследование / посещение / пакет / видеозвонок / час) is appended to the name instead of being stored separately. The trailing-price collector stops at the first non-numeric cell, leaving the unit word inside the name.",
+    "example_current": "8 Удаление инородного тела операция",
+    "example_expected": "Удаление инородного тела   (unit 'операция' kept separately)",
+    "affected_fraction": "nearly all priced rows (~95%)"
+   },
+   {
+    "kind": "missing-rows",
+    "severity": "critical",
+    "description": "Vertically wrapped / merged-cell service names are lost. When the descriptive name sits on adjacent text lines and only an index+unit sits on the priced line, the priced row gets a stub name and the real name line is mis-emitted as a section. Same effect for first/repeat consultation pairs whose name is a 2-row merged cell.",
+    "example_current": "6 операция | res=17600.0 | nonres=19800.0   (and section='Консультация врача (дмн, профессора)')",
+    "example_expected": "Удаление ногтевой пластины (вследствие травмы, вросшего ногтя, деформации ногтя, грибкового поражения) | res=17600 | nonres=19800",
+    "affected_fraction": "~40-60 rows"
+   },
+   {
+    "kind": "missing-rows",
+    "severity": "critical",
+    "description": "Cross-page table split: page 3 contains ONLY the names of подраздел 1.2 rows 12-32; page 4 contains ONLY their unit+3-price columns. Linear text extraction cannot rejoin them, so 21 services are emitted as unit-only names with the page-3 names dropped entirely.",
+    "example_current": "операция | res=18700.0 | nonres=21000.0   (name is just the unit)",
+    "example_expected": "Демонтаж аппарата Илизарова | res=18700 | nonres=21000   (name recovered from page 3, by row order)",
+    "affected_fraction": "21 rows (page 3 + page 4)"
+   },
+   {
+    "kind": "glyph-digit",
+    "severity": "critical",
+    "description": "Lookalike-glyph digits in prices: a thousands group rendered as Cyrillic О (U+041E), e.g. '12 ООО'='12 000', '77 ООО'='77 000', '198 ООО'='198 000'; and Cyrillic И for '11', e.g. 'И 400'='11 400'. parse_price's _NUMBER_RE stops at the glyph, yielding a value 1000x too small (or the token is rejected and glued into the name). Pervasive across Раздел 12 surgical pricing (pages ~28-30).",
+    "example_current": "30 УЗИ сухожилий и связок кистевого сустава исследование | res=12.0 | nonres=13500.0",
+    "example_expected": "УЗИ сухожилий и связок кистевого сустава | res=12000 | nonres=13500",
+    "affected_fraction": "~15-20 rows (1000x price error)"
+   },
+   {
+    "kind": "price-merge",
+    "severity": "high",
+    "description": "Hyphen used as the thousands separator in a price ('13-800'). parse_price's _NUMBER_RE breaks at the hyphen and returns 13.0. Compounded here with a wrapped name (lost) and leading index, so the row is fully corrupted.",
+    "example_current": "33 процедура | res=13.0 | nonres=15500.0",
+    "example_expected": "Удаление спицы с пальцев стопы и кистей, пястных и плюсневых костей | res=13800 | nonres=15500",
+    "affected_fraction": "few rows (high severity)"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "high",
+    "description": "Page-furniture number read as a price. The footer 'Страница 3' contributes '3' as the resident price for the trailing row of a names-only page.",
+    "example_current": "Закрытое вправление вывиха, неуточненная локализация | res=3.0 | nonres=None",
+    "example_expected": "Закрытое вправление вывиха, неуточненная локализация | res=<real positive price from its price columns> (never 3.0 from 'Страница 3')",
+    "affected_fraction": "1-3 rows"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "high",
+    "description": "The bare column header 'Наименование услуг' (it appears alone on a wrapped header line on every page) is mistaken for a section by _section_label (matches _SECTION_HINT_RE 'наименование услуг') and carried down as the section for all following rows.",
+    "example_current": "sec='Наименование услуг'  (on 176 rows)",
+    "example_expected": "sec should remain the true Раздел/подраздел heading (e.g. 'подраздел 1.2. ...'); the column header must never become a section",
+    "affected_fraction": "176 of 444 rows (~40%)"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "high",
+    "description": "Ordinary service-name lines and wrapped heading fragments are misclassified as sections by _section_label (single-cell, no price, matches _SECTION_HINT_RE via 'консультац'/'рентген'/'узи'/'исследован'). E.g. 'Консультация врача (дмн, профессора)' becomes a section (its rows degrade to '1 первичная посещение'); 'Рентгенография височных костей по Майеру, Стенверсу,' becomes the section for 31 rows.",
+    "example_current": "sec='Консультация врача (дмн, профессора)'  /  sec='Рентгенография височных костей по Майеру, Стенверсу,'",
+    "example_expected": "section should be 'подраздел 1.1. Консультации врачей' / 'Подраздел 5.3. Кабинет рентгеновских исследований'; service-name lines must stay names",
+    "affected_fraction": "~25-30 of the 62 emitted 'sections' are bogus"
+   },
+   {
+    "kind": "missing-rows",
+    "severity": "medium",
+    "description": "Раздел 7 heading is written '7. Бактериологическая лаборатория' (no 'Раздел' prefix). _section_label sees parse_price='7' (a value) and no _SECTION_LEAD_RE match, so it is neither a section nor a row — it is dropped, and the bacteriology rows below inherit the wrong/previous section.",
+    "example_current": "(heading dropped; bacteriology rows carry sections like 'Бактериологическое исследование носа на патогенный')",
+    "example_expected": "section 'Раздел 7. Бактериологическая лаборатория' applied to the забор-крови/bacteriology rows",
+    "affected_fraction": "~40 bacteriology rows mis-sectioned"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "Снятие металлоконструкций",
+    "res": 77000,
+    "nonres": 86300,
+    "section": "подраздел 1.2. Дополнительные услуги консультативно-диагностического отделения, а также в травматологическим пункте",
+    "note": "Source p2 line '1 Снятие металлоконструкций операция 77 000 86 300 96 700'. Strip leading index '1' and trailing unit 'операция'. Currently '1 Снятие металлоконструкций операция' res=77000."
+   },
+   {
+    "expected_name": "Удаление инородного тела",
+    "res": 16500,
+    "nonres": 18500,
+    "section": "подраздел 1.2. Дополнительные услуги консультативно-диагностического отделения, а также в травматологическим пункте",
+    "note": "Source '8 Удаление инородного тела операция 16 500 18 500 20 800'. Strip index '8' + unit 'операция'."
+   },
+   {
+    "expected_name": "Пункция суставов (1 сустав)",
+    "res": 7700,
+    "nonres": 8700,
+    "section": "подраздел 1.2. Дополнительные услуги консультативно-диагностического отделения, а также в травматологическим пункте",
+    "note": "Source '11 Пункция суставов (1 сустав) манипуляция 7 700 8 700 9 800'. Strip index '11' + unit 'манипуляция' but PRESERVE the embedded '(1 сустав)'."
+   },
+   {
+    "expected_name": "Check-up «Здоровые суставы»",
+    "res": 36900,
+    "nonres": 41400,
+    "section": "Раздел 2. Check-up программы",
+    "note": "Source '2 Check-up «Здоровые суставы» пакет 36 900 41 400 46 400'. Strip index '2' + unit 'пакет'."
+   },
+   {
+    "expected_name": "Check-up «Здоровый позвоночник»",
+    "res": 99500,
+    "nonres": 111500,
+    "section": "Раздел 2. Check-up программы",
+    "note": "Source '3 Check-up «Здоровый позвоночник» пакет 99 500 111 500 124 900'. First row after a Раздел header; strip index '3' + unit 'пакет'."
+   },
+   {
+    "expected_name": "УЗИ сухожилий и связок кистевого сустава",
+    "res": 12000,
+    "nonres": 13500,
+    "section": "Подраздел 5.6. Кабинет ультрасонографин",
+    "note": "GLYPH ROW. Source '30 УЗИ сухожилий и связок кистевого сустава исследование 12 ООО 13 500 15 200' — '12 ООО' is Cyrillic О for '12 000'. Currently res=12.0. Strip index '30' + unit 'исследование'."
+   },
+   {
+    "expected_name": "Снятие металлоконструкций",
+    "res": 77000,
+    "nonres": 86300,
+    "section": "Подраздел 12.11. Снятие металлоконструкций",
+    "note": "GLYPH ROW (p30). Source '1 Снятие металлоконструкций операция 77 ООО 86 300 96 700' — '77 ООО' = '77 000'. Currently res=77.0. Same name as gold #1 but different section, proving glyph repair fires in Раздел 12."
+   },
+   {
+    "expected_name": "Удаление спицы с пальцев стопы и кистей, пястных и плюсневых костей",
+    "res": 13800,
+    "nonres": 15500,
+    "section": "подраздел 1.2. Дополнительные услуги консультативно-диагностического отделения, а также в травматологическим пункте",
+    "note": "HARD ROW. Name wraps two text lines around the priced line: 'Удаление спицы с пальцев стопы и кистей, пястных и плюсневых' + 'костей'; priced line is '33 процедура 13-800 15 500 17 400' ('13-800' hyphen-separator = 13800). Currently emitted as name '33 процедура' res=13.0. Requires wrapped-name recovery + hyphen-price + index/unit strip."
+   }
+  ],
+  "forbidden_name_patterns": [
+   "^\\d{1,3}\\s+\\S",
+   "^[;:]\\s*\\d{1,3}\\s",
+   "(?i)^(операци[яй]|манипуляци[яй]|процедур[аы]|исследовани[ея]|посещени[ея]|видеозвонок|сеанс|пакет|анализ|консультаци[яй]|услуг[аи]|сутки|час|койко-день|снимок|зуб)$",
+   "(?i)\\s(посещение|видеозвонок|пакет|час)$",
+   "ООО",
+   "(?i)\\bстраниц[аы]\\s*\\d"
+  ],
+  "min_rows": 400,
+  "real_names_starting_with_digit": [
+   "8-ми образная гипсовая повязка",
+   "ЭКГ в 12-ти отведениях",
+   "Пункция суставов (1 сустав)",
+   "Гипсовая повязка с фиксацией 2-х суставов и более (задняя лангетка)",
+   "Доплата за пребывание в отдельной 2-х местной палате",
+   "Термический ожог 1-2-ЗАБ степени 20-30% поверхности тела",
+   "Радиочастотная денервация (РЧД) не более 2х зон",
+   "Рентгенография кости и сустава 1 проекция с нагрузкой",
+   "Определение антистрептолизина О",
+   "Стерилизация бикса КСК-9 ДСК-6, КСК-3",
+   "Доплата за пребывание в отдельной 2-х местной палате койко-день"
+  ],
+  "fix_recommendations": [
+   "table_extract.parse_price (shared by ALL formats): before numeric parsing, repair price-shaped glyph tokens — replace Cyrillic О/о (U+041E/U+043E)→'0' and И/и (U+0418/U+0438)→'11', and treat a hyphen between digit groups ('13-800')→thousands separator. Gate strictly on price-shape (a digit group immediately followed by a glyph-run of О's, or 'И' followed by a 3-digit group) so real trailing letters like 'антистрептолизина О' are untouched. This alone fixes res=12→12000, 77→77000, 198→198000, 13→13800, 11400, etc.",
+   "pdf_text.py _row_from_line: strip exactly ONE leading row-index token from the assembled name. Apply only when name matches ^\\d{1,3}\\s+ AND the next char is not a hyphen/comma/digit (protects '8-ми','1,25','(1 сустав)'); strip just one integer (so '23 8-ми образная' → '8-ми образная', never '8'). Also handle a leading punctuation+index ('; 32 ...', '1 30 ...').",
+   "pdf_text.py _row_from_line / _cells_by_gap: detect the unit-of-measurement cell (the single token just before the trailing price block) against a shared unit lexicon (операция, манипуляция, процедура, исследование, посещение, пакет, видеозвонок, час, сеанс, койко-день, сутки, зона, анализ, снимок, зуб) and move it into extra['unit'] instead of leaving it in the name.",
+   "table_extract._section_label (used by both pdf_text and rows_from_table): (a) explicitly reject the bare column headers 'Наименование услуг', 'Единица измерения', and the tier-header phrases so they can never become a section; (b) require a single-cell line to match _SECTION_LEAD_RE or be uppercase-dominant to qualify — do NOT promote ordinary service-name lines (e.g. 'Консультация врача (дмн, профессора)', 'Рентгенография височных костей ...') to sections; (c) extend heading detection to bare-numbered headings like '7. Бактериологическая лаборатория' (pattern ^\\d{1,2}\\.\\s+\\p{L} on a price-less line) so Раздел 7 is captured.",
+   "pdf_text.py _rows_from_pdf_words: implement wrapped/merged-name recovery — when a priced line's name (after index+unit strip) is empty or just a unit, compose the name from the nearest price-less text line(s) immediately above (and the continuation line below), instead of dropping them or emitting them as sections. Fixes first/repeat consultation pairs, '6 операция', '33 процедура' (Удаление спицы...), etc.",
+   "pdf_text.py PdfTextParser.parse: handle the cross-page table split — when page N word-geometry yields names with no price columns and page N+1 yields unit+price columns with no names, zip page-N left-column names onto page-N+1 rows by order (heuristic-gated so normal pages are unaffected). At minimum stop discarding the 21 page-3 names of подраздел 1.2.",
+   "pdf_text.py _rows_from_pdf_words / _row_from_line: strip page-furniture tokens ('Страница N' / 'страница N') from cells before price parsing so 'Страница 3' is not read as res=3.0 and never leaks into a name or section.",
+   "pdf_text.py _row_from_line: when three tier prices are present, retain the third (дальнее зарубежье) in extra['price_far_abroad'] (mirroring the tier handling already in rows_from_table) so the third citizen-tier column is not silently dropped on this PDF."
+  ]
+ },
+ "Клиника 6 прайс 2026.xlsx": {
+  "file": "/home/juliuscaesar/Desktop/MedTech-Hackathon-2026/data/archive/Клиника 6 прайс 2026.xlsx",
+  "format": "xlsx",
+  "detect_format_correct": true,
+  "current_rows": 5154,
+  "estimated_true_rows": 5041,
+  "estimate_method": "openpyxl scan of the single sheet 'приложение' (raw dims 5181 rows x 12 cols; header at row index 10; column-number row at 11; data from row 12). Counted rows that have an alphabetic name in col C (Наименование) AND at least one numeric price in cols F-I (без НДС / РК / ближнее / дальнее), EXCLUDING: 89 single-non-empty-cell numbered section headers ('1. СТАЦИОНАР', '1.1 Блок хирургии', ...), 2 title rows (rows 7-8 above the header), 25 'исключение услуги' placeholder rows, and 1 nameless row. Result = 5026 nonzero-priced services + 15 legitimately-free (0 KZT) services (e.g. 'Анализ крови на ВИЧ') = 5041 real service lines. NOTE: the № п/п column only reaches 3480 because ~1560 sub-services/components carry no row number, so № is NOT a reliable count; the alpha-name+price scan is.",
+  "coverage_summary": "No whole sheet/section is missing: the single sheet 'приложение' is fully read and the parser's priced_rows=5026 matches the true nonzero-priced count exactly, so extraction is essentially complete and accurate. The problem is OVER-extraction plus lost structure: the parser emits 89 numbered section-header rows ('1. СТАЦИОНАР', '1.1 Блок хирургии', '15. Лабораторные услуги', ...) as bogus price-less rows, emits 25 'исключение услуги' deleted-service placeholders, and attaches NO section to any row (sec=None on all 5026 real rows). It is not under-extracting real services. 15 free (0-KZT) real services are read correctly as price 0 but would be hidden by any downstream truthiness filter.",
+  "defects": [
+   {
+    "kind": "section-as-row",
+    "severity": "high",
+    "description": "Every numbered section header is emitted as a bogus price-less data row instead of being recognized as a heading. _section_label() rejects them because the leading hierarchical number ('1.', '1.1', '15.16') parses as a price (val=1.0) while the lead word is not in _SECTION_LEAD_RE (раздел/блок/...). 89 such junk rows pollute the catalog.",
+    "example_current": "'1. СТАЦИОНАР' | None | None | None | sec=None",
+    "example_expected": "row NOT emitted; recognized as a section heading and carried onto following rows as section='1. СТАЦИОНАР'",
+    "affected_fraction": "89 rows"
+   },
+   {
+    "kind": "missing-section",
+    "severity": "high",
+    "description": "Because the numbered headers are never detected as sections, current_section is never set, so section attribution is completely absent — every one of the 5026 real rows has sec=None. The proper section/sub-section ('1. СТАЦИОНАР' -> '1.1 Блок хирургии' -> '15.6 Серологические исследования', etc.) is lost.",
+    "example_current": "'Антирефлюксные операции' | 177560.0 | 266300.0 | 'E02.000.001' | sec=None",
+    "example_expected": "'Антирефлюксные операции' | 177560.0 | 266300.0 | 'E02.000.001' | sec='1.1 Блок хирургии'",
+    "affected_fraction": "100% (all 5026 rows)"
+   },
+   {
+    "kind": "placeholder-junk-rows",
+    "severity": "medium",
+    "description": "Deleted/withdrawn catalog entries whose Наименование cell literally reads 'исключение услуги' (excluded service) are emitted as rows with a code and a 0/None price. These are not real services and should be dropped.",
+    "example_current": "'исключение услуги' | 0.0 | None | 'E02.000.226'",
+    "example_expected": "row dropped (not a real service line)",
+    "affected_fraction": "25 rows"
+   },
+   {
+    "kind": "zero-price-as-unpriced",
+    "severity": "low",
+    "description": "Legitimately free state-funded services (e.g. 'Анализ крови на ВИЧ', priced 0/0/0/0 in source) are parsed correctly as price 0.0, but the diagnostic 'priced' check (price_resident OR price_nonresident OR price_original) treats 0.0 as falsy, so 15 real services are counted as unpriced. The parse is correct; the risk is a downstream truthiness filter hiding these real rows. Fix is in the consumer, not table_extract.",
+    "example_current": "'Анализ крови на ВИЧ' | 0.0 | 0.0 | 'E11.000.001'",
+    "example_expected": "'Анализ крови на ВИЧ' | 0.0 | 0.0 | 'E11.000.001' (kept as a real free service)",
+    "affected_fraction": "15 rows"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "Ведение больного в стационаре 1 койко-день",
+    "res": 2210,
+    "nonres": 3300,
+    "section": "1. СТАЦИОНАР",
+    "note": "First priced row of the first section; resident=col F (с НДС для граждан РК), non-resident=col I (дальнее зарубежье); code E01.000.001. Section string depends on heading-label normalization (may appear without leading '1.')."
+   },
+   {
+    "expected_name": "Антирефлюксные операции",
+    "res": 177560,
+    "nonres": 266300,
+    "section": "1.1 Блок хирургии",
+    "note": "First row immediately after a SUB-section header; the header '1.1 Блок хирургии' must NOT itself appear as a row; code E02.000.001."
+   },
+   {
+    "expected_name": "Анализ крови на ВИЧ",
+    "res": 0,
+    "nonres": 0,
+    "section": "15.6 Серологические исследования",
+    "note": "Legitimately FREE service (0 KZT in all price columns) — must survive even though both prices are 0; code E11.000.001."
+   },
+   {
+    "expected_name": "22.1.1 Наблюдение за течением беременности 7-16 недель",
+    "res": 133770,
+    "nonres": 200800,
+    "section": "22. Блок ведения беременных",
+    "note": "TRICKY: name legitimately starts with the hierarchical number '22.1.1' — must be preserved verbatim, never index-stripped. It is a priced multi-cell package (code E19.000.025), NOT a section header."
+   },
+   {
+    "expected_name": "3.5 ЭКО",
+    "res": 1155000,
+    "nonres": 1732500,
+    "section": "3.4 ЭКО  в сопровождении врача со знанием английского языка",
+    "note": "Digit-leading priced package name ('3.5 ЭКО', trailing space trimmed) — preserve verbatim; code E23.000.005."
+   },
+   {
+    "expected_name": "Подарочный сертификат номиналом 200 000 тенге",
+    "res": 210000,
+    "nonres": null,
+    "section": "27. Прочие услуги",
+    "note": "LAST real row; far-abroad column (I) is empty so non-resident MUST be null; resident=col F=210000 (NOT col E без НДС=199500); name embeds digits '200 000' that must be untouched; code E29.000.086."
+   },
+   {
+    "expected_name": "Определение опухолевого антигена (СА 19-9) в сыворотке крови методом иммунохемилюминесценции",
+    "res": 4410,
+    "nonres": 6600,
+    "section": "15.5 Иммунохимические исследования",
+    "note": "Digit-bearing lab name (СА 19-9) must be preserved; code B06.415.006."
+   },
+   {
+    "expected_name": "Определение витамина D (25-OH кальциферола) в сыворотке крови методом иммунохемилюминисценции",
+    "res": 7670,
+    "nonres": 11500,
+    "section": "15.5 Иммунохимические исследования",
+    "note": "Digit-bearing lab name (25-OH) must be preserved verbatim (source spelling 'иммунохемилюминисценции'); code B06.304.005.1."
+   }
+  ],
+  "forbidden_name_patterns": [
+   "^исключение услуги\\b",
+   "^1\\. СТАЦИОНАР$",
+   "^1\\.1 Блок хирургии$",
+   "^15\\. Лабораторные услуги$",
+   "^23\\. Услуги Check up центра$",
+   "^8\\.1 Консультации специалистов$"
+  ],
+  "min_rows": 5000,
+  "real_names_starting_with_digit": [
+   "3.5 ЭКО",
+   "3.6 ЭКО+ИКСИ",
+   "4.1 Инвазивная пренатальная диагностика: Биопсия хориона",
+   "22.1 Наблюдение за течением беременности",
+   "22.1.1 Наблюдение за течением беременности 7-16 недель",
+   "1) Медосмотр. Работники объектов общественного питания и пищевой промышленности",
+   "1 специалист по выбору Программа для детей и подростков",
+   "Определение витамина D (25-OH кальциферола) в сыворотке крови методом иммунохемилюминисценции",
+   "Определение опухолевого антигена (СА 19-9) в сыворотке крови методом иммунохемилюминесценции",
+   "Определение опухолевого антигена (СА 15-3) в сыворотке крови методом иммунохемилюминесценции",
+   "Определение опухолевого антигена (СА 72-4) в сыворотке крови методом иммунохемилюминесценции",
+   "Определение онкомаркера немелкоклеточного рака легкого (CYFRA 21-1) в сыворотке крови",
+   "Определение 17- оксипрогестерона",
+   "Обнаружение вируса папилломы человека 16,18 типов в биологическом материале",
+   "Транспортная система со средой для забора биоматериала на выявление РНК вируса COVID-19 методом ПЦР"
+  ],
+  "fix_recommendations": [
+   "1) app/parsers/table_extract.py :: _section_label(): recognize single-non-empty-cell rows that begin with a hierarchical section number ('1.', '1.1', '15.16', '8.1', '23.') as headings. Before the parse_price value-rejection, strip a leading section-number token with re.sub(r\"^\\s*\\d+(?:\\.\\d+)*[.)]?\\s+\", \"\", text) and run the price/heading test on the de-numbered core; treat the row as a heading when the core has >=3 letters and no parseable price. This is safe because the function already requires exactly ONE non-empty cell and a genuine priced service is never single-cell (it always has name + at least one price cell). This single change removes the 89 junk header rows AND populates extra['section'] for all 5026 real rows (fixes the sec=None defect).",
+   "2) Preserve the existing protection for OTHER formats sharing this function: keep the price-on-core check so a merged 'name price' cell (e.g. a PDF row 'Прием врача 5000') still detects a price on its core and is NOT swallowed as a heading. Re-run pdf_text / pdf_scan / docx fixtures after the change.",
+   "3) app/parsers/table_extract.py :: rows_from_table(): after computing `name`, drop placeholder rows by adding a small skip-set check, e.g. if name.strip().lower() in {'исключение услуги'}: continue. Removes the 25 deleted-service placeholders.",
+   "4) Do NOT add any leading-index/leading-digit stripping to names for this file: № п/п is already a separate column, and many real names legitimately start with or embed digits ('22.1.1 Наблюдение... 7-16 недель', '3.5 ЭКО', '1) Медосмотр...', '25-OH', 'СА 19-9', 'CYFRA 21-1', '17- оксипрогестерон'). Any such fix would corrupt them.",
+   "5) Column mapping is already correct and needs no change, but document it: resident=col F 'Цена с учетом НДС для граждан РК', non-resident=col I 'дальнее зарубежье', near-abroad (col H, СНГ) preserved in extra['price_near_abroad']; col E 'без НДС' is intentionally ignored. Verified against rows 13/53/736/5165.",
+   "6) Downstream only (not table_extract): when filtering 'priced' rows for display/catalog, treat price==0.0 as a valid price so the 15 free services (e.g. 'Анализ крови на ВИЧ') are not hidden by a truthiness check.",
+   "7) Add regression fixtures: assert the 8 must_appear_rows (exact name + res/nonres) are produced, assert none of the forbidden_name_patterns match any emitted name, and assert total emitted rows >= min_rows (5000) and ~5041 after dropping headers+placeholders."
+  ]
+ },
+ "Клиника 7_Прайс 2026.xls": {
+  "file": "data/archive/Клиника 7_Прайс 2026.xls",
+  "format": "xls",
+  "detect_format_correct": true,
+  "current_rows": 2953,
+  "estimated_true_rows": 2884,
+  "estimate_method": "Single sheet '2026' (3065 rows x 6 cols). The source carries an explicit row-number column (col0, '№ п/п'). Exactly 2884 rows bear a numeric index in col0 and the max index value is 2884 (contiguous 1..2884), so there are 2884 real service lines. Of those, 2883 carry a price in at least one of the three price columns (col3 РК / col4 ближнее / col5 дальнее зарубежье); the one exception is the indexed Cito surcharge line (#605, row=690 'Выполнение исследования в ускоренном режиме (по Cito)') which legitimately has empty price cells. 176 additional rows are single-cell section/subsection headers (no index, no price) and ~10 rows are sheet title/furniture above the header row — all excluded from the count.",
+  "coverage_summary": "Coverage of priced data is essentially complete: the parser emits all 2883 priced service lines plus the 1 priceless indexed Cito line — no whole sheets/pages/sections are missing (there is only one sheet). The problem is OVER-extraction and section corruption, not under-extraction. ~69 mixed-case subsection headers (e.g. 'Витамины', 'Опухолевые маркеры', 'Гормоны щитовидной железы', '- МСКТ - Головной мозг', 'Абдоминопластика') are wrongly emitted as null-price rows AND, more damagingly, are never promoted to the current section, so every priced row beneath them inherits a stale/wrong section label. Title rows above the header ('ПРЕЙСКУРАНТ', 'Приложение к Приказу…') are correctly skipped, and all-caps section headers ('ПРИЕМ ВРАЧА', 'УСЛУГИ ТЕРАПИИ') are handled correctly.",
+  "defects": [
+   {
+    "kind": "section-as-row",
+    "severity": "high",
+    "description": "Mixed-case subsection/category header rows (a single non-empty cell in the name column, no price in any column) are NOT recognized by _section_label() because they are neither uppercase-dominant (upper_ratio<0.6) nor contain a _SECTION_HINT_RE keyword. They are therefore emitted as garbage ParsedRows with all prices None. About 69 such rows leak into the output (the 70 None-resident rows minus the one genuine priceless Cito line).",
+    "example_current": "ParsedRow(service_name_raw='Гормоны щитовидной железы', price_resident=None, price_nonresident=None, extra.section='Иммунологические исследования')  [source_ref sheet=2026;row=260]",
+    "example_expected": "Row should NOT be emitted at all; instead it should set current_section='Гормоны щитовидной железы' for the priced rows that follow it.",
+    "affected_fraction": "~69 garbage null-price rows"
+   },
+   {
+    "kind": "wrong-section",
+    "severity": "high",
+    "description": "Because the missed mixed-case headers (defect 1) never update current_section, the real priced rows beneath them are tagged with the wrong (stale) section — the last all-caps/keyword header seen. This systematically mis-labels large blocks (the КДЛ lab tree rows 82-700, the КТ/МРТ dash sub-headers rows 927-1400, the surgical/plastic blocks rows 2314-2900).",
+    "example_current": "'Тиреотропного гормона (TSH)' (row=264) -> extra.section='Иммунологические исследования'  (also 'Раковый антиген 19-9 (СА 19-9)' row=380 -> 'Диагностика аутоиммуной патологии методом непрямой иммунофлюоресценции (нРИФ)'; 'Миниабдоминопластика' row=2751 -> 'Операции - Пластическая хирургия')",
+    "example_expected": "'Тиреотропного гормона (TSH)' -> section='Гормоны щитовидной железы'; 'Раковый антиген 19-9 (СА 19-9)' -> section='Опухолевые маркеры'; 'Миниабдоминопластика' -> section='Абдоминопластика'",
+    "affected_fraction": "roughly 600-1000 priced rows (~20-35%)"
+   },
+   {
+    "kind": "wrong-column",
+    "severity": "low",
+    "description": "Informational / by-design: this is a 3-tier citizen-price layout (col3 РК-resident, col4 СНГ/ближнее зарубежье, col5 дальнее зарубежье). _map_tiers() maps price_nonresident to the FAR-abroad column (col5) and stashes the near-abroad (col4) value in extra.price_near_abroad. So price_nonresident is the дальнее-зарубежье tier, not the immediate СНГ tier. Not a bug, but tests/consumers must read col5 for nonres.",
+    "example_current": "'Первичный консультативный прием врача' -> price_resident=12600 (col3), price_nonresident=21420 (col5 far), extra.price_near_abroad=16380 (col4)",
+    "example_expected": "Keep as-is (by design): res=col3=12600, nonres=col5=21420; near-abroad 16380 preserved in extra.",
+    "affected_fraction": "all rows (design note, not a corruption)"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "Первичный консультативный прием врача",
+    "res": 12600,
+    "nonres": 21420,
+    "section": "ПРИЕМ ВРАЧА",
+    "note": "First priced row of the first section; index col0=1 must be stripped (it already is). Representative baseline."
+   },
+   {
+    "expected_name": "Тиреотропного гормона (TSH)",
+    "res": 3700,
+    "nonres": 6290,
+    "section": "Гормоны щитовидной железы",
+    "note": "SECTION-FIX regression: currently mis-tagged 'Иммунологические исследования' because the mixed-case header 'Гормоны щитовидной железы' (row 260) is not detected as a section."
+   },
+   {
+    "expected_name": "Миниабдоминопластика",
+    "res": 997500,
+    "nonres": 1695750,
+    "section": "Абдоминопластика",
+    "note": "SECTION-FIX regression: currently 'Операции - Пластическая хирургия'; the lone-cell header 'Абдоминопластика ' (row 2750) must become the section."
+   },
+   {
+    "expected_name": "Раковый антиген 19-9 (СА 19-9)",
+    "res": 4450,
+    "nonres": 7565,
+    "section": "Опухолевые маркеры",
+    "note": "SAFETY + SECTION-FIX: name legitimately embeds digits ('19-9'); must never be stripped. Section currently stale 'Диагностика аутоиммуной патологии…(нРИФ)'; correct header is 'Опухолевые маркеры' (row 368)."
+   },
+   {
+    "expected_name": "1 ГРУППА СЛОЖНОСТИ",
+    "res": 12600,
+    "nonres": 21420,
+    "section": "Операции - Онкохирургия",
+    "note": "SAFETY: name legitimately starts with a digit; no index-stripping may fire. Section already correct (header ' - Операции - Онкохирургия' matches 'хирург')."
+   },
+   {
+    "expected_name": "Запись ЭКГ",
+    "res": 550,
+    "nonres": 935,
+    "section": "УСЛУГИ ТЕРАПИИ",
+    "note": "Last priced line (index col0=2884, row=3064); coverage tail must be present."
+   }
+  ],
+  "forbidden_name_patterns": [
+   "^\\s*-\\s",
+   "^Опухолевые маркеры\\s*$",
+   "^Гормоны щитовидной железы\\s*$",
+   "^Витамины\\s*$",
+   "^Иммунный статус\\s*$"
+  ],
+  "min_rows": 2880,
+  "real_names_starting_with_digit": [
+   "3Д пазух носа",
+   "3 Д ортопантомаграмма",
+   "1 ГРУППА СЛОЖНОСТИ",
+   "1\"А\" ГРУППА СЛОЖНОСТИ",
+   "1\"Б\" ГРУППА СЛОЖНОСТИ",
+   "2 ГРУППА СЛОЖНОСТИ",
+   "3 ГРУППА СЛОЖНОСТИ",
+   "4 ГРУППА СЛОЖНОСТИ",
+   "5 ГРУППА СЛОЖНОСТИ",
+   "6 ГРУППА СЛОЖНОСТИ",
+   "1 койко/день в отделении стационара с питанием (без стоимости обследования, медикаментов по Протоколу), одноместная палата",
+   "1 приставное койко-место по уходу за больным в день с питанием, одноместная палата",
+   "Раковый антиген 19-9 (СА 19-9)",
+   "Раковый антиген 15-3 (СА 15-3)",
+   "Раковый антиген 72-4 (СА 72-4)",
+   "Раковый антиген 125 (СА 125)",
+   "Витамин D общий (Vitamin D total, 25-OH-VitD)"
+  ],
+  "fix_recommendations": [
+   "PRIMARY — app/parsers/table_extract.py, _section_label(): relax the final gate so a row with exactly one non-empty cell, >=3 letters, and NO parseable price is treated as a section header even when it is neither uppercase-dominant nor matches _SECTION_HINT_RE. The current gate `if lead_heading or upper_ratio>=0.6 or _SECTION_HINT_RE.search(text)` drops mixed-case subsection headers ('Витамины', 'Опухолевые маркеры', 'Гормоны щитовидной железы', '- МСКТ - Головной мозг', 'Абдоминопластика'). A lone label cell with no price in a priced table is structurally a heading. This single change fixes BOTH the ~69 null-row over-extraction AND the stale-section attribution on the priced rows beneath.",
+   "SAFETY GATE — pass a flag from rows_from_table() into _section_label (e.g. `single_cell_is_heading = has_header and ('resident' in mapping or 'nonresident' in mapping)`) and only apply the relaxed branch when the table has a detected header with a real price column. table_extract.py is shared by PDF/DOCX/OCR; without this gate, header-less single-column name lists would be wiped. The 2-non-empty-cell Cito line (row 690, name+unit, no price) is unaffected because the relaxed rule still requires exactly ONE non-empty cell.",
+   "DO NOT add leading row-number/index stripping for this format. The № п/п is already a separate mapped 'index' column, and names legitimately begin with digits ('1 ГРУППА СЛОЖНОСТИ', '3Д пазух носа', '1 койко/день…'). Any global leading-digit strip in table_extract must be guarded to never fire when an 'index' column is mapped, or it will corrupt these names.",
+   "OPTIONAL/DOC — app/parsers/table_extract.py, _map_tiers()/rows_from_table(): the non-resident price is intentionally the far-abroad tier (col5); near-abroad (col4) is kept in extra.price_near_abroad. Document this so regression tests assert price_nonresident against the дальнее-зарубежье column, and consider surfacing price_near_abroad if the СНГ tier is needed downstream.",
+   "Add a regression fixture asserting the 6 must_appear_rows (exact name + res + nonres + corrected section) and that no emitted name matches the forbidden_name_patterns; also assert priced-row count stays >= 2880 and that '1 ГРУППА СЛОЖНОСТИ'/'Раковый антиген 19-9 (СА 19-9)' survive verbatim."
+  ]
+ },
+ "Клиника 8 2026.xlsx": {
+  "file": "/home/juliuscaesar/Desktop/MedTech-Hackathon-2026/data/archive/Клиника 8 2026.xlsx",
+  "format": "xlsx",
+  "current_rows": 1859,
+  "estimated_true_rows": 1853,
+  "detect_format_correct": true,
+  "estimate_method": "Workbook has 2 sheets. Sheet 'Страховой' (1816 raw rows): header at raw row 17, data from row 20; ~1724 priced service rows after excluding 16 title/signature rows above the header, ~80 section-header rows, and 3 trailing signatory furniture rows. Sheet 'востребовынные страховых' (155 raw rows): header at raw row 19, data from row 22; ~129 priced service rows after excluding furniture/section headers. 1724 + 129 = 1853 real priced services. This matches the parser's priced_rows=1853 count (the extra 6 of total 1859 are price-less signatory furniture). Every real data row IS being extracted — coverage is complete; the problem is value correctness on sheet 2, not missing rows.",
+  "coverage_summary": "No whole sheets/sections are missing — both sheets and all ~95 section blocks are extracted, and essentially every real priced data row is emitted (parser priced_rows=1853 ≈ estimated 1853 true services). Sheet 1 ('Страховой', 1727 emitted rows) is parsed cleanly: clean names, correct resident prices, correct codes, correct sections. The defects are concentrated entirely in sheet 2 ('востребовынные страховых', 132 emitted rows), where the price column is mismapped to the service-code column, so ALL ~129 priced rows there carry garbage prices and lost codes. Separately, the parser slightly over-extracts: 6 trailing signatory/footer rows (3 per sheet) are emitted as price-less 'services'.",
+  "defects": [
+   {
+    "kind": "wrong-column",
+    "severity": "critical",
+    "description": "On sheet 'востребовынные страховых' the detected header is raw row 19 = ['№ п/п','Наименование услуги','Цена (тенге) в том числе НДС', '', ...]. It is a STACKED two-row header: the real sub-column labels (Код по тарификатору / ед.измерения / price-for-citizens) live in raw row 20. _map_columns sees 'Цена' in column index 2 and maps resident->col2, but in the DATA rows col2 holds the MKB-9 service code (e.g. 'A02.004.000.1'). parse_price() therefore turns the code digits into a bogus price, and because res_price is non-None the rightmost-numeric fallback never runs, so the TRUE price in col4 (e.g. 25680) is ignored. Mapping is {index:0, resident:2, name:1}.",
+    "example_current": "name='Ахметжанов А.Х., врач-гинеколог, первичная консультация' res=20040001.0 nonres=None code=None sec='ПРИЕМ ВРАЧА'",
+    "example_expected": "name='Ахметжанов А.Х., врач-гинеколог, первичная консультация' res=25680 nonres=None code='A02.004.000.1' sec='ПРИЕМ ВРАЧА'",
+    "affected_fraction": "~129 rows (all priced rows of sheet 'востребовынные страховых', ~7% of document)"
+   },
+   {
+    "kind": "leading-code",
+    "severity": "high",
+    "description": "Same root cause as above: because col2 (the code column) on sheet 'востребовынные страховых' was consumed as the resident-price column, no 'code' column is mapped, so every service code on that sheet is dropped (code=None). The codes (A02.004.000.1, A02.016.000, А02.040.000 etc.) are present in the source but lost.",
+    "example_current": "code=None  (for 'Аскарова К.М. врач - пульмонолог, первичная консультация КМН')",
+    "example_expected": "code='A02.016.000'",
+    "affected_fraction": "~129 rows (all sheet-2 priced rows)"
+   },
+   {
+    "kind": "section-as-price",
+    "severity": "low",
+    "description": "Trailing signatory/footer rows that sit BELOW the last data row (so they are not skipped by the above-header cutoff) leak through _section_label (mixed-case, no section keyword, no number) and are emitted as price-less 'service' rows. These are page furniture, not services.",
+    "example_current": "name='Заместитель директора по медицинской деятельности ТОО \"Mexel Healt\"' res=None ; name='Главный экономист' res=None",
+    "example_expected": "row dropped (not a priced service)",
+    "affected_fraction": "6 rows (3 per sheet)"
+   }
+  ],
+  "must_appear_rows": [
+   {
+    "expected_name": "Консультация врача: Аллерголог КМН",
+    "res": 15480,
+    "nonres": null,
+    "section": "ПРИЕМ ВРАЧА",
+    "note": "Sheet 'Страховой', first priced row. Already correct today; lock it so the sheet-2 fix does not regress single-header sheets. Code A02.020.000.2."
+   },
+   {
+    "expected_name": "Определение 17- оксипрогестерона (17-ОН-прогестерона) в сыворотке крови ИФА-методом",
+    "res": 3840,
+    "nonres": null,
+    "section": "Иммуноферментная диагностика",
+    "note": "Digit-bearing lab name (17-ОН) — must stay intact, no index/code stripping. Already correct. Code B06.573.005."
+   },
+   {
+    "expected_name": "Узи глаз: А - Сканирование (1 глаз)",
+    "res": 4560,
+    "nonres": null,
+    "section": "ОФТАЛЬМОЛОГ",
+    "note": "Sheet 'Страховой', first row under section 'ОФТАЛЬМОЛОГ'. Already correct. Code C03.027.004."
+   },
+   {
+    "expected_name": "Ахметжанов А.Х., врач-гинеколог, первичная консультация",
+    "res": 25680,
+    "nonres": null,
+    "section": "ПРИЕМ ВРАЧА",
+    "note": "Sheet 'востребовынные страховых', row 22. CRITICAL: parser currently emits res=20040001 (code digits) and code=None. After fix res must be 25680 and code 'A02.004.000.1'."
+   },
+   {
+    "expected_name": "Ахметжанов А.Х., врач-гинеколог, повторная консультация",
+    "res": 19260,
+    "nonres": null,
+    "section": "ПРИЕМ ВРАЧА",
+    "note": "Sheet 'востребовынные страховых', row 23 — continuation line with EMPTY № index. Currently res=20040001 (garbage). Expected code 'A02.004.000.1'."
+   },
+   {
+    "expected_name": "Аскарова К.М. врач - пульмонолог, первичная консультация КМН",
+    "res": 19320,
+    "nonres": null,
+    "section": "ПРИЕМ ВРАЧА",
+    "note": "Sheet 'востребовынные страховых', row 24. Currently res=2016000 (garbage). Expected code 'A02.016.000'."
+   },
+   {
+    "expected_name": "Абдикаримов А.М., онколог-хиурург первичная консультация",
+    "res": 15480,
+    "nonres": null,
+    "section": "ПРИЕМ ВРАЧА",
+    "note": "Sheet 'востребовынные страховых', row 26. Currently res=2040000 (garbage). Code is 'А02.040.000' (note leading Cyrillic А). Expected res 15480."
+   }
+  ],
+  "forbidden_name_patterns": [
+   "^\\d+\\s+[A-Za-zА-Яа-яЁё]",
+   "^Главный экономист$",
+   "^Заместитель директора по ",
+   "^Председатель Правления$"
+  ],
+  "min_rows": 1845,
+  "real_names_starting_with_digit": [
+   "Определение 17- оксипрогестерона (17-ОН-прогестерона) в сыворотке крови ИФА-методом",
+   "Определение опухолевого антигена (СА 19-9) в сыворотке крови методом иммунохемилюминесценции",
+   "Определение опухолевого антигена (СА 15-3) в сыворотке крови методом иммунохемилюминесценции",
+   "Определение опухолевого антигена (СА 72-4) в сыворотке крови методом иммунохемилюминесценции",
+   "Определение онкомаркера немелкоклеточного рака легкого (CYFRA 21-1) в сыворотке крови методом иммунохемилюминисценции",
+   "Вирус папилломы человека 16-18 (качественный)",
+   "Консультация -консилиум из 3-4х врачей (офлайн)",
+   "Рентгенография грудной клетки в  2-х проекциях",
+   "АКШ при 3-х сосудистом поражении коронарного русла"
+  ],
+  "fix_recommendations": [
+   "PRIMARY (app/parsers/table_extract.py, rows_from_table / _map_columns): add a data-validation guard for price columns. After _map_columns, if a column mapped to 'resident' (or 'nonresident' via a 'цена' keyword) has DATA values that are predominantly NON-plain-numeric and instead match a service-code pattern (regex like ^[A-Za-zА-Яа-яЁё]?\\d{2}\\.\\d{3} — catches A02.004.000.1 / B06.157.006 / С03.027.004), reclassify that column as 'code' (if no code column is mapped yet) and DELETE the 'resident'/'nonresident' mapping. The existing rightmost-numeric fallback then correctly picks col4 (25680) into res_price and the code column is recovered. This fixes sheet 'востребовынные страховых' WITHOUT touching sheet 'Страховой' (which already has resident unmapped). Sample data cells to validate against: code col '%-numeric'≈0 vs price col '%-numeric'≈100.",
+   "ALTERNATIVE / complementary (table_extract.py, find_header_row + rows_from_table): support stacked multi-row headers — when the row directly below the detected header is itself header-like (no parseable price; contains keywords such as 'код'/'ед.изм'/'для граждан') merge its cell texts column-wise into the header before _map_columns and advance the data-start index. CAUTION: a naive merge here mis-assigns the single price column to 'nonresident' because sheet-2's price sub-header literally contains 'иностранцев' (a _NONRES_KW) and would also regress sheet 1; if you take this route, prefer mapping a sole price tier to 'resident' and only treat it as non-resident when an explicit resident column also exists. The PRIMARY guard above is safer.",
+   "SECONDARY (table_extract.py, rows_from_table main loop or _section_label): drop trailing signatory/footer furniture. Require an emitted row to have a price OR a code, OR extend the furniture filter to skip single-cell rows matching signatory titles (^Заместитель директора , ^Главный экономист$, ^Председатель ...). This removes the 6 price-less rows currently emitted (rows 1813-1815 of 'Страховой' and 152-154 of 'востребовынные страховых').",
+   "REGRESSION FIXTURE: assert the 7 must_appear_rows (exact name+res+code+section) and the forbidden_name_patterns, and explicitly assert sheet-1 rows (Аллерголог КМН=15480/A02.020.000.2, 17-ОН=3840/B06.573.005) are byte-for-byte unchanged so the shared table_extract.py change is proven non-regressing across the single-header sheet."
+  ]
+ }
+}

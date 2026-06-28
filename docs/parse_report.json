@@ -1,0 +1,92 @@
+{
+  "totals": {
+    "files": 10,
+    "partners": 10,
+    "price_items": 18451,
+    "active_items": 8752,
+    "matched_items": 9978,
+    "elapsed_sec": 720.5
+  },
+  "files": [
+    {
+      "file": "Клиника 1 2026.pdf",
+      "format": "pdf",
+      "status": "needs_review",
+      "items": 2655,
+      "matched": 1855,
+      "partner": "Стоимость,"
+    },
+    {
+      "file": "Клиника 1 прайс 2024.docx",
+      "format": "docx",
+      "status": "needs_review",
+      "items": 2646,
+      "matched": 956,
+      "partner": "Клиника"
+    },
+    {
+      "file": "Клиника 2 прайс 2025 год.PDF",
+      "format": "pdf",
+      "status": "needs_review",
+      "items": 1019,
+      "matched": 780,
+      "partner": "Блок А. Поликлиника"
+    },
+    {
+      "file": "Клиника 2 прайс 2026.pdf",
+      "format": "pdf",
+      "status": "needs_review",
+      "items": 847,
+      "matched": 680,
+      "partner": "Прейскурант иен на платные медицинские yc.iv! и"
+    },
+    {
+      "file": "Клиника 3 прайс 2026.PDF",
+      "format": "pdf",
+      "status": "needs_review",
+      "items": 818,
+      "matched": 494,
+      "partner": "Код Yliliepiia.i Цена, тенге Цена со"
+    },
+    {
+      "file": "Клиника 4 прайс 2026.pdf",
+      "format": "pdf",
+      "status": "needs_review",
+      "items": 408,
+      "matched": 231,
+      "partner": "Цена для граждан"
+    },
+    {
+      "file": "Клиника 5 прайс 2025.pdf",
+      "format": "pdf",
+      "status": "needs_review",
+      "items": 280,
+      "matched": 184,
+      "partner": "перв. повт."
+    },
+    {
+      "file": "Клиника 6 прайс 2026.xlsx",
+      "format": "xlsx",
+      "status": "needs_review",
+      "items": 5040,
+      "matched": 3240,
+      "partner": "приложение"
+    },
+    {
+      "file": "Клиника 7_Прайс 2026.xls",
+      "format": "xls",
+      "status": "needs_review",
+      "items": 2885,
+      "matched": 1163,
+      "partner": "Приложение к Приказу Директора"
+    },
+    {
+      "file": "Клиника 8 2026.xlsx",
+      "format": "xlsx",
+      "status": "needs_review",
+      "items": 1853,
+      "matched": 395,
+      "partner": "АО \"Национальный научный медицинский центр\","
+    }
+  ]
+}

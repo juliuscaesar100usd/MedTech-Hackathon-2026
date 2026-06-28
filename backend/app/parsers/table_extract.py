@@ -83,6 +83,52 @@ _CURRENCY_PATTERNS: tuple[tuple[re.Pattern[str], Currency], ...] = (
 # A numeric core: digit groups separated by spaces/NBSP/dots/commas.
 _NUMBER_RE = re.compile(r"\d[\d\s.,]*\d|\d")
 
+# --------------------------------------------------------------------------- #
+# Glyph-digit repair (look-alike letters for digits in price cells).          #
+# --------------------------------------------------------------------------- #
+# Real price lists (esp. PDFs with a broken/absent ToUnicode map) render digits
+# with look-alike Cyrillic/Latin glyphs: '12 ООС' means 12000, '10 80С' = 10800,
+# '6 00(' = 6000. We map these ONLY inside a token that is otherwise entirely
+# digits/separators/currency, so genuine words (which contain non-confusable
+# letters) are never touched.
+_GLYPH_DIGITS = {
+    "O": "0", "o": "0", "О": "0", "о": "0", "Q": "0", "С": "0", "с": "0",
+    "(": "0", ")": "0",
+    "l": "1", "I": "1", "|": "1", "¡": "1",
+    "З": "3", "з": "3", "B": "8", "б": "6", "g": "9",
+}
+_CONFUSABLE = set(_GLYPH_DIGITS)
+_CUR_TOKEN_RE = re.compile(r"₸|тг\.?|тенге|kzt|руб\.?|rub|usd|долл\.?|\$|₽", re.I)
+# A tarificator / MKB / service code prefix: 1-4 letters glued straight onto a
+# digit ('A02.004.000.1', 'В03.316.002', 'Q97', 'U1.5'). Never a price.
+_CODE_PREFIX_RE = re.compile(r"^[A-Za-zА-Яа-яЁё]{1,4}\d")
+
+
+def repair_price_glyphs(text: str) -> str:
+    """Map digit look-alike glyphs to digits inside price-shaped tokens only.
+
+    A token is "price-shaped" when, after stripping currency markers, spaces and
+    separators, every remaining character is a digit or a known confusable AND at
+    least one is a real digit (e.g. '80С', '12', 'ООС' within '24 ООС'). Words
+    keep non-confusable letters and are left untouched, so 'СОЭ'/'Витамин С' are
+    safe while '10 80С' -> '10 800'.
+    """
+    if not text:
+        return text
+    out: list[str] = []
+    for tok in re.split(r"(\s+)", text):
+        if not tok or tok.isspace():
+            out.append(tok)
+            continue
+        core = _CUR_TOKEN_RE.sub("", tok)
+        compact = re.sub(r"[.,]", "", core)
+        if (compact and all(ch.isdigit() or ch in _CONFUSABLE for ch in compact)
+                and any(ch.isdigit() for ch in compact)):
+            out.append("".join(_GLYPH_DIGITS.get(ch, ch) for ch in tok))
+        else:
+            out.append(tok)
+    return "".join(out)
+
 
 def detect_currency(text: str, default: Currency = Currency.KZT) -> Currency:
     """Map any currency symbol/word found in `text` to a Currency."""
@@ -135,7 +181,16 @@ def parse_price(text: str | None) -> tuple[float | None, Currency]:
     if raw.lower() in _NULLISH:
         return None, detect_currency(raw)
     currency = detect_currency(raw)
-    m = _NUMBER_RE.search(raw)
+    # A code, not a price: a letter glued directly to a digit ('A02.004.000.1',
+    # 'В03.316.002', 'Q97.001', 'U1'). Such tarificator/MKB codes must never be
+    # read as money (otherwise '0.004.000.1' -> 20040001). A leading currency word
+    # ('USD120', 'тг5000') is exempt.
+    if _CODE_PREFIX_RE.match(raw) and not _CUR_TOKEN_RE.match(raw):
+        return None, currency
+    # Repair digit look-alike glyphs in price-shaped tokens ('12 ООС' -> '12 000')
+    # before scanning for the numeric core. No-op on clean digits (tables).
+    repaired = repair_price_glyphs(raw)
+    m = _NUMBER_RE.search(repaired)
     if not m:
         return None, currency
     return _to_float(m.group(0)), currency
@@ -256,29 +311,57 @@ def _map_tiers(header: list[object]) -> dict[str, int]:
     return tiers
 
 
-def _section_label(row: list[object]) -> str | None:
+# A leading *hierarchical* section number — "1.", "1.1", "15.", "2.2.Выездные" —
+# must contain a dot so a bare row index ("1 Прием") is NOT mistaken for a
+# heading. The title may follow with or without a space.
+_HIER_NUM_LEAD_RE = re.compile(r"^\s*\d+\.(?:\d+\.?)*\s*[А-Яа-яA-Za-zЁё]")
+# Spreadsheet filler rows that are not real services (placeholders, sign-off
+# block roles appended after the price table).
+_PLACEHOLDER_NAME_RE = re.compile(
+    r"^(исключение услуги|главный экономист|заместитель директора|"
+    r"директор|главный врач|исполнитель|примечание|итого)\b",
+    re.I,
+)
+
+
+def _section_label(row: list[object], table_priced: bool = False) -> str | None:
     """Return the heading text if `row` is a full-width section header, else None.
 
     A section row has exactly one non-empty cell, no parseable price, and is
-    either uppercase-dominant or matches a known section keyword. (Ordinary
-    priced rows always have at least name + price cells, so they never qualify.)
+    either uppercase-dominant, a hierarchical-number banner, or matches a known
+    section keyword. (Ordinary priced rows always have at least name + price
+    cells, so they never qualify.)
+
+    ``table_priced`` is set by callers that already located real price columns
+    (``rows_from_table``): in that context a lone name cell with NO parseable
+    price is structurally a banner (e.g. 'Опухолевые маркеры', 'Гормоны
+    щитовидной железы') even without an uppercase/keyword cue. The PDF
+    word-geometry path leaves it False so wrapped name fragments are not eaten.
     """
     cells = [_cell(c) for c in row]
     nonempty = [c for c in cells if c]
-    if len(nonempty) != 1:
+    # Merged full-width header cells repeat the SAME text across every spanned
+    # column (python-docx expands a merged cell). Collapse exact duplicates so a
+    # 3-column merged banner reads as a single heading cell.
+    uniq = list(dict.fromkeys(nonempty))
+    if len(uniq) != 1:
         return None
-    text = nonempty[0]
+    text = uniq[0]
     letters = [ch for ch in text if ch.isalpha()]
     if len(letters) < 3:
         return None
-    # A row led by a structural heading word is a heading even when it embeds a
-    # number ("Раздел 5.Кардиология"); otherwise an embedded value rules it out.
-    lead_heading = bool(_SECTION_LEAD_RE.match(text))
+    # A row led by a structural heading word OR a hierarchical section number is
+    # a heading even when it embeds a number ("Раздел 5.Кардиология", "1.1 Блок
+    # хирургии"); otherwise an embedded value rules it out.
+    lead_heading = bool(_SECTION_LEAD_RE.match(text) or _HIER_NUM_LEAD_RE.match(text))
     val, _ = parse_price(text)
     if val is not None and not lead_heading:
         return None  # it's a value, not a heading
     upper_ratio = sum(1 for ch in letters if ch.isupper()) / len(letters)
     if lead_heading or upper_ratio >= 0.6 or _SECTION_HINT_RE.search(text):
+        return text.strip(" .:-—|\t")
+    # Priced-table context: a lone no-price name cell is a banner.
+    if table_priced and val is None:
         return text.strip(" .:-—|\t")
     return None
 
@@ -329,17 +412,26 @@ def rows_from_table(
     prefix = source_ref_prefix.rstrip(";") if source_ref_prefix else ""
     out: list[ParsedRow] = []
     current_section: str | None = None
+    # When the table has real price columns, a lone no-price name cell is a
+    # section banner (relax _section_label only in this trusted context).
+    priced_table = bool(
+        {"resident", "nonresident"} & set(mapping)
+    )
 
     for orig_idx, row in data:
         # Section header rows ("ПРИЕМ ВРАЧА") carry their label onto following rows.
-        section = _section_label(row)
+        section = _section_label(row, table_priced=priced_table)
         if section is not None:
             current_section = section
             continue
 
         name = _cell(row[name_col]) if name_col < len(row) else ""
+        # Strip leading list-bullet markers ("- МРТ ...", "• ...", "* ...").
+        name = re.sub(r"^[\s\-–—•·*]+", "", name).strip()
         if not name or not any(ch.isalpha() for ch in name):
             continue  # skip rows without a real service name
+        if _PLACEHOLDER_NAME_RE.match(name):
+            continue  # editing placeholder / non-service filler row
 
         code = None
         if "code" in mapping and mapping["code"] < len(row):
