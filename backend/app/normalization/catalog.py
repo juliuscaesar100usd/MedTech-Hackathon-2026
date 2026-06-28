@@ -10,6 +10,7 @@ handles Russian or English headers (e.g. "Наименование услуги"
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -34,11 +35,40 @@ _COLUMN_ALIASES: dict[str, set[str]] = {
         "category", "group", "section",
         "категория", "группа", "раздел", "санат",
     },
+    # Optional deeper levels for an N-level hierarchy (schema contract §2).
+    "subcategory": {
+        "subcategory", "sub_category", "subgroup", "sub-group",
+        "подкатегория", "подраздел", "категория2", "подгруппа",
+    },
+    "subsubcategory": {
+        "subsubcategory", "sub_subcategory", "subsubgroup",
+        "подподкатегория", "категория3",
+    },
+    # An explicit full path, either a list/JSON column or a delimited string.
+    "category_path": {
+        "category_path", "categorypath", "path", "путь", "иерархия",
+    },
     "icd_code": {
         "icd_code", "icd", "icd10", "icd-10", "code", "mkb",
         "мкб", "мкб-10", "код", "код мкб",
     },
 }
+
+# Path delimiters for a path-delimited ``category``/``category_path`` string
+# ('>' / '/' / '»' per the contract, plus the single-angle '›').
+_PATH_SPLIT_RE = re.compile(r"\s*(?:>|/|»|›)\s*")
+
+
+def _parse_path(value: Any) -> list[str]:
+    """Coerce a path cell (list, or a '>'/'/'/'»'-delimited string) to list[str]."""
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        return [str(v).strip() for v in value if str(v).strip()]
+    text = str(value).strip()
+    if not text:
+        return []
+    return [p.strip() for p in _PATH_SPLIT_RE.split(text) if p.strip()]
 
 
 def _canon_header(raw: str) -> str | None:
@@ -75,17 +105,41 @@ def _split_synonyms(value: Any) -> list[str]:
     return out
 
 
+def _category_path(row: dict[str, Any]) -> list[str]:
+    """Resolve the OUTER→INNER category path from any supported input form:
+
+    (a) a path-delimited ``category`` string ("Лаборатория > Анализ крови > …"),
+    (b) explicit ``category`` + ``subcategory`` (+ ``subsubcategory``) columns,
+    (c) a ``category_path`` list/JSON column or delimited string.
+
+    Form (c) wins when present; otherwise ``category`` is split on path
+    delimiters and any explicit sub-level columns are appended.
+    """
+    # (c) explicit category_path column (list or delimited string).
+    path = _parse_path(row.get("category_path"))
+    if path:
+        return path
+    # (a) category may itself be a delimited path.
+    path = _parse_path(row.get("category"))
+    # (b) append explicit deeper-level columns (each may also be delimited).
+    for key in ("subcategory", "subsubcategory"):
+        path.extend(_parse_path(row.get(key)))
+    return path
+
+
 def _row_to_item(row: dict[str, Any]) -> dict | None:
     """Normalize a raw dict (already keyed by canonical names) to an item."""
     name = str(row.get("service_name") or "").strip()
     if not name:
         return None
+    path = _category_path(row)
+    # ``category`` stays the top level for back-compat + the dashboard rollup.
+    category = path[0] if path else None
     return {
         "service_name": name,
         "synonyms": _split_synonyms(row.get("synonyms")),
-        "category": (str(row["category"]).strip() or None)
-        if row.get("category") not in (None, "")
-        else None,
+        "category": category,
+        "category_path": path or None,
         "icd_code": (str(row["icd_code"]).strip() or None)
         if row.get("icd_code") not in (None, "")
         else None,
@@ -168,11 +222,14 @@ def seed_services(db: Session, items: list[dict]) -> int:
     for it in items:
         name = it["service_name"]
         svc = existing.get(name)
+        path = it.get("category_path")
+        path = list(path) if path else None
         if svc is None:
             svc = Service(
                 service_name=name,
                 synonyms=list(it.get("synonyms") or []),
                 category=it.get("category"),
+                category_path=path,
                 icd_code=it.get("icd_code"),
                 is_active=True,
             )
@@ -181,6 +238,7 @@ def seed_services(db: Session, items: list[dict]) -> int:
         else:
             svc.synonyms = list(it.get("synonyms") or [])
             svc.category = it.get("category")
+            svc.category_path = path
             svc.icd_code = it.get("icd_code")
             svc.is_active = True
         n += 1

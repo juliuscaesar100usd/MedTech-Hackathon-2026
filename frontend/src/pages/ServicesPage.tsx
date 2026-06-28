@@ -2,11 +2,14 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Stethoscope, MagnifyingGlass, Barcode, CaretRight } from '@phosphor-icons/react';
 import { api } from '../lib/api';
-import type { ServiceOut } from '../lib/api';
+import type { ServiceOut, TreeNode } from '../lib/api';
 import { useFetch } from '../lib/useFetch';
 import { ErrorState } from '../components/States';
 import { Badge } from '../components/Badge';
 import { formatInt } from '../lib/format';
+import { CategoryTree } from '../components/CategoryTree';
+
+type View = 'list' | 'tree';
 
 /* MedArchive catalog — the normalized service catalog, grouped by category.
    Each category is a collapsible section (native <details>, no JS) whose
@@ -28,14 +31,26 @@ function pluralRu(n: number, [one, few, many]: [string, string, string]): string
 
 export function ServicesPage() {
   const [text, setText] = useState('');
+  const [view, setView] = useState<View>('list');
 
   // Fetch a generous page of services once; filter client-side for snappy UX.
+  // This flat list powers the List view and is the graceful fallback when the
+  // (optional) tree endpoint is unavailable or returns no taxonomy.
   const { data, loading, error, reload } = useFetch<ServiceOut[]>(
     () => api.getServices({ limit: 500 }),
     [],
   );
 
+  // The N-level taxonomy (Лаборатория → Анализ крови → … or specialty grouping
+  // when the catalogue is flat) is fetched lazily — only when Tree is selected.
+  const treeState = useFetch<TreeNode<ServiceOut>[]>(
+    () => (view === 'tree' ? api.getServicesTree() : Promise.resolve([])),
+    [view],
+  );
+
   const services = data ?? [];
+  const treeNodes = treeState.data ?? [];
+  const showTree = view === 'tree' && !treeState.error && treeNodes.length > 0;
 
   const filtered = useMemo(() => {
     const t = text.trim().toLowerCase();
@@ -80,20 +95,56 @@ export function ServicesPage() {
 
       <div className="sp-container">
         <div className="svc-catalog">
-          <div className="field grow svc-toolbar">
-            <label className="field-label" htmlFor="svc-q">
-              Поиск услуг
-            </label>
-            <input
-              id="svc-q"
-              className="input"
-              placeholder="Фильтр по названию, синониму или коду МКБ…"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
+          <div className="svc-toolbar-row">
+            <div className="field grow svc-toolbar">
+              <label className="field-label" htmlFor="svc-q">
+                Поиск услуг
+              </label>
+              <input
+                id="svc-q"
+                className="input"
+                placeholder="Фильтр по названию, синониму или коду МКБ…"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+            </div>
+            <div className="seg-toggle" role="tablist" aria-label="Вид каталога">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={view === 'list'}
+                className={`seg-btn${view === 'list' ? ' active' : ''}`}
+                onClick={() => setView('list')}
+              >
+                Список
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={view === 'tree'}
+                className={`seg-btn${view === 'tree' ? ' active' : ''}`}
+                onClick={() => setView('tree')}
+              >
+                Дерево
+              </button>
+            </div>
           </div>
 
-          {loading ? (
+          {view === 'tree' && treeState.loading ? (
+            <ServicesSkeleton />
+          ) : showTree ? (
+            <CategoryTree<ServiceOut>
+              nodes={treeNodes}
+              defaultExpandedDepth={0}
+              leafKey={(s) => String(s.service_id)}
+              renderLeaf={(s) => (
+                <Link to={`/services/${s.service_id}`} className="cat-leaf-link">
+                  <span className="cat-leaf-name">{s.service_name}</span>
+                  {s.icd_code && <span className="cat-leaf-meta">МКБ: {s.icd_code}</span>}
+                </Link>
+              )}
+            />
+          ) : loading ? (
             <ServicesSkeleton />
           ) : error ? (
             <ErrorState error={error} onRetry={reload} />

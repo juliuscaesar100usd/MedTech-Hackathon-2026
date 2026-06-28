@@ -658,3 +658,206 @@
     min-height: 44px;
   }
 }
+
+/* ============================================================================
+   Hierarchy tree (catalog Дерево view + partner price tree) + breadcrumb.
+   N-level collapsible <CategoryTree>; see components/CategoryTree.tsx.
+   ========================================================================== */
+/* ----------------------------- Segmented toggle ------------------------- */
+
+.seg-toggle {
+  display: inline-flex;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: 3px;
+  box-shadow: var(--shadow-sm);
+  gap: 3px;
+}
+.seg-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--c-text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.seg-btn:hover {
+  color: var(--c-text);
+}
+.seg-btn.active {
+  background: var(--c-primary-50);
+  color: var(--c-primary-700);
+}
+
+/* ----------------------------- Category tree ---------------------------- */
+
+.cat-tree,
+.cat-children,
+.cat-leaves {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cat-node {
+  border-bottom: 1px solid var(--c-border);
+}
+.cat-node:last-child {
+  border-bottom: none;
+}
+.cat-children .cat-node:last-child {
+  border-bottom: none;
+}
+.cat-node-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 12px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.cat-node-toggle:hover {
+  background: var(--c-surface-2);
+}
+.cat-node-toggle:focus-visible {
+  outline: 2px solid var(--c-primary-600);
+  outline-offset: -2px;
+}
+.cat-chevron {
+  display: inline-block;
+  color: var(--c-text-faint);
+  font-size: 11px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+  flex: 0 0 auto;
+}
+.cat-chevron.open {
+  transform: rotate(90deg);
+  color: var(--c-primary-600);
+}
+.cat-node-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cat-count {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: var(--r-pill);
+  background: var(--c-primary-50);
+  color: var(--c-primary-700);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.cat-node-body {
+  border-top: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+}
+.cat-leaf-item {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-right: 12px;
+  border-top: 1px solid var(--c-border);
+}
+.cat-leaf-item:first-child {
+  border-top: none;
+}
+
+/* Catalog (service link) leaf */
+.cat-leaf-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--c-text);
+}
+.cat-leaf-link:hover {
+  text-decoration: none;
+}
+.cat-leaf-link:hover .cat-leaf-name {
+  color: var(--c-primary-700);
+  text-decoration: underline;
+}
+.cat-leaf-name {
+  font-weight: 600;
+}
+.cat-leaf-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--c-text-faint);
+  font-size: 13px;
+}
+
+/* Partner price-bearing leaf */
+.price-leaf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.price-leaf-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.price-leaf-prices {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex: 0 0 auto;
+}
+
+/* ----------------------------- Breadcrumb ------------------------------- */
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 4px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--c-text-muted);
+}
+.breadcrumb .crumb {
+  font-weight: 600;
+}
+.breadcrumb .crumb-sep {
+  color: var(--c-text-faint);
+}
+.breadcrumb .crumb.current {
+  color: var(--c-primary-700);
+}
+
+/* Services toolbar row: search field grows, view toggle sits at the right. */
+.svc-toolbar-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.svc-toolbar-row .svc-toolbar {
+  flex: 1 1 280px;
+  margin-bottom: 0;
+}

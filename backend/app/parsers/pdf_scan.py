@@ -26,7 +26,17 @@ from ..enums import Currency, FileFormat
 from .base import BaseParser, ParsedDocument, ParsedRow, register_parser
 from .ocr_clean import clean_ocr_text
 from .pdf_text import extract_header_hints
-from .table_extract import parse_price
+from .table_extract import (
+    SectionHierarchy,
+    _section_depth,
+    _section_label,
+    parse_price,
+)
+
+# OCR indentation bucket (pixels at ocr_dpi) per section nesting level. OCR
+# geometry is noisy, so this is coarse; when it yields no signal the depth falls
+# back to the generic keyword class.
+_OCR_INDENT_BUCKET = 40.0
 from .vision_fallback import (
     VISION_DPI,
     extract_rows_via_vision,
@@ -163,24 +173,48 @@ def _tsv_data(img: Image.Image, tessdata_dir: str) -> dict | None:
 
 
 def _rows_from_data(data: dict | None, ref: str) -> list[ParsedRow]:
-    """Group OCR words into lines, then split each line into cells by geometry."""
+    """Group OCR words into lines, then split each line into cells by geometry.
+
+    Section-header lines (single text cell, no price) are not emitted; they push
+    onto a hierarchy so following priced rows inherit a nested section_path. Header
+    depth comes from the line's left coordinate bucketed against the page margin.
+    """
     if not data:
         return []
     n = len(data["text"])
-    lines: dict[tuple, list[tuple[int, int, str]]] = {}
+    # (left, width, top, text) per word so lines can be ordered top-to-bottom.
+    lines: dict[tuple, list[tuple[int, int, int, str]]] = {}
     for i in range(n):
         txt = (data["text"][i] or "").strip()
         if not txt:
             continue
         key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
-        lines.setdefault(key, []).append((data["left"][i], data["width"][i], txt))
+        lines.setdefault(key, []).append(
+            (data["left"][i], data["width"][i], data["top"][i], txt)
+        )
+    if not lines:
+        return []
+
+    left_margin = min(w[0] for words in lines.values() for w in words)
+    ordered = sorted(lines.items(), key=lambda kv: min(w[2] for w in kv[1]))
 
     rows: list[ParsedRow] = []
-    for key, words in lines.items():
+    hierarchy = SectionHierarchy()
+    for key, words in ordered:
         words.sort(key=lambda w: w[0])
-        cells = _cells_from_words(words)
+        cells = _cells_from_words([(l, w, t) for (l, w, _top, t) in words])
+        sec = _section_label(cells)
+        if sec is not None:
+            line_left = min(w[0] for w in words)
+            bucket = int(round((line_left - left_margin) / _OCR_INDENT_BUCKET))
+            hierarchy.push(sec, _section_depth(sec, bucket if bucket > 0 else None))
+            continue
         row = _row_from_cells(cells, f"{ref};line={key[2]}")
         if row is not None:
+            section_path = hierarchy.path()
+            if section_path:
+                row.section_path = section_path
+                row.extra = {**row.extra, "section": section_path[-1]}
             rows.append(row)
     return rows
 

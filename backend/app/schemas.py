@@ -26,6 +26,8 @@ class ServiceOut(ORMModel):
     service_name: str
     synonyms: list[str] = []
     category: str | None = None
+    # Full category hierarchy OUTER→INNER; None for flat/legacy rows (back-compat).
+    category_path: list[str] | None = None
     icd_code: str | None = None
     is_active: bool = True
 
@@ -95,6 +97,11 @@ class ServicePriceOut(BaseModel):
     service_name: str | None = None       # normalized name (if matched)
     service_name_raw: str
     category: str | None = None
+    # Catalog category hierarchy of the matched service (None when unmatched/flat).
+    category_path: list[str] | None = None
+    # Section nesting the item was found under in the source price list (innermost
+    # last); None when no section context (back-compat).
+    section_path: list[str] | None = None
     price_resident_kzt: Decimal | None = None
     price_nonresident_kzt: Decimal | None = None
     currency_original: Currency = Currency.KZT
@@ -108,6 +115,7 @@ class MatchCandidate(BaseModel):
     service_id: str
     service_name: str
     category: str | None = None
+    category_path: list[str] | None = None
     score: float
     method: MatchMethod
 
@@ -204,6 +212,7 @@ class SearchHitService(BaseModel):
     service_id: str
     service_name: str
     category: str | None = None
+    category_path: list[str] | None = None
     partner_count: int = 0
     min_price_kzt: Decimal | None = None
     max_price_kzt: Decimal | None = None
@@ -254,3 +263,29 @@ class UserOut(ORMModel):
 class TokenResponse(BaseModel):
     token: str
     user: UserOut
+
+
+# --------------------------- Hierarchy tree --------------------------------- #
+# N-level catalogue / price-list tree (category → subcategory → … → service),
+# built from Service.category_path or PriceItem.section_path. ``services`` are
+# the leaves attached directly at a node; ``children`` are the nested nodes.
+class ServiceTreeNode(BaseModel):
+    name: str
+    path: list[str] = []
+    children: list["ServiceTreeNode"] = []
+    services: list[ServiceOut] = []
+
+
+class ServiceTreeResponse(BaseModel):
+    tree: list[ServiceTreeNode] = []
+
+
+class PartnerTreeNode(BaseModel):
+    name: str
+    path: list[str] = []
+    children: list["PartnerTreeNode"] = []
+    services: list[ServicePriceOut] = []
+
+
+class PartnerTreeResponse(BaseModel):
+    tree: list[PartnerTreeNode] = []

@@ -15,7 +15,13 @@ from dateutil import parser as dateparser
 
 from ..enums import FileFormat
 from .base import BaseParser, ParsedDocument, ParsedRow, register_parser
-from .table_extract import _section_label, parse_price, rows_from_table
+from .table_extract import (
+    SectionHierarchy,
+    _section_depth,
+    _section_label,
+    parse_price,
+    rows_from_table,
+)
 
 try:  # PyMuPDF — used as a text fallback when pdfplumber finds nothing.
     import fitz  # type: ignore
@@ -142,6 +148,7 @@ def extract_header_hints(text: str, doc: ParsedDocument) -> None:
 # specialty prior fires on PDFs too.
 _PDF_LINE_TOL = 3.0   # words within this vertical distance belong to one line (pt)
 _MIN_CELL_GAP = 11.0  # absolute floor for a column-separating gap (pt)
+_PDF_INDENT_BUCKET = 18.0  # x0 indentation per nesting level for headers (pt)
 
 
 def _pdf_lines(words: list[dict]) -> list[list[dict]]:
@@ -183,7 +190,23 @@ def _cells_by_gap(line: list[dict]) -> list[str]:
     return cells
 
 
-def _row_from_line(cells: list[str], ref: str, section: str | None) -> ParsedRow | None:
+def _header_depth(line: list[dict], label: str, left_margin: float, body_size: float) -> int:
+    """Rank a section header's nesting depth from its geometry.
+
+    Primary signal is the line's left edge (x0) bucketed against the page's left
+    margin — deeper indent => deeper nesting. A header set in a font noticeably
+    larger than the body is promoted one level shallower (a banner). With no
+    geometric indent we fall back to the keyword-class depth.
+    """
+    x0 = min(float(w["x0"]) for w in line)
+    bucket = int(round((x0 - left_margin) / _PDF_INDENT_BUCKET))
+    sizes = [float(w.get("size", body_size)) for w in line]
+    if sizes and max(sizes) >= body_size + 1.5 and bucket > 0:
+        bucket -= 1
+    return _section_depth(label, bucket if bucket > 0 else None)
+
+
+def _row_from_line(cells: list[str], ref: str, section_path: list[str]) -> ParsedRow | None:
     cells = [c.strip() for c in cells if c.strip()]
     if not cells:
         return None
@@ -214,24 +237,33 @@ def _row_from_line(cells: list[str], ref: str, section: str | None) -> ParsedRow
         price_original=res,
         currency=currency,  # type: ignore[arg-type]
         source_ref=ref,
-        extra={"section": section} if section else {},
+        extra={"section": section_path[-1]} if section_path else {},
+        section_path=list(section_path),
     )
 
 
 def _rows_from_pdf_words(page, ref: str) -> list[ParsedRow]:
     try:
-        words = page.extract_words(use_text_flow=False)
+        words = page.extract_words(use_text_flow=False, extra_attrs=["size"])
     except Exception:
+        try:  # older pdfplumber / glyph w/o size attr
+            words = page.extract_words(use_text_flow=False)
+        except Exception:
+            return []
+    if not words:
         return []
+    left_margin = min(float(w["x0"]) for w in words)
+    sizes = [float(w["size"]) for w in words if "size" in w]
+    body_size = statistics.median(sizes) if sizes else 10.0
     rows: list[ParsedRow] = []
-    section: str | None = None
+    hierarchy = SectionHierarchy()
     for line in _pdf_lines(words):
         cells = _cells_by_gap(line)
         sec = _section_label(cells)
         if sec is not None:
-            section = sec
+            hierarchy.push(sec, _header_depth(line, sec, left_margin, body_size))
             continue
-        row = _row_from_line(cells, ref, section)
+        row = _row_from_line(cells, ref, hierarchy.path())
         if row is not None:
             rows.append(row)
     return rows

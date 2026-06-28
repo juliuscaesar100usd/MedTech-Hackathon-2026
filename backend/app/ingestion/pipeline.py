@@ -103,14 +103,22 @@ def process_document(
         n_matched = 0
         row_logs: list[str] = []
         for row in parsed.rows:
+            # Full nesting of section headers above this row (OUTER→INNER), per
+            # the parser contract. ``getattr`` keeps this working whether or not
+            # the parser's ``ParsedRow.section_path`` field has merged yet.
+            section_path = list(getattr(row, "section_path", None) or [])
             # Section header (e.g. "ЛАБОРАТОРНЫЕ ИССЛЕДОВАНИЯ") carried by the
             # parser in row.extra; feeds the matcher's specialty prior (lane 2)
-            # and is persisted on the PriceItem (schema contract).
+            # and is persisted on the PriceItem (schema contract). Fall back to
+            # the innermost section_path element when extra has no section.
             section = (getattr(row, "extra", None) or {}).get("section")
+            if not section and section_path:
+                section = section_path[-1]
             # Route through match_item() (the filtered path): it returns None for
             # section/category-header rows so they never become PriceItems or land
             # in the verification queue. The adapter maps ParsedRow's price fields
-            # to the *_kzt names match_item expects.
+            # to the *_kzt names match_item expects. ``section_path`` lets the
+            # matcher walk innermost→outer for the specialty prior.
             row_view = SimpleNamespace(
                 service_name_raw=row.service_name_raw,
                 price_resident_kzt=row.price_resident,
@@ -118,6 +126,7 @@ def process_document(
                 price_original=row.price_original,
                 service_code_source=row.service_code_source,
                 section=section,
+                section_path=section_path,
             )
             match = matcher.match_item(row_view)
             if match is None:
@@ -138,6 +147,9 @@ def process_document(
                 # Skipped (empty name etc.) — keep the validator's note.
                 row_logs.extend(outcome.log_messages)
                 continue
+            # Persist the full section nesting (upsert_with_versioning owns the
+            # innermost ``section`` column; section_path is set here, in scope).
+            item.section_path = section_path or None
             n_items += 1
             if item.match_status in _MATCHED:
                 n_matched += 1

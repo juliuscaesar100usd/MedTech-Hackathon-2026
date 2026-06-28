@@ -244,6 +244,13 @@ function ServicePartnersPageInner() {
     return raw || `Service #${id}`;
   }, [rows, id]);
 
+  // Catalogue path of the matched service (Лаборатория › Анализ крови › …),
+  // shown as a breadcrumb above the title when the catalogue carries hierarchy.
+  const categoryPath = useMemo(
+    () => rows.find((r) => r.category_path && r.category_path.length)?.category_path ?? [],
+    [rows],
+  );
+
   // Default the history chart to the first (cheapest) partner once data lands.
   const activePartnerId = useMemo(() => {
     if (pickedPartner && rows.some((r) => String(r.partner.partner_id) === pickedPartner)) {
@@ -324,6 +331,16 @@ function ServicePartnersPageInner() {
         <>
           <header className="page-header">
             <div className="eyebrow">Услуга</div>
+            {categoryPath.length > 0 && (
+              <nav className="breadcrumb" aria-label="Категория услуги">
+                {categoryPath.map((crumb, i) => (
+                  <span key={`${crumb}-${i}`}>
+                    {i > 0 && <span className="crumb-sep" aria-hidden="true">›</span>}
+                    <span className="crumb">{crumb}</span>
+                  </span>
+                ))}
+              </nav>
+            )}
             <h1>{serviceName}</h1>
             <p className="subtitle">
               {rows.length} {rows.length === 1 ? 'партнёр предоставляет' : 'партнёров предоставляют'} эту услугу. Сортируйте по цене для сравнения.
