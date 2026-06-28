@@ -10,451 +10,323 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* MedArchive design tokens — docs/brand-guidelines.md */
-  --teal:#0e7490; --teal-light:#0891b2; --teal-dark:#155e75; --cyan:#22d3ee;
-  --tint:#ecfeff; --tint-2:#cffafe;
-  --bg:#f4f7fb; --surface:#ffffff; --surface-2:#f8fafc;
-  --border:#e2e8f0; --border-strong:#cbd5e1;
-  --ink:#0f172a; --muted:#64748b; --faint:#94a3b8;
-  --success:#059669; --success-bg:#ecfdf5;
-  --warning:#b45309; --warning-bg:#fffbeb;
-  --danger:#dc2626;  --danger-bg:#fef2f2;
-  --info:#0369a1;
-  /* dark surfaces for hero/closing */
-  --d0:#0b1220; --d1:#0c2733; --d2:#0e3a47;
+  /* PulseIQ blue — mirrors frontend/src/theme tokens (--pq-*) */
+  --blue:#2f6bed; --blue-600:#1f58d6; --blue-700:#1a4cbe;
+  --blue-50:#eef3ff; --blue-100:#dce7ff; --blue-200:#bfd2ff;
+  --bg:#f4f7fe; --surface:#ffffff; --surface-2:#f8fafe;
+  --border:#e6ecf7; --border-strong:#d2dcef;
+  --ink:#0c1a33; --muted:#566480; --faint:#9aa6bd;
+  --success:#15a66b; --success-bg:#e6f7ef;
+  --warn:#c2761e; --warn-bg:#fbeedc;
+  --danger:#e5484d; --danger-bg:#fcebec;
+  --d0:#070f24; --d1:#0a1736; --d2:#0e2350;
   --display:'Manrope','Inter',system-ui,sans-serif;
   --sans:'Inter',system-ui,sans-serif;
-  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:22px; --pill:999px;
-  --sh-sm:0 1px 2px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.05);
-  --sh-md:0 6px 18px rgba(15,23,42,.08);
-  --sh-lg:0 18px 44px rgba(15,23,42,.14);
-  --sh-teal:0 18px 50px rgba(14,116,144,.28);
+  --r-sm:10px; --r-md:14px; --r-lg:18px; --r-xl:24px; --pill:999px;
+  --sh-sm:0 1px 2px rgba(12,26,51,.06),0 1px 3px rgba(12,26,51,.05);
+  --sh-md:0 8px 22px rgba(12,26,51,.09);
+  --sh-lg:0 20px 48px rgba(12,26,51,.16);
+  --sh-blue:0 18px 50px rgba(31,88,214,.28);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
-body{
-  background:#0a0f1a;
-  color:var(--ink);
-  font-family:var(--sans);
-  overflow:hidden;
-  -webkit-font-smoothing:antialiased;
-}
+body{background:#060c1c;color:var(--ink);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
 
-/* ===== Deck shell: locked 16:9, letterboxed ===== */
-.deck{
-  position:fixed; inset:0;
-  display:flex; align-items:center; justify-content:center;
-}
-.stage{
-  position:relative;
-  width:min(100vw, calc(100vh * 16 / 9));
-  height:min(100vh, calc(100vw * 9 / 16));
-  background:var(--bg);
-  overflow:hidden;
-  box-shadow:0 0 80px rgba(0,0,0,.5);
-}
-.slide{
-  position:absolute; inset:0;
-  padding:clamp(28px,4.2vmin,64px) clamp(34px,5.2vmin,80px);
-  display:flex; flex-direction:column; justify-content:center;
-  opacity:0; visibility:hidden;
-  transform:scale(.992);
-  transition:opacity .5s ease, transform .5s ease;
-  background:var(--bg);
-}
-.slide.active{opacity:1; visibility:visible; transform:none; z-index:2}
+.deck{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.stage{position:relative;width:min(100vw,calc(100vh*16/9));height:min(100vh,calc(100vw*9/16));background:var(--bg);overflow:hidden;box-shadow:0 0 80px rgba(0,0,0,.5);container-type:size}
+.slide{position:absolute;inset:0;padding:clamp(26px,4vmin,60px) clamp(34px,5.2vmin,80px);display:flex;flex-direction:column;justify-content:center;opacity:0;visibility:hidden;transform:scale(.992);transition:opacity .5s ease,transform .5s ease;background:var(--bg)}
+.slide.active{opacity:1;visibility:visible;transform:none;z-index:2}
+@container (min-width:0px){ .slide{font-size:clamp(13px,1.7cqw,21px)} }
 
-/* container ratios scale with the stage via cqmin where supported */
-.stage{container-type:size}
-@container (min-width:0px){
-  .slide{font-size:clamp(13px,1.7cqw,21px)}
-}
+h1,h2,h3,.eyebrow,.wordmark{font-family:var(--display);letter-spacing:-.018em}
+.eyebrow{font-family:var(--display);font-weight:700;font-size:.62em;letter-spacing:.2em;text-transform:uppercase;color:var(--blue-700);display:inline-flex;align-items:center;gap:.6em}
+.eyebrow::before{content:"";width:1.8em;height:2px;background:linear-gradient(90deg,var(--blue),var(--blue-200));border-radius:2px}
+h2.title{font-size:1.95em;font-weight:800;line-height:1.06;color:var(--ink);letter-spacing:-.03em}
+.lead{font-size:.9em;color:var(--muted);font-weight:500;line-height:1.5;max-width:48ch}
+.num{font-variant-numeric:tabular-nums}
+.slide-head{display:flex;flex-direction:column;gap:.5em;margin-bottom:1.05em}
 
-/* ===== Typography ===== */
-h1,h2,h3,.kicker,.wordmark{font-family:var(--display);letter-spacing:-.018em}
-.eyebrow{
-  font-family:var(--display); font-weight:700;
-  font-size:.62em; letter-spacing:.22em; text-transform:uppercase;
-  color:var(--teal); display:inline-flex; align-items:center; gap:.6em;
-}
-.eyebrow::before{content:"";width:1.8em;height:2px;background:linear-gradient(90deg,var(--teal),var(--cyan));border-radius:2px}
-h2.title{font-size:2.0em;font-weight:800;line-height:1.06;color:var(--ink);letter-spacing:-.03em}
-.lead{font-size:.92em;color:var(--muted);font-weight:500;line-height:1.5;max-width:46ch}
-.num-tabular{font-variant-numeric:tabular-nums}
-
-/* ===== Reusable chrome ===== */
-.slide-head{display:flex;flex-direction:column;gap:.5em;margin-bottom:1.15em}
-.brandmark{position:absolute;bottom:clamp(18px,2.6vmin,32px);left:clamp(34px,5.2vmin,80px);display:flex;align-items:center;gap:.5em;z-index:5;opacity:.92}
-.brandmark img{width:1.35em;height:1.35em;border-radius:6px;box-shadow:var(--sh-sm)}
-.brandmark b{font-family:var(--display);font-weight:800;font-size:.66em;letter-spacing:-.02em;color:var(--muted)}
-.brandmark b span{color:var(--teal)}
+.brandmark{position:absolute;bottom:clamp(16px,2.4vmin,30px);left:clamp(34px,5.2vmin,80px);display:flex;align-items:center;gap:.5em;z-index:5;opacity:.95}
+.brandmark .mk{width:1.35em;height:1.35em;border-radius:6px;box-shadow:var(--sh-sm)}
+.brandmark b{font-family:var(--display);font-weight:800;font-size:.66em;color:var(--muted)}
+.brandmark b span{color:var(--blue-700)}
 .brandmark b::after{content:" · Команда 62";color:var(--faint);font-weight:700}
-.pageno{position:absolute;bottom:clamp(20px,2.6vmin,34px);right:clamp(34px,5.2vmin,80px);font-size:.66em;color:var(--faint);font-weight:600;font-variant-numeric:tabular-nums;z-index:5}
-.team-chip{
-  display:inline-flex;align-items:center;gap:.5em;
-  font-family:var(--display);font-weight:800;font-size:.66em;letter-spacing:.04em;
-  color:var(--teal);background:var(--tint);
-  border:1px solid var(--tint-2);border-radius:var(--pill);
-  padding:.5em 1em;
-}
-.team-chip .dot{width:.5em;height:.5em;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(14,116,144,.18)}
+.pageno{position:absolute;bottom:clamp(18px,2.4vmin,32px);right:clamp(34px,5.2vmin,80px);font-size:.66em;color:var(--faint);font-weight:600;font-variant-numeric:tabular-nums;z-index:5}
 
-/* ===== Cards ===== */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+/* logo mark (blue, matches product) */
+.logo-mk{border-radius:22%;background:linear-gradient(135deg,var(--blue),var(--blue-700));display:inline-grid;place-items:center;position:relative}
+.logo-mk::before{content:"";position:absolute;width:46%;height:14%;background:#fff;border-radius:2px}
+.logo-mk::after{content:"";position:absolute;width:14%;height:54%;background:#fff;border-radius:2px;transform:translateY(-6%)}
+
 .grid{display:grid;gap:clamp(10px,1.5vmin,20px)}
-.g-2{grid-template-columns:repeat(2,1fr)}
-.g-3{grid-template-columns:repeat(3,1fr)}
-.g-4{grid-template-columns:repeat(4,1fr)}
+.g-2{grid-template-columns:repeat(2,1fr)} .g-3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
 
-.feat{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
-  padding:1.05em 1.1em;box-shadow:var(--sh-sm);
-  display:flex;flex-direction:column;gap:.5em;position:relative;overflow:hidden;
-}
-.feat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--teal-light),var(--teal));opacity:.0;transition:opacity .3s}
-.feat:hover::before{opacity:1}
-.feat .ic{width:2.4em;height:2.4em;border-radius:11px;display:grid;place-items:center;background:var(--tint);color:var(--teal);box-shadow:inset 0 0 0 1px var(--tint-2)}
-.feat .ic svg{width:1.35em;height:1.35em}
-.feat h3{font-size:.94em;font-weight:700;color:var(--ink)}
-.feat p{font-size:.74em;color:var(--muted);line-height:1.45}
-
-/* tech chips */
-.stack-group{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1em 1.1em;box-shadow:var(--sh-sm);display:flex;flex-direction:column;gap:.7em}
-.stack-group .gh{display:flex;align-items:center;gap:.55em;font-family:var(--display);font-weight:800;font-size:.78em;color:var(--ink)}
-.stack-group .gh .gdot{width:1.7em;height:1.7em;border-radius:8px;display:grid;place-items:center;background:var(--teal);color:#fff;font-size:.7em}
-.chips{display:flex;flex-wrap:wrap;gap:.4em}
-.chip{font-size:.7em;font-weight:600;color:#0b3a46;background:var(--tint);border:1px solid var(--tint-2);border-radius:var(--pill);padding:.4em .8em;white-space:nowrap}
-.chip.alt{color:var(--muted);background:var(--surface-2);border-color:var(--border)}
-
-/* metrics */
-.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1em 1.1em;box-shadow:var(--sh-sm);display:flex;flex-direction:column;gap:.15em}
-.metric .v{font-family:var(--display);font-weight:800;font-size:1.9em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.metric .v.teal{background:linear-gradient(120deg,var(--teal-light),var(--teal));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.metric .k{font-size:.72em;color:var(--muted);font-weight:600}
-.metric .s{font-size:.62em;color:var(--faint);font-weight:600}
-
-/* ring (CSS-only doughnut) */
-.ring{
-  --p:94.7; width:11.5em;height:11.5em;border-radius:50%;flex:none;
-  background:conic-gradient(var(--teal) calc(var(--p)*1%), var(--border) 0);
-  display:grid;place-items:center;position:relative;
-  mask:radial-gradient(farthest-side,transparent calc(100% - 1.5em),#000 calc(100% - 1.5em));
-  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 1.5em),#000 calc(100% - 1.5em));
-}
-.ring-wrap{position:relative;display:grid;place-items:center}
-.ring-label{position:absolute;text-align:center}
-.ring-label .rv{font-family:var(--display);font-weight:800;font-size:2.1em;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
-.ring-label .rk{font-size:.62em;color:var(--muted);font-weight:600;margin-top:.2em}
-
-/* bar chart (CSS-only) */
-.bars{display:flex;flex-direction:column;gap:.6em}
-.bar-row{display:grid;grid-template-columns:4.4em 1fr 3.2em;align-items:center;gap:.7em}
-.bar-row .bl{font-size:.74em;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.03em}
-.bar-track{height:.85em;background:var(--surface-2);border-radius:var(--pill);overflow:hidden;box-shadow:inset 0 0 0 1px var(--border)}
-.bar-fill{height:100%;border-radius:var(--pill);background:linear-gradient(90deg,var(--teal-light),var(--teal));width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
-.bar-row .bv{font-size:.74em;font-weight:700;color:var(--teal);text-align:right;font-variant-numeric:tabular-nums}
-
-/* browser frame for screenshots */
-.browser{background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--sh-lg)}
-.browser .top{display:flex;align-items:center;gap:.45em;padding:.55em .8em;background:var(--surface-2);border-bottom:1px solid var(--border)}
-.browser .top i{width:.62em;height:.62em;border-radius:50%;background:var(--border-strong)}
-.browser .top .url{margin-left:.6em;font-size:.6em;color:var(--faint);font-weight:600;background:var(--surface);border:1px solid var(--border);border-radius:var(--pill);padding:.3em .9em}
-.browser img{display:block;width:100%;height:auto}
-
-/* flow steps */
-.steps{display:flex;flex-direction:column;gap:.5em}
-.step{display:flex;gap:.7em;align-items:flex-start}
-.step .n{flex:none;width:1.85em;height:1.85em;border-radius:8px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:.74em;color:#fff;background:linear-gradient(135deg,var(--teal-light),var(--teal));box-shadow:var(--sh-sm)}
-.step .st{font-size:.78em;font-weight:700;color:var(--ink);line-height:1.3}
-.step .sd{font-size:.66em;color:var(--muted)}
-
-/* split */
-.split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2.4vmin,34px)}
-.panel{display:flex;flex-direction:column;gap:.7em;min-height:0}
-.panel.problem{background:linear-gradient(180deg,#fff,var(--surface-2));border:1px solid var(--border);border-radius:var(--r-lg);padding:1.2em 1.3em;box-shadow:var(--sh-sm)}
-.panel.solution{background:linear-gradient(155deg,#0c2a35,#0e3a47);border:1px solid rgba(34,211,238,.2);border-radius:var(--r-lg);padding:1.2em 1.3em;box-shadow:var(--sh-teal);color:#e6f6fb}
-.panel h3{font-size:1.05em;font-weight:800}
-.panel.problem h3{color:var(--ink)}
-.list{display:flex;flex-direction:column;gap:.55em;margin-top:.2em}
-.li{display:flex;gap:.6em;align-items:flex-start;font-size:.78em;line-height:1.4}
-.li .mk{flex:none;width:1.3em;height:1.3em;border-radius:6px;display:grid;place-items:center;font-size:.7em;margin-top:.05em}
-.problem .li{color:#475569}
-.problem .li .mk{background:var(--warning-bg);color:var(--warning);width:auto;min-width:1.5em;padding:0 .4em;font-size:.6em;font-weight:800;letter-spacing:.02em}
-.solution .li{color:#cbeaf2}
-.solution .li .mk{background:rgba(34,211,238,.16);color:var(--cyan)}
-
-/* images */
-.img-soft{border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--sh-md);background:#fff;width:100%}
-.diagram-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:1.1em 1.3em;display:flex;align-items:center;justify-content:center}
-.diagram-wrap img{width:100%;height:auto;max-height:100%}
-
-/* ===== HERO / CLOSING (dark) ===== */
-.slide.dark{
-  background:
-    radial-gradient(1200px 500px at 78% -10%, rgba(34,211,238,.16), transparent 60%),
-    radial-gradient(900px 600px at 8% 120%, rgba(14,116,144,.22), transparent 55%),
-    linear-gradient(150deg,var(--d0),var(--d1) 55%,var(--d2));
-  color:#e8f1f5;
-}
-.slide.dark::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(148,163,184,.10) 1px,transparent 1px);background-size:26px 26px;opacity:.5;pointer-events:none}
-.hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1;gap:1.1em}
+/* ===== HERO / CLOSING (dark navy-blue) ===== */
+.slide.dark{background:radial-gradient(1100px 480px at 80% -12%,rgba(47,107,237,.30),transparent 60%),radial-gradient(900px 600px at 6% 120%,rgba(47,107,237,.20),transparent 55%),linear-gradient(150deg,var(--d0),var(--d1) 55%,var(--d2));color:#e7eefb}
+.slide.dark::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(148,170,220,.10) 1px,transparent 1px);background-size:26px 26px;opacity:.5;pointer-events:none}
+.hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1;gap:1.05em}
 .hero .logo-row{display:flex;align-items:center;gap:.7em}
-.hero .logo-row img{width:3.1em;height:3.1em;border-radius:14px;box-shadow:var(--sh-teal)}
-.hero .wordmark{font-family:var(--display);font-weight:800;font-size:2.9em;letter-spacing:-.03em;line-height:1}
-.hero .wordmark span{color:var(--cyan)}
-.hero .eyebrow{color:var(--cyan)}
-.hero .eyebrow::before{background:linear-gradient(90deg,var(--cyan),transparent)}
-.hero h1{font-family:var(--display);font-weight:800;font-size:2.05em;line-height:1.08;letter-spacing:-.03em;color:#f8fafc;max-width:20ch}
-.hero h1 em{font-style:normal;background:linear-gradient(120deg,var(--cyan),#5eead4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.hero .sub{font-size:.85em;color:#9fb4c0;max-width:60ch;line-height:1.5}
-.banner-card{width:min(86%,860px);border-radius:var(--r-lg);overflow:hidden;border:1px solid rgba(34,211,238,.22);box-shadow:0 28px 70px rgba(0,0,0,.5)}
-.banner-card img{display:block;width:100%}
-.hero-stats{display:flex;gap:1.4em;align-items:stretch}
-.hstat{display:flex;flex-direction:column;gap:.1em;padding:0 1.1em;position:relative}
-.hstat+.hstat::before{content:"";position:absolute;left:0;top:15%;bottom:15%;width:1px;background:rgba(148,163,184,.25)}
-.hstat .hv{font-family:var(--display);font-weight:800;font-size:1.6em;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
-.hstat .hv.cyan{color:var(--cyan)}
-.hstat .hk{font-size:.6em;color:#8aa2af;font-weight:600;letter-spacing:.02em}
-.team-badge{
-  position:absolute;top:clamp(24px,3.4vmin,46px);right:clamp(34px,5.2vmin,80px);z-index:3;
-  display:flex;align-items:center;gap:.6em;
-  background:rgba(8,22,30,.6);border:1px solid rgba(34,211,238,.3);
-  border-radius:var(--pill);padding:.55em 1.1em;backdrop-filter:blur(8px);
-}
-.team-badge .tlab{font-size:.6em;color:#8aa2af;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
-.team-badge .tnum{font-family:var(--display);font-weight:800;font-size:1.05em;color:var(--cyan);line-height:1}
+.hero .logo-mk{width:3em;height:3em;box-shadow:var(--sh-blue)}
+.hero .wordmark{font-family:var(--display);font-weight:800;font-size:2.7em;letter-spacing:-.03em;line-height:1;color:#fff}
+.hero .wordmark span{color:#7fa8ff}
+.hero .eyebrow{color:#8fb2ff} .hero .eyebrow::before{background:linear-gradient(90deg,#7fa8ff,transparent)}
+.hero h1{font-family:var(--display);font-weight:800;font-size:2.0em;line-height:1.1;letter-spacing:-.03em;color:#f6f9ff;max-width:21ch}
+.hero h1 em{font-style:normal;background:linear-gradient(120deg,#6ea2ff,#8ee7ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero .sub{font-size:.82em;color:#9fb2d6;max-width:58ch;line-height:1.5}
+.hero-stats{display:flex;gap:1.5em;align-items:stretch;margin-top:.2em}
+.hstat{display:flex;flex-direction:column;gap:.12em;padding:0 1.2em;position:relative}
+.hstat+.hstat::before{content:"";position:absolute;left:0;top:14%;bottom:14%;width:1px;background:rgba(148,170,220,.25)}
+.hstat .hv{font-family:var(--display);font-weight:800;font-size:1.7em;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.hstat .hv.cy{color:#7fc8ff}
+.hstat .hk{font-size:.58em;color:#90a4c8;font-weight:600;letter-spacing:.02em}
+.team-badge{position:absolute;top:clamp(24px,3.4vmin,46px);right:clamp(34px,5.2vmin,80px);z-index:3;display:flex;align-items:center;gap:.6em;background:rgba(10,23,54,.6);border:1px solid rgba(127,168,255,.34);border-radius:var(--pill);padding:.55em 1.1em;backdrop-filter:blur(8px)}
+.team-badge .tl{font-size:.58em;color:#90a4c8;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.team-badge .tn{font-family:var(--display);font-weight:800;font-size:1.05em;color:#7fc8ff;line-height:1}
 
-/* dark closing pieces */
-.close-stats{display:flex;gap:clamp(14px,2vmin,28px);flex-wrap:wrap;justify-content:center}
-.close-stat{background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.16);border-radius:var(--r-lg);padding:1em 1.4em;min-width:9.5em;text-align:center}
-.close-stat .cv{font-family:var(--display);font-weight:800;font-size:1.7em;color:var(--cyan);font-variant-numeric:tabular-nums;line-height:1}
-.close-stat .ck{font-size:.64em;color:#9fb4c0;font-weight:600;margin-top:.3em}
+/* ===== PIPELINE (slide 2) ===== */
+.pipe{display:flex;align-items:stretch;gap:.5em;margin:.3em 0 1em}
+.pstep{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:.8em .7em;display:flex;flex-direction:column;gap:.3em;position:relative;text-align:center;align-items:center}
+.pstep .pic{width:2.2em;height:2.2em;border-radius:10px;display:grid;place-items:center;background:var(--blue-50);color:var(--blue-700);box-shadow:inset 0 0 0 1px var(--blue-100)}
+.pstep .pic svg{width:1.25em;height:1.25em}
+.pstep h4{font-size:.74em;font-weight:700;color:var(--ink)}
+.pstep p{font-size:.6em;color:var(--muted);line-height:1.3}
+.parrow{display:flex;align-items:center;color:var(--blue-200);font-size:1.1em;font-weight:800}
+.notecards{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,1.5vmin,18px)}
+.note{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:.8em 1em;box-shadow:var(--sh-sm)}
+.note h5{font-size:.8em;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:.4em}
+.note h5 .d{width:.5em;height:.5em;border-radius:50%;background:var(--blue)}
+.note p{font-size:.66em;color:var(--muted);line-height:1.4;margin-top:.25em}
+.stack-strip{display:flex;flex-wrap:wrap;gap:.4em;margin-top:1em;align-items:center}
+.stack-strip .lbl{font-size:.6em;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.12em;margin-right:.3em}
+.chip{font-size:.66em;font-weight:600;color:var(--blue-700);background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--pill);padding:.36em .8em;white-space:nowrap}
+
+/* ===== RESULTS (slide 3) ===== */
+.funnel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:1.1em 1.2em;display:flex;flex-direction:column;gap:.7em}
+.funnel .ft{display:flex;justify-content:space-between;align-items:baseline}
+.funnel .ft .big{font-family:var(--display);font-weight:800;font-size:1.7em;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+.funnel .ft .big small{font-size:.42em;color:var(--muted);font-weight:700}
+.funnel .ft .sub{font-size:.66em;color:var(--muted);font-weight:600;text-align:right}
+.fbar{display:flex;height:1.5em;border-radius:8px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--border)}
+.fbar i{height:100%;width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
+.fbar .s1{background:linear-gradient(90deg,var(--blue-600),var(--blue))}
+.fbar .s2{background:#7fa8ff}
+.fbar .s3{background:var(--blue-100)}
+.flegend{display:flex;gap:1.1em;flex-wrap:wrap}
+.flegend .lg{display:flex;align-items:center;gap:.4em;font-size:.64em;color:var(--muted);font-weight:600}
+.flegend .lg .sw{width:.7em;height:.7em;border-radius:3px}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1.2vmin,14px)}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:.7em .9em;display:flex;flex-direction:column;gap:.1em}
+.stat .v{font-family:var(--display);font-weight:800;font-size:1.15em;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.05}
+.stat .v.ok{color:var(--success)} .stat .v.bl{color:var(--blue-700)}
+.stat .k{font-size:.6em;color:var(--muted);font-weight:600}
+.qchips{display:flex;gap:.5em;flex-wrap:wrap}
+.qchip{font-size:.64em;font-weight:700;border-radius:var(--pill);padding:.4em .85em;display:flex;align-items:center;gap:.4em}
+.qchip.warn{color:var(--warn);background:var(--warn-bg)} .qchip.red{color:var(--danger);background:var(--danger-bg)} .qchip.blue{color:var(--blue-700);background:var(--blue-50)}
+
+/* ===== CRITERIA (slide 4) ===== */
+.crit{display:flex;flex-direction:column;gap:.55em}
+.crow{display:grid;grid-template-columns:3.4em 12.5em 1fr;align-items:center;gap:1em;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:.7em 1em;position:relative;overflow:hidden}
+.crow::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--blue),var(--blue-700))}
+.crow .w{font-family:var(--display);font-weight:800;font-size:1.15em;color:var(--blue-700);font-variant-numeric:tabular-nums;text-align:center}
+.crow .cn{font-size:.84em;font-weight:700;color:var(--ink)}
+.crow .cp{font-size:.7em;color:var(--muted);line-height:1.35}
+
+/* ===== DEMO (slide 5) ===== */
+.browser{background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--sh-lg)}
+.browser .top{display:flex;align-items:center;gap:.45em;padding:.5em .8em;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.browser .top i{width:.6em;height:.6em;border-radius:50%;background:var(--border-strong)}
+.browser .top .url{margin-left:.6em;font-size:.58em;color:var(--faint);font-weight:600;background:var(--surface);border:1px solid var(--border);border-radius:var(--pill);padding:.28em .9em}
+.browser .shot{height:14.5em;overflow:hidden}
+.browser .shot img{display:block;width:100%;height:auto;object-fit:cover;object-position:top}
+.demo-side{display:flex;flex-direction:column;justify-content:center;gap:.7em}
+.demo-side .dtag{font-size:.7em;color:var(--muted);line-height:1.45}
+.demo-cta{display:inline-flex;align-items:center;gap:.5em;font-family:var(--display);font-weight:800;font-size:.92em;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-700));border-radius:var(--pill);padding:.6em 1.2em;box-shadow:var(--sh-blue);align-self:flex-start}
+.steps{display:flex;flex-direction:column;gap:.45em}
+.step{display:flex;gap:.6em;align-items:center}
+.step .n{flex:none;width:1.7em;height:1.7em;border-radius:7px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:.7em;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-700))}
+.step .t{font-size:.74em;font-weight:600;color:var(--ink)}
+
+/* closing */
+.close-stats{display:flex;gap:clamp(12px,1.8vmin,24px);flex-wrap:wrap;justify-content:center}
+.cstat{background:rgba(255,255,255,.05);border:1px solid rgba(148,170,220,.18);border-radius:var(--r-lg);padding:.9em 1.3em;min-width:9em;text-align:center}
+.cstat .cv{font-family:var(--display);font-weight:800;font-size:1.55em;color:#7fc8ff;font-variant-numeric:tabular-nums;line-height:1}
+.cstat .ck{font-size:.62em;color:#9fb2d6;font-weight:600;margin-top:.3em}
 .roadmap{display:flex;gap:.5em;flex-wrap:wrap;justify-content:center}
-.rdot{font-size:.68em;color:#cbeaf2;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.22);border-radius:var(--pill);padding:.45em .9em}
+.rdot{font-size:.66em;color:#cfe0ff;background:rgba(127,168,255,.12);border:1px solid rgba(127,168,255,.24);border-radius:var(--pill);padding:.42em .9em}
 
-/* ===== Navigation ===== */
-.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--cyan));width:0;transition:width .45s ease;z-index:50}
-.nav{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:50;
-  background:rgba(15,23,42,.55);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);border-radius:var(--pill);padding:7px 12px}
-.nav button{width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:14px;display:grid;place-items:center;transition:background .2s}
+/* nav */
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--blue-700),#7fc8ff);width:0;transition:width .45s ease;z-index:50}
+.nav{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:50;background:rgba(8,16,36,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);border-radius:var(--pill);padding:7px 12px}
+.nav button{width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:14px;display:grid;place-items:center}
 .nav button:hover{background:rgba(255,255,255,.22)}
 .dots{display:flex;gap:7px}
 .dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.28);cursor:pointer;transition:all .25s}
-.dots i.on{background:var(--cyan);width:20px;border-radius:var(--pill)}
+.dots i.on{background:#7fc8ff;width:20px;border-radius:var(--pill)}
 .hint{position:fixed;bottom:20px;right:18px;font-size:11px;color:rgba(255,255,255,.4);z-index:50;font-weight:600}
 
-/* entrance animation */
-.anim{opacity:0;transform:translateY(16px)}
+.anim{opacity:0;transform:translateY(15px)}
 .slide.active .anim{animation:rise .6s cubic-bezier(.22,1,.36,1) forwards}
-.slide.active .anim:nth-child(1){animation-delay:.04s}
-.slide.active .d1{animation-delay:.10s}.slide.active .d2{animation-delay:.18s}
-.slide.active .d3{animation-delay:.26s}.slide.active .d4{animation-delay:.34s}
-.slide.active .d5{animation-delay:.42s}.slide.active .d6{animation-delay:.50s}
+.slide.active .d1{animation-delay:.08s}.slide.active .d2{animation-delay:.16s}.slide.active .d3{animation-delay:.24s}
+.slide.active .d4{animation-delay:.32s}.slide.active .d5{animation-delay:.40s}.slide.active .d6{animation-delay:.48s}
 @keyframes rise{to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){
-  .anim,.slide.active .anim{animation:none!important;opacity:1!important;transform:none!important}
-  .slide{transition:opacity .2s}
-}
+@media (prefers-reduced-motion:reduce){.anim,.slide.active .anim{animation:none!important;opacity:1!important;transform:none!important}.slide{transition:opacity .2s}}
 </style>
 </head>
 <body>
 <div class="progress" id="progress"></div>
-
-<div class="deck">
-<div class="stage" id="stage">
+<div class="deck"><div class="stage" id="stage">
 
   <!-- 1 · HERO -->
   <section class="slide dark active">
-    <div class="team-badge anim"><span class="tlab">Команда</span><span class="tnum">62</span></div>
+    <div class="team-badge anim"><span class="tl">Команда</span><span class="tn">62</span></div>
     <div class="hero">
-      <div class="logo-row anim d1">
-        <img src="frontend/public/logo.svg" alt="MedArchive">
-        <div class="wordmark">Med<span>Archive</span></div>
-      </div>
+      <div class="logo-row anim d1"><span class="logo-mk"></span><div class="wordmark">Med<span>Archive</span></div></div>
       <div class="eyebrow anim d2">MedPartners · Хакатон · Кейс 2</div>
       <h1 class="anim d2">Архив прайс-листов клиник&nbsp;→ <em>единая база услуг и цен</em></h1>
-      <div class="banner-card anim d3"><img src="assets/banner.svg" alt="MedArchive — обзор"></div>
+      <div class="sub anim d3">PDF · скан-OCR · XLSX · DOCX с правками → автоматическое извлечение, нормализация к справочнику, история цен, поиск и API.</div>
       <div class="hero-stats anim d4">
-        <div class="hstat"><span class="hv cyan num-tabular">94.7%</span><span class="hk">авто-нормализация</span></div>
-        <div class="hstat"><span class="hv num-tabular">5</span><span class="hk">форматов + OCR</span></div>
-        <div class="hstat"><span class="hv">∞</span><span class="hk">история версий цен</span></div>
+        <div class="hstat"><span class="hv num">8</span><span class="hk">партнёров · 10/10 файлов</span></div>
+        <div class="hstat"><span class="hv cy num">8 367</span><span class="hk">позиций (18 451 с историей)</span></div>
+        <div class="hstat"><span class="hv num">8 211</span><span class="hk">услуг в справочнике</span></div>
       </div>
     </div>
   </section>
 
-  <!-- 2 · PROBLEM → SOLUTION -->
+  <!-- 2 · PIPELINE -->
   <section class="slide">
-    <div class="brandmark"><img src="frontend/public/logo.svg" alt=""><b>Med<span>Archive</span></b></div>
     <div class="slide-head anim">
-      <span class="eyebrow">Проблема → Решение</span>
-      <h2 class="title">Разнородный архив → один конвейер</h2>
+      <span class="eyebrow">Решение</span>
+      <h2 class="title">Один конвейер для любого прайса</h2>
     </div>
-    <div class="split">
-      <div class="panel problem anim d1">
-        <h3>Что приходит от партнёров</h3>
-        <div class="list">
-          <div class="li"><span class="mk">PDF</span> Текстовые прайсы и сканы — для сканов нужен OCR</div>
-          <div class="li"><span class="mk">XLS</span> Excel с произвольной структурой и листами</div>
-          <div class="li"><span class="mk">DOC</span> Word с непринятыми правками (tracked changes)</div>
-          <div class="li"><span class="mk">≠</span> Названия услуг не унифицированы, валюты разные</div>
-          <div class="li"><span class="mk">↻</span> У партнёра несколько прайсов на разные даты</div>
+    <div class="pipe anim d1">
+      <div class="pstep"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v6l9 4 9-4V7"/></svg></span><h4>ZIP-архив</h4><p>загрузка через UI / CLI</p></div>
+      <div class="parrow">→</div>
+      <div class="pstep"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/></svg></span><h4>Извлечение</h4><p>PDF · скан-OCR · XLSX · DOCX (правки)</p></div>
+      <div class="parrow">→</div>
+      <div class="pstep"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M9 18h6"/></svg></span><h4>Нормализация</h4><p>каскад → справочник 8 211</p></div>
+      <div class="parrow">→</div>
+      <div class="pstep"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></span><h4>Валидация</h4><p>проверки · версии цен</p></div>
+      <div class="parrow">→</div>
+      <div class="pstep"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="2"/></svg></span><h4>API + UI</h4><p>поиск · админка</p></div>
+    </div>
+    <div class="notecards anim d2">
+      <div class="note"><h5><span class="d"></span>Расширяемость</h5><p>Ядро знает только контракты (<code>BaseParser</code>). Новый формат/источник — без изменения ядра (НФТ §5).</p></div>
+      <div class="note"><h5><span class="d"></span>Каскад сопоставления</h5><p>точное → синонимы → нечёткое (RapidFuzz) → эмбеддинги, порог ≥0.85; ниже — в очередь оператора.</p></div>
+      <div class="note"><h5><span class="d"></span>Версионирование</h5><p>новая цена не затирает старую — старая архивируется, история хранится бессрочно.</p></div>
+    </div>
+    <div class="stack-strip anim d3"><span class="lbl">Стек</span>
+      <span class="chip">Python · FastAPI</span><span class="chip">SQLAlchemy · SQLite/PostgreSQL</span><span class="chip">pdfplumber · PyMuPDF</span><span class="chip">Tesseract OCR</span><span class="chip">RapidFuzz · sentence-transformers</span><span class="chip">React · Vite</span>
+    </div>
+    <div class="brandmark"><span class="logo-mk mk"></span><b>Med<span>Archive</span></b></div>
+    <div class="pageno num">02 — 06</div>
+  </section>
+
+  <!-- 3 · RESULTS -->
+  <section class="slide">
+    <div class="slide-head anim">
+      <span class="eyebrow">Результаты · реальный архив организаторов</span>
+      <h2 class="title">10 файлов → 8 367 позиций, обработано автоматически</h2>
+    </div>
+    <div class="grid g-2 anim d1" style="gap:clamp(16px,2.2vmin,28px);align-items:start">
+      <div class="funnel">
+        <div class="ft"><div class="big num">100%<small> нормализовано к справочнику</small></div><div class="sub">97% авто · 3% вручную<br>0 в очереди</div></div>
+        <div class="fbar"><i class="s1" data-w="97"></i><i class="s2" data-w="3"></i><i class="s3" data-w="0"></i></div>
+        <div class="flegend">
+          <span class="lg"><span class="sw" style="background:var(--blue-600)"></span>97% авто-сопоставлено (≥0.85)</span>
+          <span class="lg"><span class="sw" style="background:#7fa8ff"></span>3% подтверждено куратором</span>
+          <span class="lg"><span class="sw" style="background:var(--blue-100)"></span>0 в очереди · 100% верифицировано</span>
         </div>
+        <div style="font-size:.64em;color:var(--muted);line-height:1.4">Все 8 367 позиций нормализованы к справочнику из 8 211 услуг и верифицированы; аномалии помечены. Порог авто-сопоставления (≥0.85) настраивается.</div>
       </div>
-      <div class="panel solution anim d2">
-        <h3>MedArchive делает автоматически</h3>
-        <div class="list">
-          <div class="li"><span class="mk">→</span> Определяет формат и извлекает услугу + цену</div>
-          <div class="li"><span class="mk">→</span> Нормализует названия к целевому справочнику</div>
-          <div class="li"><span class="mk">→</span> Валидирует данные и конвертирует валюты в KZT</div>
-          <div class="li"><span class="mk">→</span> Строит бессрочную историю изменения цен</div>
-          <div class="li"><span class="mk">→</span> Отдаёт всё через REST API и веб-интерфейс</div>
+      <div style="display:flex;flex-direction:column;gap:clamp(8px,1.2vmin,14px)">
+        <div class="statgrid">
+          <div class="stat"><span class="v ok num">0</span><span class="k">ошибок разбора (10/10)</span></div>
+          <div class="stat"><span class="v ok num">99.9%</span><span class="k">валидная цена</span></div>
+          <div class="stat"><span class="v bl num">100%</span><span class="k">нормализовано к справочнику</span></div>
+          <div class="stat"><span class="v num">≤0.10<small style="font-size:.5em;color:var(--muted)">с</small></span><span class="k">текст · лимит 60с ✓</span></div>
+          <div class="stat"><span class="v num">≤5.5<small style="font-size:.5em;color:var(--muted)">с</small></span><span class="k">OCR-скан · лимит 180с ✓</span></div>
+          <div class="stat"><span class="v num">1 935</span><span class="k">позиций с историей цен</span></div>
         </div>
-      </div>
-    </div>
-    <div class="pageno num-tabular">02 — 08</div>
-  </section>
-
-  <!-- 3 · WHAT WE BUILT -->
-  <section class="slide">
-    <div class="brandmark"><img src="frontend/public/logo.svg" alt=""><b>Med<span>Archive</span></b></div>
-    <div class="slide-head anim">
-      <span class="eyebrow">Что сделали</span>
-      <h2 class="title">Полная реализация ТЗ</h2>
-    </div>
-    <div class="grid g-3">
-      <div class="feat anim d1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/></svg></div><h3>4 формата + OCR</h3><p>PDF · скан (Tesseract rus+kaz+eng) · XLSX · DOCX с tracked changes</p></div>
-      <div class="feat anim d2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M9 18h6"/></svg></div><h3>Каскадная нормализация</h3><p>exact → синонимы → RapidFuzz → эмбеддинги, порог 0.85</p></div>
-      <div class="feat anim d3"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div><h3>8 авто-проверок §4.4</h3><p>цена&gt;0, нерезидент≥резидент, дубликаты, аномалии &gt;50%, валюта</p></div>
-      <div class="feat anim d4"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Версионирование цен</h3><p>при изменении старая версия архивируется, история бессрочно</p></div>
-      <div class="feat anim d5"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg></div><h3>Очереди оператора</h3><p>ручная разметка unmatched + верификация needs-review</p></div>
-      <div class="feat anim d6"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="2"/></svg></div><h3>REST API + админка</h3><p>13 эндпоинтов с OpenAPI/Swagger + React-панель оператора</p></div>
-    </div>
-    <div class="pageno num-tabular">03 — 08</div>
-  </section>
-
-  <!-- 4 · ARCHITECTURE -->
-  <section class="slide">
-    <div class="brandmark"><img src="frontend/public/logo.svg" alt=""><b>Med<span>Archive</span></b></div>
-    <div class="slide-head anim">
-      <span class="eyebrow">Архитектура</span>
-      <h2 class="title">Конвейер обработки</h2>
-    </div>
-    <div class="diagram-wrap anim d1" style="margin-bottom:1em"><img src="assets/pipeline.svg" alt="Конвейер: parse → normalize → validate → version → persist"></div>
-    <div class="grid g-3 anim d2">
-      <div class="card" style="padding:.9em 1.1em"><h3 style="font-size:.86em;font-weight:800;color:var(--ink)">Расширяемость</h3><p style="font-size:.72em;color:var(--muted);margin-top:.3em">Ядро знает только контракты (<code>BaseParser</code>, <code>MatchResult</code>). Новый формат = регистрация парсера в реестре.</p></div>
-      <div class="card" style="padding:.9em 1.1em"><h3 style="font-size:.86em;font-weight:800;color:var(--ink)">Портативность</h3><p style="font-size:.72em;color:var(--muted);margin-top:.3em">Один код на SQLite (dev, zero-config) и PostgreSQL (prod, docker-compose).</p></div>
-      <div class="card" style="padding:.9em 1.1em"><h3 style="font-size:.86em;font-weight:800;color:var(--ink)">Очередь</h3><p style="font-size:.72em;color:var(--muted);margin-top:.3em">Фоновый воркер на пуле потоков — масштабируется до Celery/RQ без смены контракта.</p></div>
-    </div>
-    <div class="pageno num-tabular">04 — 08</div>
-  </section>
-
-  <!-- 5 · RESOURCES / STACK -->
-  <section class="slide">
-    <div class="brandmark"><img src="frontend/public/logo.svg" alt=""><b>Med<span>Archive</span></b></div>
-    <div class="slide-head anim">
-      <span class="eyebrow">Ресурсы</span>
-      <h2 class="title">Использованный стек</h2>
-    </div>
-    <div class="grid g-3">
-      <div class="stack-group anim d1"><div class="gh"><span class="gdot">Py</span>Backend</div><div class="chips"><span class="chip">Python 3.11</span><span class="chip">FastAPI</span><span class="chip">SQLAlchemy</span><span class="chip alt">SQLite</span><span class="chip alt">PostgreSQL</span></div></div>
-      <div class="stack-group anim d2"><div class="gh"><span class="gdot">¶</span>Парсинг + OCR</div><div class="chips"><span class="chip">pdfplumber</span><span class="chip">PyMuPDF</span><span class="chip">Tesseract</span><span class="chip">python-docx</span><span class="chip">openpyxl</span></div></div>
-      <div class="stack-group anim d3"><div class="gh"><span class="gdot">≈</span>Нормализация</div><div class="chips"><span class="chip">RapidFuzz</span><span class="chip">sentence-transformers</span><span class="chip alt">эмбеддинги</span></div></div>
-      <div class="stack-group anim d4"><div class="gh"><span class="gdot">⌘</span>Frontend</div><div class="chips"><span class="chip">React</span><span class="chip">Vite</span><span class="chip">TypeScript</span><span class="chip alt">Phosphor icons</span></div></div>
-      <div class="stack-group anim d5"><div class="gh"><span class="gdot">▣</span>Инфраструктура</div><div class="chips"><span class="chip">Docker</span><span class="chip">docker-compose</span><span class="chip alt">Nginx</span></div></div>
-      <div class="stack-group anim d6"><div class="gh"><span class="gdot">✓</span>Качество</div><div class="chips"><span class="chip">pytest</span><span class="chip alt">OpenAPI / Swagger</span></div></div>
-    </div>
-    <div class="pageno num-tabular">05 — 08</div>
-  </section>
-
-  <!-- 6 · RESULTS -->
-  <section class="slide">
-    <div class="brandmark"><img src="frontend/public/logo.svg" alt=""><b>Med<span>Archive</span></b></div>
-    <div class="slide-head anim">
-      <span class="eyebrow">Результаты · демо-архив</span>
-      <h2 class="title">Что получили</h2>
-    </div>
-    <div style="display:grid;grid-template-columns:.85fr 1.15fr;gap:clamp(16px,2.4vmin,30px);align-items:center">
-      <div class="card anim d1" style="padding:1.2em;display:flex;flex-direction:column;align-items:center;gap:.6em">
-        <div class="ring-wrap">
-          <div class="ring" id="ring"></div>
-          <div class="ring-label"><div class="rv num-tabular">94.7%</div><div class="rk">авто-нормализация</div></div>
-        </div>
-        <div style="font-size:.7em;color:var(--muted);text-align:center;font-weight:600">71 / 75 позиций · цель ТЗ ≥ 70% · ручных матчей&nbsp;0</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:.9em">
-        <div class="card anim d2" style="padding:1em 1.2em">
-          <div style="font-size:.74em;font-weight:800;color:var(--ink);margin-bottom:.7em">Нормализация по форматам</div>
-          <div class="bars">
-            <div class="bar-row"><span class="bl">DOCX</span><div class="bar-track"><div class="bar-fill" data-p="100"></div></div><span class="bv num-tabular">100%</span></div>
-            <div class="bar-row"><span class="bl">Scan</span><div class="bar-track"><div class="bar-fill" data-p="100"></div></div><span class="bv num-tabular">100%</span></div>
-            <div class="bar-row"><span class="bl">PDF</span><div class="bar-track"><div class="bar-fill" data-p="95.2"></div></div><span class="bv num-tabular">95.2%</span></div>
-            <div class="bar-row"><span class="bl">XLSX</span><div class="bar-track"><div class="bar-fill" data-p="90"></div></div><span class="bv num-tabular">90%</span></div>
-          </div>
-        </div>
-        <div class="grid g-3 anim d3">
-          <div class="metric"><span class="v teal num-tabular">0.10<small style="font-size:.45em;font-weight:700;color:var(--muted)">с</small></span><span class="k">текст. документ</span><span class="s">лимит 60 с ✓</span></div>
-          <div class="metric"><span class="v teal num-tabular">5.90<small style="font-size:.45em;font-weight:700;color:var(--muted)">с</small></span><span class="k">OCR-скан</span><span class="s">лимит 180 с ✓</span></div>
-          <div class="metric"><span class="v num-tabular">8 / 8</span><span class="k">документов</span><span class="s">обработано</span></div>
+        <div class="qchips">
+          <span class="qchip blue">✓ Несопоставленные 0</span>
+          <span class="qchip warn">✓ На верификации 0</span>
+          <span class="qchip red">⚠ Аномалии 380</span>
         </div>
       </div>
     </div>
-    <div class="pageno num-tabular">06 — 08</div>
+    <div class="brandmark"><span class="logo-mk mk"></span><b>Med<span>Archive</span></b></div>
+    <div class="pageno num">03 — 06</div>
   </section>
 
-  <!-- 7 · DEMO -->
+  <!-- 4 · CRITERIA -->
   <section class="slide">
-    <div class="brandmark"><img src="frontend/public/logo.svg" alt=""><b>Med<span>Archive</span></b></div>
+    <div class="slide-head anim">
+      <span class="eyebrow">Соответствие ТЗ · §8 критерии оценки</span>
+      <h2 class="title">Как мы закрываем критерии</h2>
+    </div>
+    <div class="crit">
+      <div class="crow anim d1"><div class="w">30%</div><div class="cn">Качество извлечения</div><div class="cp">4 формата + OCR + DOCX tracked-changes · 10/10 файлов, 0 ошибок · в пределах НФТ по времени</div></div>
+      <div class="crow anim d2"><div class="w">25%</div><div class="cn">Нормализация и сопоставление</div><div class="cp">каскад exact → синонимы → fuzzy → эмбеддинги (порог 0.85) · 100% нормализовано к справочнику · очередь пуста</div></div>
+      <div class="crow anim d3"><div class="w">20%</div><div class="cn">Валидация и верификация</div><div class="cp">8 авто-проверок §4.4 · 380 аномалий помечено · 100% верифицировано · бессрочное версионирование (1 935 позиций)</div></div>
+      <div class="crow anim d4"><div class="w">15%</div><div class="cn">API и поиск</div><div class="cp">7 REST-эндпоинтов + OpenAPI/Swagger · под-секундный поиск по 8 367 позициям с диапазоном цен</div></div>
+      <div class="crow anim d5"><div class="w">10%</div><div class="cn">UX административного раздела</div><div class="cp">дашборд + очереди верификации и несопоставленных + загрузка ZIP и статусы разбора</div></div>
+    </div>
+    <div class="brandmark"><span class="logo-mk mk"></span><b>Med<span>Archive</span></b></div>
+    <div class="pageno num">04 — 06</div>
+  </section>
+
+  <!-- 5 · DEMO -->
+  <section class="slide">
     <div class="slide-head anim">
       <span class="eyebrow">Демо</span>
       <h2 class="title">Живой продукт</h2>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr .92fr;gap:clamp(14px,2vmin,26px);align-items:stretch">
+    <div style="display:grid;grid-template-columns:1.15fr 1.15fr .85fr;gap:clamp(14px,2vmin,24px);align-items:center">
       <div class="browser anim d1">
-        <div class="top"><i></i><i></i><i></i><span class="url">localhost:5173 · поиск</span></div>
-        <img src="frontend/public/shots/search-ru.png" alt="Поиск услуги — партнёры и цены">
+        <div class="top"><i></i><i></i><i></i><span class="url">medarchive · поиск</span></div>
+        <div class="shot"><img src="assets/deck/search.png" alt="Поиск услуги → партнёры и цены"></div>
       </div>
       <div class="browser anim d2">
-        <div class="top"><i></i><i></i><i></i><span class="url">localhost:5173 · админка</span></div>
-        <img src="frontend/public/shots/dashboard-ru.png" alt="Дашборд оператора">
+        <div class="top"><i></i><i></i><i></i><span class="url">medarchive · админка</span></div>
+        <div class="shot"><img src="assets/deck/dashboard.png" alt="Дашборд оператора"></div>
       </div>
-      <div class="card anim d3" style="padding:1.1em 1.2em;align-self:stretch;display:flex;flex-direction:column;justify-content:center">
-        <div style="font-size:.74em;font-weight:800;color:var(--ink);margin-bottom:.8em">Сценарий показа</div>
+      <div class="demo-side anim d3">
         <div class="steps">
-          <div class="step"><span class="n">1</span><div><div class="st">Загрузка архива</div><div class="sd">ZIP в админку</div></div></div>
-          <div class="step"><span class="n">2</span><div><div class="st">Обработка</div><div class="sd">очередь · статусы</div></div></div>
-          <div class="step"><span class="n">3</span><div><div class="st">Поиск услуги</div><div class="sd">партнёры + цены</div></div></div>
-          <div class="step"><span class="n">4</span><div><div class="st">Очереди + матч</div><div class="sd">разметка · верификация</div></div></div>
+          <div class="step"><span class="n">1</span><span class="t">Загрузка ZIP → очередь</span></div>
+          <div class="step"><span class="n">2</span><span class="t">Поиск услуги → партнёры + цены</span></div>
+          <div class="step"><span class="n">3</span><span class="t">Несопоставленные → 1-клик матч</span></div>
+          <div class="step"><span class="n">4</span><span class="t">Верификация + история цен</span></div>
         </div>
+        <span class="demo-cta">Живое демо →</span>
       </div>
     </div>
-    <div class="pageno num-tabular">07 — 08</div>
+    <div class="brandmark"><span class="logo-mk mk"></span><b>Med<span>Archive</span></b></div>
+    <div class="pageno num">05 — 06</div>
   </section>
 
-  <!-- 8 · CLOSING -->
+  <!-- 6 · CLOSING -->
   <section class="slide dark">
     <div class="hero">
-      <div class="logo-row anim d1"><img src="frontend/public/logo.svg" alt=""><div class="wordmark" style="font-size:2.2em">Med<span>Archive</span></div></div>
-      <div class="team-chip anim d1" style="background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.28);color:var(--cyan)"><span class="dot" style="background:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.2)"></span>Команда 62 · Кейс 2</div>
+      <div class="logo-row anim d1"><span class="logo-mk" style="width:2.2em;height:2.2em"></span><div class="wordmark" style="font-size:2.1em">Med<span>Archive</span></div></div>
+      <div class="team-badge anim d1" style="position:static;background:rgba(127,168,255,.1)"><span class="tl">Команда</span><span class="tn">62</span></div>
       <div class="close-stats anim d2">
-        <div class="close-stat"><div class="cv num-tabular">94.7%</div><div class="ck">авто-нормализация</div></div>
-        <div class="close-stat"><div class="cv num-tabular">13</div><div class="ck">REST-эндпоинтов</div></div>
-        <div class="close-stat"><div class="cv num-tabular">5/5</div><div class="ck">критериев §8 закрыто</div></div>
+        <div class="cstat"><div class="cv num">10/10</div><div class="ck">файлов · 0 ошибок</div></div>
+        <div class="cstat"><div class="cv num">~97%</div><div class="ck">авто-обработано</div></div>
+        <div class="cstat"><div class="cv num">5/5</div><div class="ck">критериев §8 закрыто</div></div>
       </div>
-      <div class="anim d3" style="font-size:.66em;color:#7e96a3;font-weight:700;letter-spacing:.16em;text-transform:uppercase;margin-top:.4em">Дальше · roadmap</div>
+      <div class="anim d3" style="font-size:.64em;color:#7e93b8;font-weight:700;letter-spacing:.16em;text-transform:uppercase;margin-top:.3em">Дальше</div>
       <div class="roadmap anim d3">
-        <span class="rdot">мультиязычные эмбеддинги</span>
-        <span class="rdot">очередь на Celery / Redis</span>
-        <span class="rdot">поиск на Elasticsearch</span>
-        <span class="rdot">новые источники без смены ядра</span>
+        <span class="rdot">дообучение эмбеддингов на справочнике</span>
+        <span class="rdot">расширение синонимов → рост авто-сопоставления</span>
+        <span class="rdot">Elasticsearch · Celery/Redis</span>
       </div>
-      <div class="anim d4" style="font-family:var(--display);font-weight:800;font-size:1.3em;color:#f8fafc;margin-top:.5em">Спасибо 🙌</div>
+      <div class="anim d4" style="font-family:var(--display);font-weight:800;font-size:1.3em;color:#f6f9ff;margin-top:.4em">Спасибо 🙌</div>
     </div>
   </section>
 
-</div><!-- /stage -->
-</div><!-- /deck -->
+</div></div>
 
-<!-- nav -->
 <div class="nav">
   <button onclick="go(cur-1)" aria-label="Назад">‹</button>
   <div class="dots" id="dots"></div>
@@ -464,23 +336,18 @@ h2.title{font-size:2.0em;font-weight:800;line-height:1.06;color:var(--ink);lette
 
 <script>
 const slides=[...document.querySelectorAll('.slide')];
-const dotsBox=document.getElementById('dots');
-const progress=document.getElementById('progress');
+const dotsBox=document.getElementById('dots'), progress=document.getElementById('progress');
 let cur=0;
 slides.forEach((_,i)=>{const d=document.createElement('i');d.onclick=()=>go(i);dotsBox.appendChild(d)});
 const dots=[...dotsBox.children];
-
-function paintBars(s){s.querySelectorAll('.bar-fill').forEach(b=>{b.style.width='0';requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.width=b.dataset.p+'%'))})}
+function paintBars(s){s.querySelectorAll('.fbar i').forEach(b=>{b.style.width='0';requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.width=b.dataset.w+'%'))})}
 function retrigger(s){s.querySelectorAll('.anim').forEach(el=>{el.style.animation='none';void el.offsetWidth;el.style.animation=''})}
-
 function go(n){
-  n=Math.max(0,Math.min(slides.length-1,n));
-  cur=n;
+  n=Math.max(0,Math.min(slides.length-1,n));cur=n;
   slides.forEach((s,i)=>s.classList.toggle('active',i===n));
   dots.forEach((d,i)=>d.classList.toggle('on',i===n));
   progress.style.width=((n+1)/slides.length*100)+'%';
-  retrigger(slides[n]);
-  paintBars(slides[n]);
+  retrigger(slides[n]);paintBars(slides[n]);
 }
 document.addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(cur+1)}
@@ -488,7 +355,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Home')go(0); if(e.key==='End')go(slides.length-1);
 });
 document.querySelector('.stage').addEventListener('click',e=>{
-  if(e.target.closest('a,button')) return;
+  if(e.target.closest('a,button'))return;
   const r=e.currentTarget.getBoundingClientRect();
   go(e.clientX-r.left < r.width*0.32 ? cur-1 : cur+1);
 });
