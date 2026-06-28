@@ -103,7 +103,8 @@
 .lp-h1-accent {
   color: var(--pq-blue);
   -webkit-text-fill-color: var(--pq-blue);
-  white-space: nowrap;
+  /* Must wrap: at the max clamp this phrase is far wider than the text column,
+     so `nowrap` made it overflow ~400px into the dashboard screenshot. */
 }
 .lp-h1-accent::before {
   content: '';
@@ -281,7 +282,10 @@
    ------------------------------------------------------------------------- */
 .lp-metrics-band {
   position: relative;
-  padding-block: 0 72px;
+  /* Symmetric block padding so the metric cards sit vertically centered in the
+     tinted band (was 0/72 → cards hugged the top). margin-top keeps the band
+     lifted into the hero. */
+  padding-block: 44px;
   margin-top: -36px;
   background: var(--pq-bg-tint);
 }
