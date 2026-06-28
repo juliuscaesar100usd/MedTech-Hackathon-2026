@@ -135,17 +135,19 @@ export function LandingPage() {
       </section>
 
       {/* ---- Capabilities: showcase (real search shot) + icon list ---- */}
-      <section className="lp-section lp-container" aria-labelledby="lp-caps-h">
-        <h2 id="lp-caps-h" className="lp-h2">Всё необходимое для бэк-офиса</h2>
+      <section className="lp-section lp-container lp-showcase-section" aria-labelledby="lp-caps-h">
         <div className="lp-showcase">
-          <figure className="lp-showcase-media">
-            <div className="lp-shot">
-              <img src="/shots/search-ru.png" alt="Поиск услуги в каталоге MedArchive" loading="lazy" width={1360} height={900} />
-            </div>
-            <figcaption className="lp-showcase-cap">
-              Найдите услугу — получите все клиники-партнёры с ценами для резидентов и нерезидентов.
-            </figcaption>
-          </figure>
+          <div className="lp-showcase-left">
+            <h2 id="lp-caps-h" className="lp-h2">Всё необходимое для бэк-офиса</h2>
+            <figure className="lp-showcase-media">
+              <div className="lp-shot">
+                <img src="/shots/search-ru.png" alt="Поиск услуги в каталоге MedArchive" loading="lazy" width={1360} height={900} />
+              </div>
+              <figcaption className="lp-showcase-cap">
+                Найдите услугу — получите все клиники-партнёры с ценами для резидентов и нерезидентов.
+              </figcaption>
+            </figure>
+          </div>
           <ul className="lp-cap-list">
             {CAPS.map((c) => (
               <li key={c.title} className="lp-cap-row">

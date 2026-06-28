@@ -433,10 +433,20 @@
   gap: 48px;
   align-items: start;
 }
-.lp-showcase-media {
-  margin: 0;
+/* Left rail: heading + screenshot pinned together while the capability list
+   scrolls past. Sticky lives on the rail (not the figure) so the h2 pins too.
+   NB: the section must NOT carry a transform (its scroll-reveal animation is
+   excluded below) — a transformed ancestor silently breaks position:sticky. */
+.lp-showcase-left {
   position: sticky;
   top: calc(var(--pq-nav-h) + 24px);
+  align-self: start;
+}
+.lp-showcase-left .lp-h2 {
+  margin: 0 0 22px;
+}
+.lp-showcase-media {
+  margin: 0;
 }
 .lp-showcase-cap {
   margin: 14px 2px 0;
@@ -457,7 +467,9 @@
   display: flex;
   gap: 18px;
   align-items: flex-start;
-  padding: 22px 20px;
+  /* Right gutter reserves room for the big 01–05 numeral (absolute, right:14px)
+     so the body text never runs under it. */
+  padding: 22px 96px 22px 20px;
   border-bottom: 1px solid var(--pq-border);
   border-radius: var(--pq-r);
   transition: background 0.18s ease, box-shadow 0.18s ease;
@@ -752,8 +764,11 @@
     animation: pq-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  /* scroll-reveal sections */
-  .lp-section,
+  /* scroll-reveal sections. EXCLUDE the showcase section: its sticky left rail
+     needs an untransformed ancestor (a transform — even the identity matrix this
+     animation leaves behind — makes the section the containing block and breaks
+     position:sticky). The cap rows still reveal individually below. */
+  .lp-section:not(.lp-showcase-section),
   .lp-metrics-band,
   .lp-cta-band {
     animation: pq-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -838,9 +853,12 @@
     grid-template-columns: 1fr;
     gap: 36px;
   }
-  .lp-showcase-media {
+  /* Stacked: drop the sticky so the rail flows normally above the list. */
+  .lp-showcase-left {
     position: static;
     top: auto;
+  }
+  .lp-showcase-media {
     max-width: 620px;
   }
   .lp-assistant {
@@ -879,6 +897,9 @@
   }
   .lp-cta-row .lp-btn {
     width: 100%;
+  }
+  .lp-cap-row {
+    padding-right: 68px;
   }
   .lp-cap-row::before {
     font-size: 48px;
