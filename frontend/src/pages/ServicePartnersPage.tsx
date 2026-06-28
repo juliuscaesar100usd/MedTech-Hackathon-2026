@@ -15,6 +15,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { ChartLine } from '@phosphor-icons/react';
 import { api, API_BASE } from '../lib/api';
 import type { PartnerPriceOut } from '../lib/api';
 import { useFetch } from '../lib/useFetch';
@@ -127,7 +128,7 @@ function PriceHistoryChart({
   // state rather than a single dot / a degenerate vertical line at one date.
   if (points.length < 2) {
     return (
-      <EmptyState icon="📈" title="История цен пока отсутствует">
+      <EmptyState icon={<ChartLine weight="duotone" aria-hidden="true" />} title="История цен пока отсутствует">
         Динамика цен появится, когда для этого партнёра будет загружено более одного
         прайс-листа с разными датами.
       </EmptyState>

@@ -19,7 +19,7 @@ export function EmptyState({
   title,
   children,
 }: {
-  icon?: string;
+  icon?: ReactNode;
   title: string;
   children?: ReactNode;
 }) {
