@@ -1,13 +1,19 @@
-"""Promote every UNMATCHED price item into a real catalog service.
+"""Promote every UNMATCHED and NEEDS_REVIEW price item into a real catalog service.
 
-Unmatched rows (``service_id IS NULL``) are genuine services from the partners'
-price lists that simply weren't in the seed catalog. This backfill turns each
-distinct one into a presentable :class:`Service` so it shows on the catalog,
-search, and partner pages — with its prices.
+Both queues hold genuine services from the partners' price lists that the
+matcher couldn't place confidently:
 
-Dedup is by normalized name, so the same service across clinics collapses into
-ONE catalog entry with several price offers (a real comparison). The price-list
-``section`` becomes the service ``category`` for grouping. Items are linked as
+* ``unmatched`` — no catalog match at all (``service_id IS NULL``).
+* ``needs_review`` — a gray-zone (0.5–0.85) guess that is almost always WRONG
+  ("Кариотипирование" -> "HLA-типирование", "Репозиция костей носа" ->
+  "Репатриация"). Confirming those would attach prices to the wrong service, so
+  we DISCARD the tentative match and key off the raw name instead.
+
+Each distinct service (by normalized name) becomes one presentable
+:class:`Service`; duplicates across clinics collapse into a single entry with
+several price offers. If a name already exists in the catalog (e.g. promoted in
+an earlier pass), items link to it rather than creating a near-duplicate. The
+price-list ``section`` becomes the ``category``. Items are linked as
 ``matched_manual`` (confidence 1.0) and drop out of the verification queue.
 
     cd backend && PYTHONPATH=. .venv/bin/python -m scripts.promote_unmatched
@@ -22,6 +28,9 @@ from app.ingestion.pipeline import reconcile_active_versions
 from app.models import PriceItem, Service
 from app.normalization import normalize, seed_services
 
+# Statuses that mean "not yet a trustworthy catalog entry".
+_PROMOTE = (MatchStatus.unmatched, MatchStatus.needs_review)
+
 
 def main() -> int:
     init_db()
@@ -29,38 +38,49 @@ def main() -> int:
     try:
         items = (
             db.query(PriceItem)
-            .filter(PriceItem.service_id.is_(None))
+            .filter(PriceItem.match_status.in_(_PROMOTE))
             .all()
         )
-        # Group unmatched items by normalized name (merge duplicates across clinics).
+        if not items:
+            print("nothing to promote (no unmatched / needs_review items)")
+            return 0
+
+        # Group by normalized name (merge duplicates across clinics), ignoring
+        # any existing — and for needs_review, untrustworthy — service_id.
         groups: dict[str, list[PriceItem]] = defaultdict(list)
         for it in items:
             key = normalize(it.service_name_raw or "")
             if key:
                 groups[key].append(it)
 
-        # One service per group: the most common raw spelling is the display name,
-        # the most common section is the category.
+        # Existing catalog, keyed by normalized name, so a service promoted in an
+        # earlier pass (or already in the seed catalog) is reused, not duplicated.
+        norm_to_id: dict[str, str] = {}
+        for s in db.query(Service).all():
+            norm_to_id.setdefault(normalize(s.service_name), s.service_id)
+
         chosen_name: dict[str, str] = {}
-        payloads: list[dict] = []
+        new_payloads: list[dict] = []
         for key, its in groups.items():
             name = Counter(
                 it.service_name_raw.strip() for it in its
             ).most_common(1)[0][0]
+            chosen_name[key] = name
+            if key in norm_to_id:
+                continue  # link to the existing service below
             sections = Counter(
                 (it.section or "").strip() for it in its if (it.section or "").strip()
             )
             category = sections.most_common(1)[0][0] if sections else None
-            chosen_name[key] = name
-            payloads.append({"service_name": name, "category": category})
+            new_payloads.append({"service_name": name, "category": category})
 
-        created = seed_services(db, payloads)
-
+        created = seed_services(db, new_payloads)
+        # Refresh the map so the freshly-created services resolve.
         name_to_id = {s.service_name: s.service_id for s in db.query(Service).all()}
 
         linked = 0
         for key, its in groups.items():
-            sid = name_to_id[chosen_name[key]]
+            sid = norm_to_id.get(key) or name_to_id[chosen_name[key]]
             for it in its:
                 it.service_id = sid
                 it.match_status = MatchStatus.matched_manual
@@ -73,14 +93,16 @@ def main() -> int:
         reactivated = reconcile_active_versions(db)
 
         total_services = db.query(Service).count()
-        still_unmatched = (
-            db.query(PriceItem).filter(PriceItem.service_id.is_(None)).count()
+        remaining = (
+            db.query(PriceItem)
+            .filter(PriceItem.match_status.in_(_PROMOTE))
+            .count()
         )
         print(
-            f"promoted: {created} new services from {linked} items "
-            f"({len(groups)} groups); reactivated {reactivated}; "
-            f"catalog now {total_services} services; "
-            f"unmatched remaining {still_unmatched}"
+            f"promoted {linked} items from {len(groups)} groups: "
+            f"{created} new services, {len(groups) - created} merged into existing; "
+            f"reactivated {reactivated}; catalog now {total_services} services; "
+            f"queue remaining {remaining}"
         )
         return 0
     finally:
