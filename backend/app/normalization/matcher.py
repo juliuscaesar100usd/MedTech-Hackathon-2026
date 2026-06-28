@@ -266,6 +266,34 @@ class Matcher:
             return sids, spec
         return None, spec
 
+    def _resolve_prior(
+        self, section: str | None, section_path: list[str] | None
+    ) -> tuple[set[str] | None, str | None]:
+        """Pick the candidate restriction using the MOST SPECIFIC section first.
+
+        Walks the section nesting innermost→outer (then the bare ``section``),
+        returning the first level that maps to a specialty with a non-empty
+        candidate set. Strictly additive: with no ``section_path`` this reduces
+        to the previous single-``section`` behaviour.
+        """
+        # Innermost first, then outward, then the bare section (deduped).
+        ordered: list[str] = []
+        for level in reversed(section_path or []):
+            level = (level or "").strip()
+            if level and level not in ordered:
+                ordered.append(level)
+        if section and section not in ordered:
+            ordered.append(section)
+
+        last_spec: str | None = None
+        for sec in ordered:
+            allowed, spec = self._allowed_sids(sec)
+            if spec:
+                last_spec = spec
+            if allowed is not None:
+                return allowed, spec
+        return None, last_spec
+
     # ------------------------------------------------------------------ #
     def _candidate(self, sid: str, score: float, method: MatchMethod) -> Candidate:
         m = self._meta[sid]
@@ -295,7 +323,11 @@ class Matcher:
 
     # ------------------------------------------------------------------ #
     def match(
-        self, raw_name: str, section: str | None = None, top_k: int = 5
+        self,
+        raw_name: str,
+        section: str | None = None,
+        top_k: int = 5,
+        section_path: list[str] | None = None,
     ) -> MatchResult:
         norm = normalize(raw_name)
 
@@ -328,7 +360,9 @@ class Matcher:
             )
 
         # --- specialty prior: narrow candidates BEFORE fuzzy/embedding ---- #
-        allowed, _spec = self._allowed_sids(section)
+        # Use the MOST SPECIFIC section element first (innermost→outer) when a
+        # full section_path is available; falls back to the bare section.
+        allowed, _spec = self._resolve_prior(section, section_path)
 
         # 4) fuzzy over the (restricted) candidate texts.
         # best per service: service_id -> (score, method)
@@ -403,7 +437,8 @@ class Matcher:
             return None
 
         section = getattr(item, "section", None)
-        return self.match(name, section=section, top_k=top_k)
+        section_path = getattr(item, "section_path", None)
+        return self.match(name, section=section, top_k=top_k, section_path=section_path)
 
 
 def _load_service_specialties(db: Session) -> dict[str, list[str]]:

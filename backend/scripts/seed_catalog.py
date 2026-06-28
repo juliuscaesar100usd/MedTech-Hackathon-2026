@@ -31,13 +31,19 @@ def main(argv: list[str] | None = None) -> int:
     db = SessionLocal()
     try:
         n = seed_services(db, items)
-        total = db.query(Service).count()
-        n_syn = sum(len(s.synonyms or []) for s in db.query(Service).all())
+        services = db.query(Service).all()
+        total = len(services)
+        n_syn = sum(len(s.synonyms or []) for s in services)
+        # Hierarchy depth summary (the optional N-level category support).
+        depths = [len(s.category_path or []) for s in services]
+        max_depth = max(depths) if depths else 0
+        n_nested = sum(1 for d in depths if d >= 2)
     finally:
         db.close()
 
     print(f"Loaded {len(items)} catalog records from {path.name}")
     print(f"Seeded/updated {n} services (total in DB: {total}; synonyms: {n_syn})")
+    print(f"Category hierarchy: max depth {max_depth}; {n_nested} multi-level services")
     return 0
 
 

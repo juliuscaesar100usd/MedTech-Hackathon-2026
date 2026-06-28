@@ -34,6 +34,56 @@ def _cellval(v: object) -> str:
     return str(v).strip()
 
 
+def _level_from(first_col: int, leading_spaces: int, indent: float) -> int | None:
+    """Combine the geometric indentation signals into a coarse nesting level.
+
+    A header pushed further to the right is more deeply nested. We sum the column
+    offset of its first non-empty cell, its leading-space count (~2 spaces/level)
+    and the openpyxl cell-alignment indent. Returns None when there is no
+    positive signal so table_extract falls back to keyword-class depth.
+    """
+    level = first_col + leading_spaces // 2 + int(indent)
+    return level if level > 0 else None
+
+
+def _cell_level_hint(cells) -> int | None:
+    """Geometric nesting level for a row of openpyxl cells (or None).
+
+    Uses the first non-empty cell's column index, the leading spaces of its raw
+    text (NOT stripped, so indentation survives) and cell.alignment.indent.
+    """
+    for ci, cell in enumerate(cells):
+        v = cell.value
+        if v is None:
+            continue
+        raw = str(v)
+        if not raw.strip():
+            continue
+        leading = len(raw) - len(raw.lstrip())
+        indent = 0.0
+        try:  # available even in read_only mode; guard for safety
+            al = cell.alignment
+            if al is not None and al.indent:
+                indent = float(al.indent)
+        except Exception:
+            indent = 0.0
+        return _level_from(ci, leading, indent)
+    return None
+
+
+def _value_level_hint(values) -> int | None:
+    """Geometric nesting level for a row of raw values (legacy .xls / pandas)."""
+    for ci, v in enumerate(values):
+        if v is None:
+            continue
+        raw = str(v)
+        if not raw.strip():
+            continue
+        leading = len(raw) - len(raw.lstrip())
+        return _level_from(ci, leading, 0.0)
+    return None
+
+
 # --------------------------------------------------------------------------- #
 # Legacy .xls -> .xlsx conversion via LibreOffice (Fix A fallback).            #
 # --------------------------------------------------------------------------- #
@@ -113,10 +163,13 @@ class XlsxParser(_BaseExcelParser):
             return doc
         try:
             for ws in wb.worksheets:
-                table = [
-                    [_cellval(c) for c in row]
-                    for row in ws.iter_rows(values_only=True)
-                ]
+                # Iterate CELL objects (not values_only) so we can read both the
+                # value and the alignment indent for the section-depth hint.
+                table: list[list[str]] = []
+                level_hints: list[int | None] = []
+                for row in ws.iter_rows():
+                    table.append([_cellval(c.value) for c in row])
+                    level_hints.append(_cell_level_hint(row))
                 if not table:
                     continue
                 top_text.append(ws.title)
@@ -125,7 +178,11 @@ class XlsxParser(_BaseExcelParser):
                     if line:
                         top_text.append(line)
                 doc.rows.extend(
-                    rows_from_table(table, source_ref_prefix=f"sheet={ws.title}")
+                    rows_from_table(
+                        table,
+                        source_ref_prefix=f"sheet={ws.title}",
+                        level_hints=level_hints,
+                    )
                 )
         finally:
             wb.close()
@@ -153,16 +210,22 @@ class XlsxParser(_BaseExcelParser):
 
         top_text: list[str] = []
         for sheet_name, df in sheets.items():
-            table = [[_cellval(v) for v in row] for row in df.values.tolist()]
+            raw_rows = df.values.tolist()
+            table = [[_cellval(v) for v in row] for row in raw_rows]
             if not table:
                 continue
+            level_hints = [_value_level_hint(row) for row in raw_rows]
             top_text.append(str(sheet_name))
             for r in table[:6]:
                 line = " ".join(c for c in r if c)
                 if line:
                     top_text.append(line)
             doc.rows.extend(
-                rows_from_table(table, source_ref_prefix=f"sheet={sheet_name}")
+                rows_from_table(
+                    table,
+                    source_ref_prefix=f"sheet={sheet_name}",
+                    level_hints=level_hints,
+                )
             )
         return self._finish(doc, top_text)
 

@@ -28,6 +28,8 @@ export interface ServiceOut {
   service_name: string;
   synonyms: string[];
   category: string | null;
+  /** OUTER→INNER taxonomy path, e.g. ["Лаборатория","Анализ крови","Гормоны"]. */
+  category_path?: string[] | null;
   icd_code: string | null;
   is_active: boolean;
 }
@@ -52,6 +54,8 @@ export interface PartnerPriceOut {
   effective_date: string | null;
   is_verified: boolean;
   match_confidence: number | string | null;
+  /** Matched service taxonomy path (list endpoints now include this). */
+  category_path?: string[] | null;
 }
 
 export interface ServicePriceOut {
@@ -60,6 +64,10 @@ export interface ServicePriceOut {
   service_name: string | null;
   service_name_raw: string | null;
   category: string | null;
+  /** Matched catalog service taxonomy path, OUTER→INNER. */
+  category_path?: string[] | null;
+  /** Raw price-list section nesting for this item, OUTER→INNER. */
+  section_path?: string[] | null;
   price_resident_kzt: Money;
   price_nonresident_kzt: Money;
   currency_original: string | null;
@@ -73,6 +81,7 @@ export interface SearchServiceHit {
   service_id: number | string;
   service_name: string;
   category: string | null;
+  category_path?: string[] | null;
   partner_count: number | null;
   min_price_kzt: Money;
   max_price_kzt: Money;
@@ -188,6 +197,7 @@ export interface MatchCandidate {
   service_id: number | string;
   service_name: string;
   category: string | null;
+  category_path?: string[] | null;
   score: number | null;
   method: string | null;
 }
@@ -305,6 +315,31 @@ export interface VerifyInput {
   price_nonresident_kzt?: number;
   note?: string;
   operator?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Hierarchical tree (category → subcategory → … → service)
+// ---------------------------------------------------------------------------
+
+/**
+ * One node in the N-level service taxonomy. Generic over its leaf type:
+ * catalog tree leaves are {@link ServiceOut}; a partner price-list tree uses
+ * {@link ServicePriceOut} leaves (carrying prices).
+ */
+export interface TreeNode<Leaf = ServiceOut> {
+  /** Display name of this level, e.g. "Анализ крови". */
+  name: string;
+  /** Full OUTER→INNER path to this node, e.g. ["Лаборатория","Анализ крови"]. */
+  path: string[];
+  /** Nested child categories. */
+  children: TreeNode<Leaf>[];
+  /** Leaf services that live directly at this node. */
+  services: Leaf[];
+}
+
+/** Wire shape of the tree endpoints: { tree: TreeNode[] }. */
+export interface TreeResponse<Leaf = ServiceOut> {
+  tree: TreeNode<Leaf>[];
 }
 
 // ---------------------------------------------------------------------------
@@ -434,6 +469,16 @@ export const api = {
     return request<PartnerPriceOut[]>(`/services/${id}/partners`);
   },
 
+  /**
+   * Catalog taxonomy as an N-level tree (category → subcategory → … → service).
+   * Unwraps `{ tree }`; returns `[]` if the endpoint is missing/empty so callers
+   * can gracefully fall back to the flat list view.
+   */
+  async getServicesTree(): Promise<TreeNode<ServiceOut>[]> {
+    const res = await request<TreeResponse<ServiceOut>>('/services/tree');
+    return res?.tree ?? [];
+  },
+
   getPartners(query: PartnerQuery = {}): Promise<PartnerOut[]> {
     return request<PartnerOut[]>('/partners', { params: query as QueryParams });
   },
@@ -444,6 +489,17 @@ export const api = {
 
   getPartnerServices(id: number | string): Promise<ServicePriceOut[]> {
     return request<ServicePriceOut[]>(`/partners/${id}/services`);
+  },
+
+  /**
+   * A partner's price list grouped into the same N-level tree shape, with
+   * {@link ServicePriceOut} (price-bearing) leaves. Unwraps `{ tree }`; returns
+   * `[]` if the endpoint is missing/empty so callers can fall back to the flat
+   * grouped table.
+   */
+  async getPartnerTree(id: number | string): Promise<TreeNode<ServicePriceOut>[]> {
+    const res = await request<TreeResponse<ServicePriceOut>>(`/partners/${id}/tree`);
+    return res?.tree ?? [];
   },
 
   search(q: string): Promise<SearchResult> {

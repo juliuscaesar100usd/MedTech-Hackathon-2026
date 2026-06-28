@@ -19,7 +19,7 @@ import zipfile
 from pathlib import Path
 
 from app.config import settings
-from app.database import SessionLocal, init_db
+from app.database import Base, SessionLocal, engine, init_db
 from app.catalog_loader import load_real_catalog
 from app.enums import MatchStatus, ParseStatus
 from app.ingestion import ingest_archive, process_pending
@@ -47,6 +47,15 @@ def main() -> int:
     print(f"Embeddings: {'ON' if settings.use_embeddings else 'OFF'} "
           f"(offline={settings.embeddings_offline})")
 
+    # Rebuild the schema from scratch. create_all() never ALTERs an existing
+    # table, so a pre-existing medarchive.db would be missing the new hierarchy
+    # columns (Service.category_path / PriceItem.section_path). drop_all +
+    # create_all guarantees the live demo DB has them. The demo reseeds all data
+    # below, so wiping the old rows is intended.
+    import app.models  # noqa: F401  (register mappers before drop/create)
+
+    print("Rebuilding schema (drop_all + create_all) so new columns exist…")
+    Base.metadata.drop_all(bind=engine)
     init_db()
     db = SessionLocal()
     try:

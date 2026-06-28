@@ -22,6 +22,8 @@ from .table_extract import (
     _CONFUSABLE,
     _CUR_TOKEN_RE,
     _GLYPH_DIGITS,
+    SectionHierarchy,
+    _section_depth,
     parse_price,
     repair_price_glyphs,
     rows_from_table,
@@ -419,7 +421,22 @@ def _pdf_section(cells) -> str | None:
     return None
 
 
-def _row_from_cells(cells, ref, section, index_x, pending, wrap):
+_PDF_INDENT_BUCKET = 18.0  # x0 indentation per nesting level for headers (pt)
+
+
+def _pdf_header_depth(cells, label: str, left_margin: float) -> int:
+    """Rank a section banner's nesting depth from its left-edge indent.
+
+    A header pushed further right (larger x0 vs the page's left margin) nests
+    deeper. With no positive indent we fall back to the keyword-class depth.
+    """
+    real = [c for c in cells if c[0]]
+    x0 = real[0][1] if real else left_margin
+    bucket = int(round((x0 - left_margin) / _PDF_INDENT_BUCKET))
+    return _section_depth(label, bucket if bucket > 0 else None)
+
+
+def _row_from_cells(cells, ref, section_path, index_x, pending, wrap):
     """Build a ParsedRow from one (orphan-merged) line's cells.
 
     `pending` is the accumulated name fragment from preceding name-only lines;
@@ -536,8 +553,8 @@ def _row_from_cells(cells, ref, section, index_x, pending, wrap):
         return None, [], False
 
     extra: dict = {}
-    if section:
-        extra["section"] = section
+    if section_path:
+        extra["section"] = section_path[-1]  # innermost — back-compat
     return (
         ParsedRow(
             service_name_raw=name,
@@ -547,6 +564,7 @@ def _row_from_cells(cells, ref, section, index_x, pending, wrap):
             source_ref=ref,
             service_code_source=code,
             extra=extra,
+            section_path=list(section_path),
         ),
         [],
         False,
@@ -616,6 +634,7 @@ def _rows_from_words(words, ref: str) -> list[ParsedRow]:
     """Reconstruct rows from a page's normalized words."""
     if not words:
         return []
+    left_margin = min(w[0] for w in words)
     celllines = [(y, _split_cells(lw)) for y, lw in _group_lines(words)]
     index_x = _index_column_x(celllines)
 
@@ -633,18 +652,18 @@ def _rows_from_words(words, ref: str) -> list[ParsedRow]:
             merged.append((y, cells))
 
     rows: list[ParsedRow] = []
-    section: str | None = None
+    hierarchy = SectionHierarchy()
     pending: list[str] = []
     wrap = False
     for _y, cells in merged:
         sec = _pdf_section(cells)
         if sec is not None:
-            section = sec
+            hierarchy.push(sec, _pdf_header_depth(cells, sec, left_margin))
             pending = []
             wrap = False
             continue
         row, pending, wrap = _row_from_cells(
-            cells, ref, section, index_x, pending, wrap
+            cells, ref, hierarchy.path(), index_x, pending, wrap
         )
         if row is not None:
             rows.append(row)

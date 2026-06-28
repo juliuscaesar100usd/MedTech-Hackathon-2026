@@ -1,19 +1,23 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
-import type { PartnerOut, ServicePriceOut } from '../lib/api';
+import type { PartnerOut, ServicePriceOut, TreeNode } from '../lib/api';
 import { useFetch } from '../lib/useFetch';
 import { Loading, ErrorState, EmptyState } from '../components/States';
 import { Card } from '../components/Card';
 import { Badge, VerifiedBadge } from '../components/Badge';
 import { PriceTag } from '../components/PriceTag';
+import { CategoryTree, filterTree, countLeaves } from '../components/CategoryTree';
 import { formatDate } from '../lib/format';
 
 export function PartnerPage() {
   const { id = '' } = useParams();
 
   const partnerState = useFetch<PartnerOut>(() => api.getPartner(id), [id]);
+  // Flat list powers the search-filter fallback table; the section_path tree is
+  // the primary (N-level) view. Both load in parallel; either can cover the other.
   const servicesState = useFetch<ServicePriceOut[]>(() => api.getPartnerServices(id), [id]);
+  const treeState = useFetch<TreeNode<ServicePriceOut>[]>(() => api.getPartnerTree(id), [id]);
 
   const partner = partnerState.data;
 
@@ -79,7 +83,7 @@ export function PartnerPage() {
             </Card>
 
             <div>
-              <PriceList state={servicesState} />
+              <PriceList treeState={treeState} flatState={servicesState} />
             </div>
           </div>
         </>
@@ -88,55 +92,116 @@ export function PartnerPage() {
   );
 }
 
+/** Case-insensitive search over an item's normalized/raw/category/section text. */
+function makeMatcher(query: string): (it: ServicePriceOut) => boolean {
+  const t = query.trim().toLowerCase();
+  return (it: ServicePriceOut) => {
+    if (!t) return true;
+    const hay = [
+      it.service_name || '',
+      it.service_name_raw || '',
+      it.category || '',
+      ...(it.section_path || []),
+    ]
+      .join(' ')
+      .toLowerCase();
+    return hay.includes(t);
+  };
+}
+
 function PriceList({
-  state,
+  treeState,
+  flatState,
 }: {
-  state: ReturnType<typeof useFetch<ServicePriceOut[]>>;
+  treeState: ReturnType<typeof useFetch<TreeNode<ServicePriceOut>[]>>;
+  flatState: ReturnType<typeof useFetch<ServicePriceOut[]>>;
 }) {
   const [text, setText] = useState('');
-  const items = state.data ?? [];
 
-  // Group items by category for a readable, sectioned price list.
+  const treeNodes = treeState.data ?? [];
+  const useTree = !treeState.error && treeNodes.length > 0;
+  const searching = text.trim().length > 0;
+
+  // --- Tree view (primary): prune nodes/leaves to the search query ----------
+  const visibleNodes = useMemo(
+    () => (searching ? filterTree(treeNodes, makeMatcher(text)) : treeNodes),
+    [treeNodes, text, searching],
+  );
+  const visibleCount = useMemo(
+    () => visibleNodes.reduce((n, node) => n + countLeaves(node), 0),
+    [visibleNodes],
+  );
+
+  // --- Flat fallback: master's single-level category table ------------------
+  const flatItems = flatState.data ?? [];
   const grouped = useMemo(() => {
-    const t = text.trim().toLowerCase();
-    const filtered = items.filter((it) => {
-      if (!t) return true;
-      const hay = [it.service_name || '', it.service_name_raw || '', it.category || '']
-        .join(' ')
-        .toLowerCase();
-      return hay.includes(t);
-    });
+    const match = makeMatcher(text);
+    const filtered = flatItems.filter(match);
     const map = new Map<string, ServicePriceOut[]>();
     for (const it of filtered) {
       const cat = it.category || 'Без категории';
       if (!map.has(cat)) map.set(cat, []);
       map.get(cat)!.push(it);
     }
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [items, text]);
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], 'ru'));
+  }, [flatItems, text]);
 
-  if (state.loading) return <Loading label="Загрузка прайс-листа…" />;
-  if (state.error) return <ErrorState error={state.error} onRetry={state.reload} />;
+  // Gate loading/errors on whichever source we will actually render.
+  if (treeState.loading) return <Loading label="Загрузка прайс-листа…" />;
+  if (!useTree && flatState.loading) return <Loading label="Загрузка прайс-листа…" />;
+  if (!useTree && flatState.error)
+    return <ErrorState error={flatState.error} onRetry={flatState.reload} />;
 
-  return (
-    <section>
-      <div className="row between wrap" style={{ marginBottom: 14 }}>
-        <h2 style={{ marginBottom: 0 }}>Прайс-лист</h2>
-        <input
-          className="input"
-          style={{ maxWidth: 260 }}
-          type="search"
-          aria-label="Фильтр услуг"
-          placeholder="Фильтр услуг…"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-      </div>
+  const hasAnyData = useTree ? treeNodes.length > 0 : flatItems.length > 0;
 
-      {items.length === 0 ? (
+  const searchBox = (
+    <div className="row between wrap" style={{ marginBottom: 14 }}>
+      <h2 style={{ marginBottom: 0 }}>Прайс-лист</h2>
+      <input
+        className="input"
+        style={{ maxWidth: 260 }}
+        type="search"
+        aria-label="Фильтр услуг"
+        placeholder="Фильтр услуг…"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+    </div>
+  );
+
+  if (!hasAnyData) {
+    return (
+      <section>
+        {searchBox}
         <EmptyState icon="📋" title="Нет позиций прайс-листа">
           Для этого партнёра ещё не загружено ни одной позиции.
         </EmptyState>
+      </section>
+    );
+  }
+
+  return (
+    <section>
+      {searchBox}
+
+      {useTree ? (
+        visibleNodes.length === 0 ? (
+          <EmptyState icon="🔍" title="Ничего не найдено" />
+        ) : (
+          <div className="card pad-sm">
+            <p className="faint" style={{ marginBottom: 10 }}>
+              {visibleCount} {visibleCount === 1 ? 'услуга' : 'услуг'}
+            </p>
+            <CategoryTree<ServicePriceOut>
+              // Remount when crossing the search boundary so matches auto-expand.
+              key={searching ? 'search' : 'browse'}
+              nodes={visibleNodes}
+              defaultExpandedDepth={searching ? 99 : 0}
+              leafKey={(it) => String(it.item_id)}
+              renderLeaf={(it) => <PriceLeaf item={it} />}
+            />
+          </div>
+        )
       ) : grouped.length === 0 ? (
         <EmptyState icon="🔍" title="Ничего не найдено" />
       ) : (
@@ -160,6 +225,31 @@ function PriceList({
         </div>
       )}
     </section>
+  );
+}
+
+/** One service row inside the N-level tree: name + prices + verification. */
+function PriceLeaf({ item }: { item: ServicePriceOut }) {
+  const normalized = item.service_name;
+  const raw = item.service_name_raw;
+  const showRaw = raw && raw !== normalized;
+  return (
+    <div className="price-leaf">
+      <span className="price-leaf-main">
+        <span className="cell-strong">{normalized || raw || '—'}</span>
+        {showRaw && <span className="cell-sub">исходное: «{raw}»</span>}
+        {!normalized && item.match_status && (
+          <span className="cell-sub">
+            <Badge tone="warning">{item.match_status}</Badge>
+          </span>
+        )}
+      </span>
+      <span className="price-leaf-prices">
+        <PriceTag value={item.price_resident_kzt} />
+        <PriceTag value={item.price_nonresident_kzt} />
+        <VerifiedBadge verified={item.is_verified} />
+      </span>
+    </div>
   );
 }
 

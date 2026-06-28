@@ -67,6 +67,95 @@ _SECTION_HINT_RE = re.compile(
 _SECTION_LEAD_RE = re.compile(r"^\s*(раздел|подраздел|категори|отделени|глава|блок)\b", re.I)
 
 # --------------------------------------------------------------------------- #
+# Section-depth keyword classes (generic fallback when no geometry is present). #
+# --------------------------------------------------------------------------- #
+# Department / specialty banners — the OUTERMOST level of a catalogue (depth 0).
+_DEPT_RE = re.compile(
+    r"лаборатор|диагностик|отделени|кабинет|консультац|"
+    r"терап|хирург|стоматолог|кардиолог|невролог|гинеколог|уролог|"
+    r"офтальмолог|дерматолог|эндокринолог|онколог|травматолог|педиатр|"
+    r"радиолог|узи|рентген|эндоскоп|"
+    r"department|laboratory|diagnost|surgery|therapy|cardio|neuro",
+    re.I,
+)
+# Group / panel words that live UNDER a department (depth 1).
+_GROUP_RE = re.compile(
+    r"анализ|исследован|панел|комплекс|профил|пакет|обследован|групп|"
+    r"panel|profile|complex|package|group",
+    re.I,
+)
+
+
+def _generic_section_depth(label: str) -> int:
+    """Infer a coarse nesting depth for a header from its wording alone.
+
+    Used as the fallback when no geometric indentation signal is available:
+      0 — a department / specialty banner (also ALL-CAPS headers read as banners),
+      1 — a group / panel header, a ':'-suffixed header,
+      2 — anything else (a leaf-ish sub-grouping such as "Гормоны").
+    Combined with the stack's pop/push, repeated same-level headers replace one
+    another instead of nesting.
+    """
+    text = label.strip()
+    low = text.lower()
+    letters = [ch for ch in text if ch.isalpha()]
+    all_caps = bool(letters) and sum(1 for ch in letters if ch.isupper()) / len(letters) >= 0.6
+    if _DEPT_RE.search(low) or all_caps:
+        return 0
+    if _GROUP_RE.search(low) or text.endswith(":"):
+        return 1
+    return 2
+
+
+def _section_depth(label: str, geo: int | None = None) -> int:
+    """Resolve a header's nesting depth.
+
+    When a geometric level hint (`geo`) is available — indentation/column offset
+    (XLSX), char x0 buckets (PDF), TSV left buckets (OCR) — it wins, since real
+    geometry beats keyword guessing. Otherwise fall back to the keyword class.
+    """
+    if geo is not None:
+        return geo
+    return _generic_section_depth(label)
+
+
+class SectionHierarchy:
+    """A stack of ``(label, depth)`` section headers tracked OUTER -> INNER.
+
+    Depth is any monotonic integer: a larger depth means a more deeply nested
+    header. ``push`` pops every entry whose depth is >= the incoming depth, then
+    appends — so a header at the same or a shallower level REPLACES its siblings
+    (and their children) rather than nesting under them, while a strictly deeper
+    header nests beneath the current chain. ``path`` returns the live label
+    chain that gets copied onto each following data row's ``section_path``.
+    """
+
+    __slots__ = ("_stack",)
+
+    def __init__(self) -> None:
+        self._stack: list[tuple[str, int]] = []
+
+    def push(self, label: str, depth: int) -> None:
+        while self._stack and self._stack[-1][1] >= depth:
+            self._stack.pop()
+        self._stack.append((label, depth))
+
+    def path(self) -> list[str]:
+        """Current label chain (a fresh list, safe to attach to a row)."""
+        return [label for label, _ in self._stack]
+
+    @property
+    def innermost(self) -> str | None:
+        return self._stack[-1][0] if self._stack else None
+
+    def reset(self) -> None:
+        self._stack.clear()
+
+    def __len__(self) -> int:
+        return len(self._stack)
+
+
+# --------------------------------------------------------------------------- #
 # Price / currency parsing.                                                    #
 # --------------------------------------------------------------------------- #
 _NULLISH = {
@@ -367,13 +456,29 @@ def _section_label(row: list[object], table_priced: bool = False) -> str | None:
 
 
 def rows_from_table(
-    table: list[list[object]], source_ref_prefix: str = ""
+    table: list[list[object]],
+    source_ref_prefix: str = "",
+    level_hints: list[int | None] | None = None,
+    base_path: list[str] | None = None,
 ) -> list[ParsedRow]:
     """Convert a 2D table into ParsedRow objects.
 
     The header row is auto-detected; data rows below it are parsed. If no header
     is found we still extract using a best-guess name column + first numeric cell
     as the price.
+
+    Section headers ("ПРИЕМ ВРАЧА", "Анализ крови") are NOT emitted as data rows;
+    they build a nested ``section_path`` (OUTER->INNER) attached to the data rows
+    that follow. Nesting is driven by a :class:`SectionHierarchy` stack:
+
+    * ``level_hints`` — optional per-table-row geometric depth (e.g. XLSX indent /
+      column offset), aligned with the ORIGINAL ``table`` row indices. A hint of
+      ``None`` falls back to keyword-class depth.
+    * ``base_path`` — an outer context (e.g. DOCX paragraph headings) prepended to
+      every row's ``section_path``; in-table sections nest beneath it.
+
+    ``extra["section"]`` is always set to the innermost label (back-compat with
+    the matcher's specialty-prior).
     """
     if not table:
         return []
@@ -411,7 +516,8 @@ def rows_from_table(
 
     prefix = source_ref_prefix.rstrip(";") if source_ref_prefix else ""
     out: list[ParsedRow] = []
-    current_section: str | None = None
+    base = list(base_path) if base_path else []
+    hierarchy = SectionHierarchy()
     # When the table has real price columns, a lone no-price name cell is a
     # section banner (relax _section_label only in this trusted context).
     priced_table = bool(
@@ -419,10 +525,14 @@ def rows_from_table(
     )
 
     for orig_idx, row in data:
-        # Section header rows ("ПРИЕМ ВРАЧА") carry their label onto following rows.
+        # Section header rows ("ПРИЕМ ВРАЧА") are not emitted; they push onto the
+        # hierarchy so following rows inherit the full nested section_path.
         section = _section_label(row, table_priced=priced_table)
         if section is not None:
-            current_section = section
+            geo = None
+            if level_hints is not None and 0 <= orig_idx < len(level_hints):
+                geo = level_hints[orig_idx]
+            hierarchy.push(section, _section_depth(section, geo))
             continue
 
         name = _cell(row[name_col]) if name_col < len(row) else ""
@@ -473,9 +583,10 @@ def rows_from_table(
                     res_price, currency = p, c
                     break
 
+        section_path = base + hierarchy.path()
         extra: dict = {}
-        if current_section:
-            extra["section"] = current_section
+        if section_path:
+            extra["section"] = section_path[-1]  # innermost — back-compat
         # Keep the extra citizen tiers (near/far abroad) so nothing is lost when
         # they collapse onto the single non-resident field.
         if tiers:
@@ -497,6 +608,7 @@ def rows_from_table(
                 service_code_source=code,
                 source_ref=ref,
                 extra=extra,
+                section_path=section_path,
             )
         )
     return out

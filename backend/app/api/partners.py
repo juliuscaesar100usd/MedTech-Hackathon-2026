@@ -1,14 +1,34 @@
-"""Partners router: directory + per-partner service price lists."""
+"""Partners router: directory + per-partner service price lists + price tree."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..models import Partner, PriceItem, Service
-from ..schemas import PartnerOut, ServicePriceOut
+from ..schemas import PartnerOut, PartnerTreeResponse, ServicePriceOut
 from .deps import Pagination, get_db, pagination
+from .services import build_category_tree, effective_path
 
 router = APIRouter(tags=["partners"])
+
+
+def _service_price_out(item: PriceItem, service: Service | None) -> ServicePriceOut:
+    """Build a :class:`ServicePriceOut` (incl. the new hierarchy fields)."""
+    return ServicePriceOut(
+        item_id=item.item_id,
+        service_id=item.service_id,
+        service_name=service.service_name if service is not None else None,
+        service_name_raw=item.service_name_raw,
+        category=service.category if service is not None else None,
+        category_path=(service.category_path if service is not None else None),
+        section_path=item.section_path,
+        price_resident_kzt=item.price_resident_kzt,
+        price_nonresident_kzt=item.price_nonresident_kzt,
+        currency_original=item.currency_original,
+        effective_date=item.effective_date,
+        match_status=item.match_status,
+        is_verified=item.is_verified,
+    )
 
 
 @router.get("/partners", response_model=list[PartnerOut])
@@ -62,22 +82,7 @@ def partner_services(
         .all()
     )
 
-    out = [
-        ServicePriceOut(
-            item_id=item.item_id,
-            service_id=item.service_id,
-            service_name=service.service_name if service is not None else None,
-            service_name_raw=item.service_name_raw,
-            category=service.category if service is not None else None,
-            price_resident_kzt=item.price_resident_kzt,
-            price_nonresident_kzt=item.price_nonresident_kzt,
-            currency_original=item.currency_original,
-            effective_date=item.effective_date,
-            match_status=item.match_status,
-            is_verified=item.is_verified,
-        )
-        for item, service in rows
-    ]
+    out = [_service_price_out(item, service) for item, service in rows]
 
     out.sort(
         key=lambda r: (
@@ -86,3 +91,36 @@ def partner_services(
         )
     )
     return out
+
+
+@router.get("/partners/{partner_id}/tree", response_model=PartnerTreeResponse)
+def partner_tree(
+    partner_id: str,
+    db: Session = Depends(get_db),
+) -> PartnerTreeResponse:
+    """The partner's active price list grouped by ``PriceItem.section_path``.
+
+    Same ``TreeNode`` shape as ``/services/tree`` but with
+    :class:`ServicePriceOut` leaves (resident/non-resident prices kept). Items
+    with no section nesting fall back to the matched service's category, then a
+    "Без категории" bucket — so every priced item is still reachable.
+    """
+    partner = db.get(Partner, partner_id)
+    if partner is None:
+        raise HTTPException(status_code=404, detail="Partner not found")
+
+    rows = (
+        db.query(PriceItem, Service)
+        .outerjoin(Service, PriceItem.service_id == Service.service_id)
+        .filter(PriceItem.partner_id == partner_id, PriceItem.is_active.is_(True))
+        .order_by(PriceItem.service_name_raw)
+        .all()
+    )
+
+    entries: list[tuple[list[str], ServicePriceOut]] = []
+    for item, service in rows:
+        fallback = item.section or (service.category if service is not None else None)
+        path = effective_path(item.section_path, fallback)
+        entries.append((path, _service_price_out(item, service)))
+
+    return PartnerTreeResponse(tree=build_category_tree(entries))

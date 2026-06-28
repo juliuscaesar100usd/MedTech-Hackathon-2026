@@ -60,6 +60,11 @@ class Service(Base):
     service_name: Mapped[str] = mapped_column(String(512), nullable=False, index=True)
     synonyms: Mapped[list] = mapped_column(JSON, default=list)         # list[str]
     category: Mapped[str | None] = mapped_column(String(128), index=True)
+    # Full category hierarchy OUTER→INNER, e.g. ["Лаборатория","Анализ крови",
+    # "Гормоны"]. ``category`` == ``category_path[0]`` (top level) for back-compat
+    # and the dashboard ``by_category`` rollup. JSON keeps it N-level with no FK
+    # wiring; NULL for flat/legacy rows (schema contract §2 — back-compat).
+    category_path: Mapped[list | None] = mapped_column(JSON, nullable=True, default=None)
     icd_code: Mapped[str | None] = mapped_column(String(32))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
@@ -186,6 +191,11 @@ class PriceItem(Base):
     # Section/department header the item was found under in the source document
     # (e.g. a specialty heading). Carried through for grouping and match hints.
     section: Mapped[str | None] = mapped_column(String(256))
+    # Full nesting of section headers above the row OUTER→INNER, e.g.
+    # ["Лаборатория","Анализ крови","Гормоны"]. ``section`` == ``section_path[-1]``
+    # (innermost) for back-compat + the specialty prior; NULL when no section
+    # context (schema contract §2 — back-compat).
+    section_path: Mapped[list | None] = mapped_column(JSON, nullable=True, default=None)
     service_id: Mapped[str | None] = mapped_column(
         ForeignKey("services.service_id"), index=True
     )

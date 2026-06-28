@@ -26,6 +26,11 @@ class ParsedRow:
     service_code_source: str | None = None
     source_ref: str | None = None      # e.g. "sheet=Прайс;row=12" for audit
     extra: dict = field(default_factory=dict)
+    # Full nested section context above this row, OUTER->INNER, e.g.
+    # ["Лаборатория", "Анализ крови", "Гормоны"]. Empty when no section exists.
+    # extra["section"] mirrors section_path[-1] (the innermost label) for the
+    # matcher's specialty-prior, which keeps working unchanged.
+    section_path: list[str] = field(default_factory=list)
 
 
 @dataclass
