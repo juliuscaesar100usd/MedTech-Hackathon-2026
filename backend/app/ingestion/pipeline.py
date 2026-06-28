@@ -25,7 +25,7 @@ from ..validation import (
     upsert_with_versioning,
     validate_row,
 )
-from .partner import filename_hints, resolve_partner
+from .partner import filename_hints, real_org_name, resolve_partner
 
 _MATCHED = {MatchStatus.matched_auto, MatchStatus.matched_manual}
 
@@ -71,13 +71,17 @@ def process_document(
 
         fn_hints = filename_hints(doc.file_name)
 
-        # 3) resolve partner. Prefer the filename clinic name ("Клиника 1") over
-        # the parsed document header: KZ price lists are reliably named by clinic,
-        # whereas the header text is often a stray column label ("Стоимость,",
-        # "приложение"). This also MERGES a clinic's yearly files (2024 + 2026)
-        # into one partner so a price-over-time history exists. Falls back to the
-        # parsed name when the filename yields nothing.
-        name_hint = _first(fn_hints["partner_name"], parsed.partner_name_hint)
+        # 3) resolve partner. Use a REAL organisation name from the header when the
+        # document carries one ('АО "Национальный научный медицинский центр"'),
+        # else the filename clinic name ("Клиника 1"). The filename name is what
+        # MERGES a clinic's yearly files (2024 + 2026) into one partner for price
+        # history; the header text is otherwise stray column furniture
+        # ("Стоимость,", "приложение"), so we never fall back to it raw.
+        name_hint = _first(
+            real_org_name(parsed.partner_name_hint),
+            fn_hints["partner_name"],
+            parsed.partner_name_hint,
+        )
         partner = resolve_partner(
             db,
             name_hint=name_hint,

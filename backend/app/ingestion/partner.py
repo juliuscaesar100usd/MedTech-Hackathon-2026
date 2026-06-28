@@ -44,6 +44,33 @@ _DATE_YEAR = re.compile(r"(?<!\d)(20\d{2})(?!\d)")
 
 _BIN_RE = re.compile(r"\b(\d{12})\b")
 
+# A real organisation name from a document header begins with a legal form
+# (KZ/RU): АО/АҚ, ТОО/ЖШС, ГКП/ГККП/КГП/КГКП, РГП/РГКП, ГУ/КГУ, ЧУ, НИИ, ИП, etc.
+# This is what separates a genuine clinic name ('АО "Национальный научный
+# медицинский центр"') from the table-header junk most price lists put on top
+# ('Стоимость,', 'приложение', 'Прейскурант цен…').
+_ORG_PREFIX_RE = re.compile(
+    r'^["«\s]*('
+    r"АО|АҚ|ТОО|ЖШС|ГКП|ГККП|КГП|КГКП|РГП|РГКП|ГУ|КГУ|ЧУ|НИИ|ИП|ЗАО|ОАО|ПАО|НАО"
+    r")\b",
+    re.I,
+)
+
+
+def real_org_name(text: str | None) -> str | None:
+    """Return a cleaned real organisation name if `text` looks like one, else None.
+
+    A header line is accepted only when it opens with a legal-form prefix, so the
+    common price-list furniture ('Цена для граждан', 'Приложение к Приказу…') is
+    rejected. Trailing list punctuation is trimmed.
+    """
+    if not text:
+        return None
+    name = text.strip().strip(" ,.;:—-").strip()
+    if len(name) >= 6 and _ORG_PREFIX_RE.match(name):
+        return name
+    return None
+
 
 def _safe_date(y: int, m: int, d: int) -> date | None:
     try:
