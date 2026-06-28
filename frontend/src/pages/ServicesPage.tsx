@@ -37,7 +37,7 @@ export function ServicesPage() {
   // This flat list powers the List view and is the graceful fallback when the
   // (optional) tree endpoint is unavailable or returns no taxonomy.
   const { data, loading, error, reload } = useFetch<ServiceOut[]>(
-    () => api.getServices({ limit: 5000 }),
+    () => api.getServices({ limit: 10000 }),
     [],
   );
 
