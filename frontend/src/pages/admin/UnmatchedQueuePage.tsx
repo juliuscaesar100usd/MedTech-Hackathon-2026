@@ -8,6 +8,7 @@ import { Badge } from '../../components/Badge';
 import { PriceTag } from '../../components/PriceTag';
 import { useToast } from '../../components/Toast';
 import { formatConfidence } from '../../lib/format';
+import { CheckCircle } from '@phosphor-icons/react';
 
 function errMessage(err: unknown): string {
   if (err instanceof ApiError)
@@ -51,7 +52,7 @@ export function UnmatchedQueuePage() {
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : items.length === 0 ? (
-        <EmptyState icon="✅" title="Нет несопоставленных">
+        <EmptyState icon={<CheckCircle weight="duotone" />} title="Нет несопоставленных">
           Все загруженные позиции сопоставлены с услугами каталога.
         </EmptyState>
       ) : (

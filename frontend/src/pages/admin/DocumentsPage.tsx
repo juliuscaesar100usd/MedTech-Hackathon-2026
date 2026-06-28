@@ -6,6 +6,7 @@ import { Loading, ErrorState, EmptyState, Spinner } from '../../components/State
 import { DataTable, type Column } from '../../components/DataTable';
 import { StatusBadge, Badge } from '../../components/Badge';
 import { formatDate, formatDateTime, formatInt } from '../../lib/format';
+import { FileText } from '@phosphor-icons/react';
 
 const STATUS_OPTIONS = ['', 'pending', 'processing', 'done', 'error'];
 
@@ -128,7 +129,7 @@ export function DocumentsPage() {
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : docs.length === 0 ? (
-        <EmptyState icon="📄" title="Нет документов">
+        <EmptyState icon={<FileText weight="duotone" />} title="Нет документов">
           Загрузите архив, чтобы заполнить список.
         </EmptyState>
       ) : (

@@ -6,6 +6,7 @@ import { Loading, ErrorState, EmptyState } from '../../components/States';
 import { Card } from '../../components/Card';
 import { StatusBadge } from '../../components/Badge';
 import { formatInt, formatPercent, formatDateTime } from '../../lib/format';
+import { Package } from '@phosphor-icons/react';
 
 export function DashboardPage() {
   const { data, loading, error, reload } = useFetch<DashboardStats>(() => api.getDashboard(), []);
@@ -161,7 +162,7 @@ function BarList({ data, emptyLabel }: { data: Record<string, number>; emptyLabe
 function RecentBatches({ batches }: { batches: BatchOut[] }) {
   if (!batches || batches.length === 0)
     return (
-      <EmptyState icon="📦" title="Нет пакетов">
+      <EmptyState icon={<Package weight="duotone" />} title="Нет пакетов">
         Загрузите архив, чтобы увидеть здесь пакеты загрузки.
       </EmptyState>
     );

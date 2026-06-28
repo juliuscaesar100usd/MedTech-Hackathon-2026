@@ -1,4 +1,5 @@
 import { useRef, useState, type DragEvent } from 'react';
+import { FileZip } from '@phosphor-icons/react';
 
 export function Dropzone({
   accept,
@@ -47,7 +48,7 @@ export function Dropzone({
       tabIndex={0}
       aria-disabled={disabled}
     >
-      <div className="dz-icon" aria-hidden="true">📦</div>
+      <div className="dz-icon" aria-hidden="true"><FileZip size={30} weight="duotone" /></div>
       <div className="dz-title">{title}</div>
       <div className="dz-sub">{subtitle}</div>
       {file && <div className="dz-file">Выбран: {file.name}</div>}

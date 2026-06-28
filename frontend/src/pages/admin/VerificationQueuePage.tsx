@@ -8,6 +8,7 @@ import { Badge, VerifiedBadge } from '../../components/Badge';
 import { PriceTag } from '../../components/PriceTag';
 import { useToast } from '../../components/Toast';
 import { formatDate, toNumber } from '../../lib/format';
+import { CheckCircle, Warning } from '@phosphor-icons/react';
 
 function errMessage(err: unknown): string {
   if (err instanceof ApiError)
@@ -52,7 +53,7 @@ export function VerificationQueuePage() {
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : items.length === 0 ? (
-        <EmptyState icon="✅" title="Очередь пуста">
+        <EmptyState icon={<CheckCircle weight="duotone" />} title="Очередь пуста">
           Нет позиций, требующих ручной проверки.
         </EmptyState>
       ) : (
@@ -139,7 +140,8 @@ function VerificationRow({
         <div className="tag-list" style={{ marginTop: 12 }}>
           {anomalies.map((a) => (
             <Badge key={a} tone="danger">
-              ⚠ {a}
+              <Warning size={12} weight="fill" aria-hidden="true" style={{ verticalAlign: '-1px', marginRight: 4 }} />
+              {a}
             </Badge>
           ))}
         </div>
