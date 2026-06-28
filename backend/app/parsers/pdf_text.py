@@ -57,8 +57,11 @@ _KNOWN_CITIES = (
     "костанай", "кызылорда", "уральск", "петропавловск", "актау", "темиртау",
     "туркестан", "кокшетау", "талдыкорган", "экибастуз", "рудный", "жезказган",
 )
+# Street prefixes: the abbreviations REQUIRE their period (ул. / пр. / мкр.).
+# Without it, re.I lets a bare "пр"/"ул" swallow common word-starts in a header
+# ("Приложение", "проживающих", "улой…") and store them as a fake address.
 _ADDRESS_RE = re.compile(
-    r"((?:ул\.?|улица|пр\.?|проспект|мкр\.?|микрорайон|көше|даңғыл)"
+    r"((?:ул\.|улица|пр\.|проспект|мкр\.|микрорайон|көше|даңғыл)"
     r"[^\n,;]{2,60}(?:[, ]+(?:д\.?|дом|№)?\s*\d+[А-Яа-яA-Za-z/]*)?)",
     re.I,
 )
@@ -120,9 +123,12 @@ def extract_header_hints(text: str, doc: ParsedDocument) -> None:
         if m:
             doc.phone_hint = m.group(0).strip()
     if doc.city_hint is None:
+        # Accept a "г./город X" capture ONLY when X is a real KZ city. re.I
+        # defeats the capital-letter anchor, so a bare "г" otherwise grabs the
+        # next word ("Гражданства" -> "город Ражданства"); whitelisting kills it.
         m = _CITY_RE.search(head)
-        if m:
-            doc.city_hint = m.group(1)
+        if m and m.group(1).lower() in _KNOWN_CITIES:
+            doc.city_hint = m.group(1).title()
         else:
             low = head.lower()
             for c in _KNOWN_CITIES:

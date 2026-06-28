@@ -5,6 +5,7 @@ import type { PartnerOut } from '../lib/api';
 import { useFetch } from '../lib/useFetch';
 import { Loading, ErrorState, EmptyState } from '../components/States';
 import { Badge } from '../components/Badge';
+import { MapPin, Buildings } from '@phosphor-icons/react';
 
 export function PartnersPage() {
   const [text, setText] = useState('');
@@ -89,7 +90,7 @@ export function PartnersPage() {
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
       ) : filtered.length === 0 ? (
-        <EmptyState icon="🏥" title="Партнёры не найдены">
+        <EmptyState icon={<Buildings weight="duotone" />} title="Партнёры не найдены">
           {partners.length === 0
             ? 'Партнёры пока отсутствуют. Загрузите архив из раздела «Админ» для начала работы.'
             : 'Нет партнёров, соответствующих фильтрам.'}
@@ -105,7 +106,11 @@ export function PartnersPage() {
               <Link key={p.partner_id} to={`/partners/${p.partner_id}`} className="card hoverable result-card">
                 <div className="rc-title">{p.name}</div>
                 <div className="rc-meta">
-                  {p.city && <span>📍 {p.city}</span>}
+                  {p.city && (
+                    <span className="rc-city">
+                      <MapPin size={14} weight="fill" aria-hidden="true" /> {p.city}
+                    </span>
+                  )}
                   {p.is_active ? (
                     <Badge tone="success" dot>
                       Активна

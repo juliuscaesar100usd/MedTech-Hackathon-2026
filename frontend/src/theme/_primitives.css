@@ -340,6 +340,15 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.rc-city {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rc-city svg {
+  color: var(--pq-blue);
+  flex: none;
+}
 .rc-price {
   margin-top: 12px;
   font-weight: 800;

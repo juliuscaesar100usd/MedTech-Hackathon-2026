@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { ChartLine } from '@phosphor-icons/react';
+import { ChartLine, Buildings } from '@phosphor-icons/react';
 import { api, API_BASE } from '../lib/api';
 import type { PartnerPriceOut } from '../lib/api';
 import { useFetch } from '../lib/useFetch';
@@ -351,7 +351,7 @@ function ServicePartnersPageInner() {
           </header>
 
           {rows.length === 0 ? (
-            <EmptyState icon="🏥" title="Пока нет партнёров, предлагающих эту услугу">
+            <EmptyState icon={<Buildings weight="duotone" />} title="Пока нет партнёров, предлагающих эту услугу">
               Как только будут загружены прайс-листы, ссылающиеся на эту услугу, здесь появятся партнёры.
             </EmptyState>
           ) : (
